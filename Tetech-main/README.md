@@ -1,0 +1,117 @@
+# NEON FORGE — Techno Prompt Lab for Suno
+
+A single-file, offline-first laboratory for generating **maximum-energy, instrumental-safe
+techno prompts** for [Suno](https://suno.com). No build system, no backend, no dependencies —
+one `index.html` you can double-click.
+
+```bash
+# either open index.html directly, or:
+python3 -m http.server 8080
+```
+
+---
+
+## What's in it
+
+### Generation
+- **461 curated techno styles** tagged `core` / `sub` / `rare`, searchable in a 📜 picker modal,
+  with style fusion 🔀 and clear ✕.
+- **Weirdness slider that actually bites** — it picks a *category* first, so pool sizes can't
+  swamp it. Sweeps from 71% core / 2% rare at 0 to 3% core / 75% rare at 100, shows the live
+  mix next to the slider, and also biases which scales the key engine chooses.
+- **Emotion-led melody** with a melodic-force level (Light / Balanced / Strong / Dominant).
+  Melody is always present — force only changes how much of the prompt it commands, so it can
+  never be crowded out by bass, drums or concept.
+- **Key & scale engine** — 27 scales with real semitone intervals, root note selection, and a
+  **Camelot wheel** position for matching the track into a DJ set. Harmonic colour is bound to
+  the key, so a prompt can never contradict itself.
+- **10-dimension concept roller** (world, location, visual, narrative, sensation, event,
+  conflict, crowd, title, transformation) — 92 worlds, 93 titles and heavily expanded
+  fragments throughout.
+- **Melody concept roller** — the melody gets its own 4-part narrative brief
+  (story / role in the track / motion / hook shape) so the hook is never an afterthought
+  of the visuals. Rolls on its own button or with feeling→melody.
+- **35 arrangements**, weighted 68% toward fast, groovy, relentless shapes.
+- **Microtonality** — arm it per section on melody and/or bass, with 7 flavours
+  (quarter-tone, sixth-tone, eighth-tone, just intonation, maqam 3/4, analog drift,
+  wide detune). These are real cent offsets: the audition engine bends the oscillators
+  by exactly the amount the prompt describes.
+- Large pools for bass, drums, groove, swing, syncopation and intensity.
+- **24 optional detail layers** (acid, glitch, saturation, sidechain, polyrhythm, …), all OFF
+  by default.
+
+### Hearing it
+- **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
+  rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed
+  from the rolled kick / bass / lead text. Deterministic per seed, so a shared link sounds the
+  same for everyone. Built lazily; no AudioContext until you press play.
+
+### Shaping it
+- **Energy arc** — a bar-accurate, section-by-section timeline (Intro → Build → Drop →
+  Breakdown → … ) with per-section energy levels, total runtime and copyable `[Section]` tags.
+- **Prompt score** — six weighted metrics (length, melodic clarity, instrumentation coverage,
+  style focus, energy density, harmonic definition) with actionable notes on each.
+- **A/B slots** — stash an idea in slot B, keep working, then flip between them.
+- **Engineer & DJ pack** — key-derived kick tuning in Hz, sidechain timings, stereo and master
+  notes, cue advice and a compatible BPM/Camelot mixing range.
+
+### Workflow
+- **Command palette** (<kbd>⌘K</kbd> / <kbd>Ctrl+K</kbd>) with fuzzy search over every action.
+- Per-field **lock 🔒** and **roll 🎲** on every element, ⚡ power roll, ↶ undo / ↷ redo.
+- **Hide 👁** on every card plus BPM and Key individually — hiding a section removes its
+  content from the generated prompt.
+- 3 variations, refreshed on power roll, with "Apply this one".
+- Presets (localStorage), shareable deterministic URLs, history (records only on copy/apply),
+  and full **session export / import** as JSON.
+
+### Safety rails
+- **Instrumental-only is ON by default.** A word-boundary vocal sanitizer strips any vocal,
+  chant, choir, lyric or whisper content — and it is *label-aware*, so removing an offending
+  clause never leaves a section headless.
+- **Maximum-energy filter** — `minimal`, `minimalist`, `sparse`, `restrained`, `low-energy`,
+  `weak`, `tiny`, `gentle` and `quiet` can never reach the output.
+- Budget system drops whole clauses by priority, never mid-phrase:
+  Style Prompt ≤ 1000 chars, Full Brief ≤ 3000 chars.
+
+---
+
+## Outputs
+
+| Tab | Contents |
+|---|---|
+| **Style Prompt** | ≤1000 chars, ready to paste into Suno's style box |
+| **Full Brief** | ≤3000 chars, full production brief with energy arc |
+| **Suno Kit** | style + brief + section tags + energy arc + vocal policy + engineer & DJ notes |
+| **Engineer** | mix/master and DJ metadata on its own |
+
+---
+
+## Keyboard
+
+| Key | Action |
+|---|---|
+| <kbd>⌘K</kbd> | Command palette |
+| <kbd>P</kbd> | Power roll everything |
+| <kbd>Space</kbd> | Play / stop audition |
+| <kbd>V</kbd> | Generate 3 variations |
+| <kbd>F</kbd> / <kbd>M</kbd> / <kbd>B</kbd> / <kbd>D</kbd> | Roll feeling→melody / melody / bass / drums |
+| <kbd>C</kbd> / <kbd>A</kbd> / <kbd>K</kbd> | Roll concept / arrangement / key |
+| <kbd>L</kbd> | Style library |
+| <kbd>I</kbd> | Toggle instrumental safety |
+| <kbd>S</kbd> | Copy share link |
+| <kbd>1</kbd>–<kbd>4</kbd> | Switch output tab |
+| <kbd>⌘Z</kbd> / <kbd>⌘⇧Z</kbd> | Undo / redo |
+| <kbd>?</kbd> | All shortcuts |
+
+---
+
+## Tests
+
+A headless acceptance suite (jsdom) covers all 20 product acceptance criteria plus the new
+subsystems — key engine, energy arc, scoring, A/B, command palette, and sanitizer regressions.
+
+```bash
+npm i -D jsdom
+node qa/test.js     # 48 checks
+node qa/pools.js    # runs every pool phrase through the live sanitizer
+```
