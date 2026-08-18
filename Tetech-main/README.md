@@ -25,6 +25,10 @@ python3 -m http.server 8080
   micro-genres (Gagaku, Hindustani, Morna, Tuareg, Kulintang, Pansori…), scene/atmosphere
   themes (Harbor, Observatory, Spaceport, Factory, Music Box, Circus, Steampunk, Solarpunk…)
   and mood/season sets. One click on **🎲 New Style** re-rolls a brand-new combo.
+- **Genre-aware BPM** — the roller now matches the tempo to the rolled genres (Bossa ~90,
+  Dub ~80, DnB ~170, Metal ~160, Techno ~140…), so a combo *sounds* right before you even
+  audition it. The two slots also come from **different genres** so you never get "Bebop Jazz"
+  + "Cool Jazz". The genre hint shows the resolved genres + "tempo matched to genre".
 - **Techno-Only mode** — a toggle in the Style & Tempo card. The 460+ curated techno styles are
   kept in their **own special list** and never appear in the genre combo. Flip **Techno only** to
   switch the roller *and* the 📜 picker to the techno pool exclusively. You can still manually
@@ -137,6 +141,6 @@ subsystems — key engine, energy arc, scoring, A/B, command palette, and saniti
 
 ```bash
 npm i -D jsdom
-node qa/test.js     # 55 checks (genre combos, techno mode, expanded pools, audition fidelity)
+node qa/test.js     # 56 checks (genre combos, techno mode, expanded pools, audition fidelity, genre-aware BPM)
 node qa/pools.js    # runs every pool phrase (incl. all 2800+ genre combos) through the live sanitizer
 ```

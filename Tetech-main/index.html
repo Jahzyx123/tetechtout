@@ -1160,6 +1160,44 @@ function pickGenreComboOther(avoid){
   while(c===avoid && guard++<8){ c = pickGenreCombo(); }
   return c;
 }
+/* Genre + combo pair (kept separate so we can drive BPM + avoid repeats). */
+function pickGenreObj(){
+  const g = pick(GENRES);
+  return {genre:g.n, combo:genreComboName(g, pick(g.subs))};
+}
+/* A genre + combo pair whose GENRE differs from an avoid value. */
+function pickGenreObjOther(avoidGenre){
+  let g = pick(GENRES); let guard = 0;
+  while(g.n===avoidGenre && guard++<8) g = pick(GENRES);
+  return {genre:g.n, combo:genreComboName(g, pick(g.subs))};
+}
+/* Resolve the genre name back from a combo string (for standalone rolls). */
+function genreOfStyle(name){
+  const low=(name||"").toLowerCase(); if(!low) return "";
+  for(const g of GENRES){
+    const gn=g.n.toLowerCase();
+    if(low===gn) return g.n;
+    if(low.length>gn.length && low.endsWith(gn)) return g.n;
+    for(const sub of g.subs){ if(low===genreComboName(g,sub).toLowerCase()) return g.n; }
+  }
+  return "";
+}
+/* Tempo that actually fits the rolled genres — a Bossa Nova should not be 138 BPM. */
+const TEMPO_RULES = [
+  [/dubstep|drum.?and.?bass|jungle|breakbeat|drumstep|dnb/, 140, 178],
+  [/metal|punk|hardcore|gabber|hardstyle|industrial|rock/, 138, 190],
+  [/techno|house|trance|dance|electronic|electro|hardcore/, 120, 160],
+  [/latin|salsa|samba|cumbia|reggaeton|tango|soca|merengue|mambo|cha-cha|bossa/, 88, 118],
+  [/hip-?hop|rap|r&b|rnb|grime|drill|trap/, 70, 102],
+  [/reggae|dub|ska|rocksteady/, 70, 100],
+  [/disco|funk|soul/, 100, 124],
+  [/bossa|jazz|swing|blues|lounge|chill|lo-?fi|downtempo|ambient|new age|meditation|ballad|folk|acoustic|classical|gospel|country|bluegrass|orchestra|cinematic|easy listening|adult|theatrical/, 76, 118]
+];
+function tempoForGenre(g1, g2){
+  const s=((g1||"")+" "+(g2||"")).toLowerCase();
+  for(const [re,lo,hi] of TEMPO_RULES){ if(re.test(s)) return lo + Math.floor(rng()*(hi-lo+1)); }
+  return 96 + Math.floor(rng()*45); // 96-140 broad default
+}
 /* Weirdness also biases HARMONY: low = familiar minor modes, high = the
    alien scales. This is why the slider now audibly changes the melody. */
 const SCALE_TIERS = {
@@ -2355,18 +2393,19 @@ const ATOMS = [
 const ATOM_BY_KEY = {}; ATOMS.forEach(a=>ATOM_BY_KEY[a.key]=a);
 
 const ROLL_FN = {
-  primary:      s=>{ s.primaryStyle = pickStyle(); },
-  secondary:    s=>{ s.secondaryStyle = pickSecondary(s.primaryStyle); },
+  primary:      s=>{ s.primaryStyle = pickStyle(); s.primaryGenre = s.techOnly ? "Techno" : genreOfStyle(s.primaryStyle); },
+  secondary:    s=>{ s.secondaryStyle = pickSecondary(s.primaryStyle); s.secondaryGenre = s.techOnly ? "Techno" : genreOfStyle(s.secondaryStyle); },
   /* Roll a whole new style + sub-style combo (non-techno) into BOTH slots,
-     or two techno styles when Techno-Only mode is on. */
+     or two techno styles when Techno-Only mode is on. BPM follows the genre. */
   genre:        s=>{
     if(s.techOnly){
-      s.primaryStyle = pickStyle();
-      s.secondaryStyle = pickSecondary(s.primaryStyle);
+      s.primaryStyle = pickStyle();  s.primaryGenre = "Techno";
+      s.secondaryStyle = pickSecondary(s.primaryStyle); s.secondaryGenre = "Techno";
     }else{
-      s.primaryStyle = pickGenreCombo();
-      s.secondaryStyle = pickGenreComboOther(s.primaryStyle);
+      const p = pickGenreObj();   s.primaryGenre = p.genre;   s.primaryStyle = p.combo;
+      const q = pickGenreObjOther(p.genre); s.secondaryGenre = q.genre; s.secondaryStyle = q.combo;
     }
+    if(!s.locks.bpm) s.bpm = tempoForGenre(s.primaryGenre, s.secondaryGenre);
   },
   bpm:          s=>{ s.bpm = rollBpmValue(); },
   key:          s=>{ s.rootPc = Math.floor(rng()*12); s.scaleId = pickScaleId(); s.chordColor = scaleOf(s).n; },
@@ -2437,7 +2476,7 @@ function defaultHidden(){
 function defaultState(){
   return {
     seed: newSeed(),
-    primaryStyle:"", secondaryStyle:"", bpm:140, rootPc:9, scaleId:"aeolian",
+    primaryStyle:"", secondaryStyle:"", primaryGenre:"", secondaryGenre:"", bpm:140, rootPc:9, scaleId:"aeolian",
     techOnly:false,
     microMelody:"off", microBass:"off",
     feeling:"", flavor:"", direction:"", leadVoice:"", leadPerf:"", contour:"", rhythm:"",
@@ -2763,9 +2802,13 @@ function render(){
   $("v-secondary").textContent = state.secondaryStyle || "— none";
   $("v-secondary").classList.toggle("dim", !state.secondaryStyle);
   $("techOnlyChk").checked = !!state.techOnly;
-  $("genreHint").textContent = state.techOnly
-    ? "techno pool only · 🎲 rolls two techno styles"
-    : GENRES.length + " genres · rolls a sub-style combo";
+  if(state.techOnly){
+    $("genreHint").textContent = "techno pool only · 🎲 rolls two techno styles";
+  } else if(state.primaryGenre){
+    $("genreHint").textContent = (state.primaryGenre===state.secondaryGenre ? state.primaryGenre+" (same genre)" : state.primaryGenre+" + "+state.secondaryGenre) + " · tempo matched to genre";
+  } else {
+    $("genreHint").textContent = GENRES.length + " genres · rolls a sub-style combo";
+  }
   $("genreHint").className = "val dim";
   $("bpmInput").value = state.bpm;
   $("influenceSel").value = state.influence;
@@ -4031,6 +4074,7 @@ window.NF = {
   get state(){ return state; }, set state(v){ state = v; rng = mulberry32(state.seed); },
   get currentTab(){ return currentTab; }, set currentTab(v){ currentTab = v; },
   STYLES, GENRES, ATOMS, ROLL_FN, GROUPS, SCALES, LAYERS, CONCEPT, MELODY_CONCEPT, MELODY_FORCE, COMMANDS,
+  tempoForGenre, genreOfStyle,
   melodyConceptLine,
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,

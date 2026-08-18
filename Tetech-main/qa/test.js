@@ -234,6 +234,21 @@ t("audition engine has new genre-feel + pattern voices", ()=>{
   const checks=["function styleFeel()","function snare(","function tom(","function shaker(","function percExtra()","offbeatSk","breakbeat ?"];
   const missing=checks.filter(c=>!src.includes(c));
   return missing.length===0 || ("missing: "+missing.join(", "));});
+t("genre roll matches BPM to genre + avoids same genre", ()=>{
+  S().techOnly=false; S().locks.bpm=false;
+  let same=0, outOfRange=0;
+  for(let i=0;i<40;i++){
+    w.NF.doRoll("genre");
+    const b=S().bpm;
+    if(S().primaryGenre===S().secondaryGenre) same++;
+    if(b<60||b>200) outOfRange++;
+  }
+  // force a couple of clearly-tempo'd genres
+  const force=(p,s)=>{ S().primaryGenre=p; S().primaryStyle=p+" X"; S().secondaryGenre=s; S().secondaryStyle=s+" Y"; return w.NF.tempoForGenre(p,s); };
+  const dnb=force("Drum and Bass","Electronic"); const ska=force("Ska","Reggae");
+  S().locks.bpm=false;
+  return (same===0 && outOfRange===0 && dnb>=140 && dnb<=190 && ska>=60 && ska<=110) ||
+    ("same="+same+" oob="+outOfRange+" dnb="+dnb+" ska="+ska);});
 
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);
