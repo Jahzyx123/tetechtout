@@ -222,5 +222,18 @@ t("genre pool itself contains no techno", ()=>{
   }
   return leak.length===0 || ("techno in genre pool: "+JSON.stringify(leak));});
 
+t("expanded bass/melody/drum/groove pools", ()=>{
+  const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
+  const cnt=n=>{ const m=src.match(new RegExp("const "+n+" = \\[([\\s\\S]*?)\\n\\];")); return m?[...m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].length:0; };
+  const need={FEELINGS:140,BASS_VOICES:55,BASS_MOVES:28,KICKS:30,HATS:28,GROOVES:30,SWINGS:20,INTENSITIES:25,LEADS:60,DIRECTIONS:55};
+  const bad=[];
+  for(const [k,v] of Object.entries(need)){ const c=cnt(k); if(c<v) bad.push(k+"="+c+"<"+v); }
+  return bad.length===0 || bad.join(", ");});
+t("audition engine has new genre-feel + pattern voices", ()=>{
+  const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
+  const checks=["function styleFeel()","function snare(","function tom(","function shaker(","function percExtra()","offbeatSk","breakbeat ?"];
+  const missing=checks.filter(c=>!src.includes(c));
+  return missing.length===0 || ("missing: "+missing.join(", "));});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

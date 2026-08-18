@@ -52,7 +52,10 @@ python3 -m http.server 8080
   (quarter-tone, sixth-tone, eighth-tone, just intonation, maqam 3/4, analog drift,
   wide detune). These are real cent offsets: the audition engine bends the oscillators
   by exactly the amount the prompt describes.
-- Large pools for bass, drums, groove, swing, syncopation and intensity.
+- **Huge expanded pools for bass, melody, feeling and drums** — 150+ feelings, 90+ flavors,
+  85+ lead voices, 65+ bass voices, 35+ bass moves, 30+ grooves, 30+ kicks, 30+ intensities
+  and more, all new entries validated against the safety sanitizer so nothing gets censored
+  out of a prompt.
 - **24 optional detail layers** (acid, glitch, saturation, sidechain, polyrhythm, …), all OFF
   by default.
 
@@ -61,6 +64,12 @@ python3 -m http.server 8080
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed
   from the rolled kick / bass / lead text. Deterministic per seed, so a shared link sounds the
   same for everyone. Built lazily; no AudioContext until you press play.
+- **High-fidelity beat** — the drum pattern actually changes with what you roll: the *groove*
+  decides the kick (four-on-the-floor, half-time, double-time, breakbeat, tribal, reggae
+  one-drop…), the *snare/hats/intensity/sync* text change the backbeat, fills, ghost notes and
+  shaker layers, and a light **genre-feel** mapping gives jazz/soul, latin, reggae, hip-hop,
+  ballad and metal rolls their own swing and rhythmic character — so a Bossa Nova, a Dub
+  Reggae and a Hardcore roll each sound genuinely different, all without mapping every style.
 
 ### Shaping it
 - **Energy arc** — a bar-accurate, section-by-section timeline (Intro → Build → Drop →
@@ -128,6 +137,6 @@ subsystems — key engine, energy arc, scoring, A/B, command palette, and saniti
 
 ```bash
 npm i -D jsdom
-node qa/test.js     # 52 checks (incl. genre-combo + techno-only mode)
+node qa/test.js     # 55 checks (genre combos, techno mode, expanded pools, audition fidelity)
 node qa/pools.js    # runs every pool phrase (incl. all 2800+ genre combos) through the live sanitizer
 ```

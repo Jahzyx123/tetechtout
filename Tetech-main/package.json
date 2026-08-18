@@ -8,7 +8,5 @@
     "test": "node qa/test.js",
     "lint:pools": "node qa/pools.js"
   },
-  "devDependencies": {
-    "jsdom": "^24.1.3"
-  }
+  "devDependencies": { "jsdom": "^24.0.0" }
 }
