@@ -10,6 +10,7 @@ const chk=(lbl,arr)=>arr.forEach(v=>{ if(typeof v==='string' && v && w.NF.isDirt
 for(const k in w.NF.CONCEPT) chk('CONCEPT.'+k, w.NF.CONCEPT[k]);
 for(const k in w.NF.MELODY_CONCEPT) chk('MELODY_CONCEPT.'+k, w.NF.MELODY_CONCEPT[k]);
 chk('STYLES', w.NF.STYLES.map(s=>s.n));
+{ const g=[...w.NF.GENRES.map(g=>g.n), ...w.NF.GENRES.flatMap(g=>g.subs)]; chk('GENRES', g); }
 chk('LAYERS', w.NF.LAYERS.map(l=>l.phrase));
 chk('SCALES', w.NF.SCALES.map(s=>s.mood));
 chk('MICRO_MODES', w.NF.MICRO_MODES.map(m=>m.desc));

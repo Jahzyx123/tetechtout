@@ -14,11 +14,27 @@ python3 -m http.server 8080
 ## What's in it
 
 ### Generation
+- **🎲 Genre Combo roller** — the default way to style. Rolls a random genre **and** a random
+  sub-style and drops them straight into both the Primary and Secondary slots (e.g.
+  `Bebop Jazz` + `Lo-Fi Chill`, `Steam Engine Steampunk` + `Vespa Ride Lounge`, `Fado` + `Neon House`).
+  An **immense pool of 250+ genres and 2800+ sub-style combos** — Jazz, Blues, Pop (incl.
+  Bubblegum, J-Pop, K-Pop), Bossa Nova, Soul, Funk, Disco, House, Trance, Hip-Hop, Latin,
+  World, Classical, Metal, Punk, Folk, Swing, Bluegrass, Ska, Dub, Dubstep, Drum & Bass,
+  Synthwave, Vaporwave, Lo-Fi, City Pop, Bollywood, Afrobeats, Caribbean, Nordic, Slavic,
+  Andean, Afro-Cuban, Ambient, Cinematic, Experimental — plus hundreds of obscure world
+  micro-genres (Gagaku, Hindustani, Morna, Tuareg, Kulintang, Pansori…), scene/atmosphere
+  themes (Harbor, Observatory, Spaceport, Factory, Music Box, Circus, Steampunk, Solarpunk…)
+  and mood/season sets. One click on **🎲 New Style** re-rolls a brand-new combo.
+- **Techno-Only mode** — a toggle in the Style & Tempo card. The 460+ curated techno styles are
+  kept in their **own special list** and never appear in the genre combo. Flip **Techno only** to
+  switch the roller *and* the 📜 picker to the techno pool exclusively. You can still manually
+  change one style to techno anytime by toggling the mode and picking from the techno list.
 - **461 curated techno styles** tagged `core` / `sub` / `rare`, searchable in a 📜 picker modal,
-  with style fusion 🔀 and clear ✕.
+  with style fusion 🔀 and clear ✕ (visible in Techno-Only mode).
 - **Weirdness slider that actually bites** — it picks a *category* first, so pool sizes can't
   swamp it. Sweeps from 71% core / 2% rare at 0 to 3% core / 75% rare at 100, shows the live
-  mix next to the slider, and also biases which scales the key engine chooses.
+  mix next to the slider, and also biases which scales the key engine chooses. (Applies to the
+  techno pool in Techno-Only mode; it always continues to bias the key/scale engine.)
 - **Emotion-led melody** with a melodic-force level (Light / Balanced / Strong / Dominant).
   Melody is always present — force only changes how much of the prompt it commands, so it can
   never be crowded out by bass, drums or concept.
@@ -112,6 +128,6 @@ subsystems — key engine, energy arc, scoring, A/B, command palette, and saniti
 
 ```bash
 npm i -D jsdom
-node qa/test.js     # 48 checks
-node qa/pools.js    # runs every pool phrase through the live sanitizer
+node qa/test.js     # 52 checks (incl. genre-combo + techno-only mode)
+node qa/pools.js    # runs every pool phrase (incl. all 2800+ genre combos) through the live sanitizer
 ```

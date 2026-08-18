@@ -158,11 +158,14 @@ t("no pool phrase is self-censoring", ()=>{
     for(const k in (s.concept||{})){ if(s.concept[k] && w.NF.isDirty(String(s.concept[k]).toLowerCase())) return "concept."+k+" = "+s.concept[k]; }
   } return true;});
 t("weirdness measurably shifts style mix", ()=>{
+  // Weirdness biases the curated techno pool — which is only used in
+  // Techno-Only mode (the default genre roller never includes techno).
+  S().techOnly=true;
   const cat={}; w.NF.STYLES.forEach(x=>cat[x.n]=x.c);
   const sample=wd=>{ S().weirdness=wd; let rare=0;
     for(let i=0;i<600;i++){ w.NF.doRoll("primary"); if(cat[S().primaryStyle]==="rare") rare++; }
     return rare/600; };
-  const lo=sample(0), hi=sample(100); S().weirdness=50;
+  const lo=sample(0), hi=sample(100); S().weirdness=50; S().techOnly=false;
   if(lo>0.12) return "weirdness 0 still gives "+(lo*100).toFixed(0)+"% rare";
   if(hi<0.60) return "weirdness 100 only gives "+(hi*100).toFixed(0)+"% rare";
   return true;});
@@ -191,6 +194,33 @@ t("27+ scales, all intervals valid", ()=>{
     if(s.iv.some(x=>x<0||x>11)) return s.id+" interval out of range";
     if(new Set(s.iv).size!==s.iv.length) return s.id+" duplicate intervals";
   } return true;});
+
+t("genre roll never uses techno in normal mode", ()=>{
+  S().techOnly=false;
+  const seen=new Set();
+  for(let i=0;i<80;i++){ w.NF.doRoll("genre"); seen.add(S().primaryStyle); seen.add(S().secondaryStyle); }
+  const anyTech=[...seen].some(x=>/techno|tekno/i.test(x));
+  S().primaryStyle=""; S().secondaryStyle="";
+  return (!anyTech && seen.size>=30) || ("tech leak or too few="+seen.size);});
+t("techno-only mode uses techno pool", ()=>{
+  S().techOnly=true;
+  const techNames=new Set(w.NF.STYLES.map(x=>x.n));
+  const seen=new Set();
+  for(let i=0;i<60;i++){ w.NF.doRoll("genre"); seen.add(S().primaryStyle); }
+  const leaked=[...seen].filter(x=>!techNames.has(x));
+  S().techOnly=false;
+  return (leaked.length===0 && seen.size>=20) || ("non-tech leaked="+JSON.stringify(leaked.slice(0,5)));});
+t("genre pool is large", ()=> w.NF.GENRES.length>=30 || w.NF.GENRES.length);
+t("genre roll fills both slots", ()=>{ S().techOnly=false; w.NF.doRoll("genre");
+  return (S().primaryStyle.length>2 && S().secondaryStyle.length>2 && S().primaryStyle!==S().secondaryStyle) ||
+    (S().primaryStyle+" | "+S().secondaryStyle);});
+t("genre pool itself contains no techno", ()=>{
+  const leak=[];
+  for(const g of w.NF.GENRES){
+    if(/techno|tekno/i.test(g.n)) leak.push("genre:"+g.n);
+    for(const s of g.subs){ if(/techno|tekno/i.test(s)) leak.push(g.n+"::"+s); }
+  }
+  return leak.length===0 || ("techno in genre pool: "+JSON.stringify(leak));});
 
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

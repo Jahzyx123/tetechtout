@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEON FORGE // Techno Prompt Lab for Suno</title>
-<meta name="description" content="Offline-first techno prompt laboratory for Suno — 461 styles, key-aware melody engine, live Web Audio audition, engineer notes and energy arcs.">
+<title>NEON FORGE // Prompt Lab for Suno (any genre + techno mode)</title>
+<meta name="description" content="Offline-first prompt laboratory for Suno — a huge any-genre combo roller (jazz, blues, pop, bossa nova, bubblegum, …) plus a techno-only mode with 461 curated styles, key-aware melody engine, live Web Audio audition, engineer notes and energy arcs.">
 <meta name="theme-color" content="#050806">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23050806'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='%2339ff14' font-family='monospace' font-weight='bold'%3EN%3C/text%3E%3C/svg%3E">
 <style>
 /* ============================================================
-   NEON FORGE — Techno Prompt Lab for Suno
+   NEON FORGE — Any-Genre / Techno Prompt Lab for Suno
    Offline-first. Vanilla HTML/CSS/JS. No build system.
    Dark black/green neon aesthetic.
    ============================================================ */
@@ -229,6 +229,14 @@ input[type=number]{width:76px}
 .cat.core{background:rgba(57,255,20,.15);color:var(--green-soft)}
 .cat.sub{background:rgba(255,210,63,.15);color:var(--amber)}
 .cat.rare{background:rgba(255,75,75,.15);color:var(--red)}
+.cat.genre{background:rgba(63,199,255,.15);color:#5cd6ff}
+.cat.tech{background:rgba(255,75,75,.15);color:var(--red)}
+.techonly-toggle{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);cursor:pointer;user-select:none;white-space:nowrap}
+.techonly-toggle input{accent-color:#ff2d55;width:14px;height:14px;cursor:pointer}
+.techonly-toggle input:checked ~ span{color:var(--red);text-shadow:0 0 8px rgba(255,45,85,.5)}
+.genreRowBadge{display:inline-block;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-right:6px}
+.badge-all{background:rgba(63,199,255,.15);color:#5cd6ff}
+.badge-tech{background:rgba(255,75,75,.15);color:var(--red)}
 
 .foot{margin-top:30px;text-align:center;color:var(--text-faint);font-family:var(--mono);font-size:11px;line-height:1.7;position:relative}
 .foot .sig{position:absolute;right:2px;bottom:2px;font-size:10px;letter-spacing:1px;color:var(--green-dim);text-align:right;text-shadow:0 0 8px rgba(57,255,20,.35)}
@@ -295,7 +303,7 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
   <header>
     <div class="brand">
       <h1>NEON FORGE<span>// TECHNO PROMPT LAB · SUNO</span></h1>
-      <div class="tag">MAXIMUM-ENERGY · INSTRUMENTAL-SAFE · 461 STYLES · AUDIBLE PREVIEW</div>
+      <div class="tag">🎲 ANY-GENRE COMBO ROLLER · + TECHNO-ONLY MODE · INSTRUMENTAL-SAFE · AUDIBLE PREVIEW</div>
     </div>
     <div class="header-actions">
       <span class="chip">SEED <b id="seedView">–</b></span>
@@ -330,6 +338,14 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
             <button class="mini listbtn" data-pick="secondary">📜 List</button>
             <button class="mini miniroll" data-roll="clear-secondary" title="Clear influence">✕</button>
             <button class="mini miniroll" data-roll="fuse" title="Fuse styles into one">🔀</button>
+          </div>
+          <div class="row" id="genreRow"><span class="lbl">Genre Combo</span>
+            <span class="val dim" id="genreHint">roll any genre + sub-style</span>
+            <button class="mini miniroll" data-roll="genre" title="Roll a random style + sub-style combo">🎲 New Style</button>
+            <label class="techonly-toggle" title="Toggle Techno-Only mode">
+              <input type="checkbox" id="techOnlyChk">
+              <span>Techno only</span>
+            </label>
           </div>
           <div class="row"><span class="lbl">Influence</span>
             <select id="influenceSel">
@@ -628,7 +644,7 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
 
 <script>
 /* =====================================================================
-   NEON FORGE — Techno Prompt Lab for Suno
+   NEON FORGE — Any-Genre / Techno Prompt Lab for Suno
    ---------------------------------------------------------------------
    Architecture notes:
    - A single mutable `state` holds every rolled value + locks + hidden flags.
@@ -820,6 +836,268 @@ const STYLES = [
   {n:"Mainframe Techno",c:"rare"},{n:"Server-Farm Techno",c:"rare"},
 ];
 
+/* ---------------------------- GENRE POOL (NON-TECHNO) ----------------------------
+   Every other genre the roller can pull from. Each genre has a list of
+   sub-styles, so a roll produces a "sub-style + genre" combo like
+   "Bebop Jazz" or "Smooth Acid Jazz". Deliberately contains NO techno —
+   techno lives in its own special list and only appears when the
+   "Techno Only" mode is switched on.
+--------------------------------------------------------------------- */
+const GENRES = [
+  { n:"Jazz", subs:["Bebop","Cool Jazz","Modal Jazz","Hard Bop","Smooth Jazz","Acid Jazz","Gypsy Jazz","Latin Jazz","Fusion Jazz","Free Jazz","Dixieland","Swing","Bossa Jazz","Soul Jazz","Jazz-Funk","Standards","Jazz Rock","Flamenco Jazz","Ethio Jazz","Afro-Jazz","Jazz Flow","Nu Jazz","Drumless Jazz","Stride","New Orleans Jazz","West Coast Jazz","Kansas City Jazz","Acid Jazz Groove","Jazz Hop","Jazz House","Straight Ahead","Swing Jazz","Jazz Blues"] },
+  { n:"Blues", subs:["Chicago Blues","Delta Blues","Electric Blues","Blues Rock","Jump Blues","Piedmont Blues","Texas Blues","Memphis Blues","Soul Blues","Country Blues","West Coast Blues","British Blues","Hill Country Blues","Louisiana Blues","Detroit Blues","Juke Joint Blues","Slide Guitar Blues","Boogie Blues","12-Bar Blues","Acoustic Blues","Harmonica Blues","Piano Blues","Slide Delta","Bottleneck Slide"] },
+  { n:"Pop", subs:["Synth-Pop","Dream Pop","Dance-Pop","Art Pop","Bubblegum Pop","Indie Pop","Power Pop","Electropop","Teen Pop","J-Pop","K-Pop","Latin Pop","Soft Pop","Glam Pop","Sophisti-Pop","Hyperpop","Bedroom Pop","Folktronica Pop","Baroque Pop","Sunshine Pop","Chamber Pop","Twee Pop","Electro-Soul Pop","Tropical House Pop","City Pop","Retro Pop","Future Pop","Ambient Pop","Orchestral Pop","Wonky Pop","Diva Pop","Power Ballad","Anthem Pop","Electro-Pop Ballad","Folk Pop","R&B Pop","Dance Pop Anthem","Power Pop Rock","Disco Pop"] },
+  { n:"Bossa Nova", subs:["Classic Bossa","Latin Bossa","Bossa Jazz","Soft Bossa","Bossa Groove","Urban Bossa","Acoustic Bossa","Instrumental Bossa","Samba-Jazz Bossa","Tropical Bossa","Night Bossa","Sunset Bossa","Beach Bossa","Slow Bossa","Electro Bossa","Cinematic Bossa"] },
+  { n:"Rock", subs:["Classic Rock","Indie Rock","Garage Rock","Psychedelic Rock","Progressive Rock","Hard Rock","Grunge","Post-Punk","Art Rock","Southern Rock","Glam Rock","Stoner Rock","Space Rock","Blues Rock","Folk Rock","Math Rock","Noise Rock","Surf Rock","Jam Rock","Arena Rock","Soft Rock","Heartland Rock","Desert Rock","Lo-Fi Rock","Freakbeat","Pub Rock","Acid Rock","Ambient Rock","Baroque Rock","Garage Revival","Prog Rock Suite","Indie Shoegaze","Desert Boogie","Wide Plains Rock"] },
+  { n:"Soul", subs:["Motown","Neo-Soul","Philly Soul","Northern Soul","Blue-Eyed Soul","Southern Soul","Memphis Soul","Gospel Soul","Chicago Soul","Psychedelic Soul","Deep Soul","Smooth Soul","Retro Soul","Funk Soul","Hip-Hop Soul","Alternative Soul","Soul Revival","Turntable Soul","Soul Funk","Deep Soul Ballad","Soul Strut"] },
+  { n:"R&B", subs:["Contemporary R&B","Smooth R&B","Trap R&B","Alternative R&B","Slow Jam","90s R&B","Pop R&B","Bounce R&B","Ambient R&B","Futuristic R&B","Soul R&B","Groove R&B","Midnight R&B","Retro R&B"] },
+  { n:"Funk", subs:["P-Funk","Funk Rock","G-Funk","Deep Funk","Boogie","Electro-Funk","Disco Funk","Minneapolis Funk","Soul Funk","Afro Funk","Funk Metal","Funk Jazz","Psych Funk","Funkadelic","Street Funk","Stadium Funk","Solar Funk","Boogie Funk","Jazz Funk"] },
+  { n:"Disco", subs:["Italo Disco","Nu-Disco","Space Disco","Euro Disco","Philly Disco","Disco Soul","Hi-NRG","Cosmic Disco","Boogie Disco","French Disco","Dub Disco","Orchestral Disco","Retro Disco","Midnight Disco","Disco Funk","Balearic Disco","Disco Ballad","Pop Disco"] },
+  { n:"House", subs:["Deep House","Acid House","Chicago House","Garage House","Funky House","Disco House","French House","Tech House","House Classics","Afro House","UK Garage","Future House","Tribal House","Soulful House","Jackin' House","Jack House","Swing House","Jazz House","Latin House","Balearic House","Italo House","Progressive House","Electro House","Melodic House","Organic House","Hypnotic House","Dirty House","Bass House","Speed Garage","Garage 2-Step","Sax House"] },
+  { n:"Trance", subs:["Uplifting Trance","Psytrance","Goa Trance","Progressive Trance","Tech Trance","Melodic Trance","Acid Trance","Balearic Trance","Dream Trance","Hard Trance","Euphoric Trance","Anthem Trance","Deep Trance","Future Trance","Ambient Trance","Suomisaundi","Dark Psytrance","Forest Trance","Zenonesque","Neo Goa","Psychedelic Trance","Morning Trance","Sunrise Trance"] },
+  { n:"Electronic", subs:["Downtempo","IDM","Ambient Electronica","Trip-Hop","Electro","Chillwave","Synthwave","Vaporwave","Glitch","Breakbeat","Big Beat","Breakcore","Dubstep","Drum and Bass","Jungle","Bassline","Garage","Grime","Wonky","Glitch-Hop","Intelligent Drum and Bass","Liquid Funk","Neurofunk","Techstep","Dub-Lite Rhythm","Darkstep","Jazzstep","Drumstep","Riddim","Trench","Experimental Bass","Future Garage","Wave","Neon DnB","IDM Beat","Wonky Glitch","Ambient Beat","Acid Dub"] },
+  { n:"Reggae", subs:["Roots Reggae","Dub","Dancehall","Ska","Rocksteady","Reggaeton","Lovers Rock","Steppers","Ragga","Roots","Conscious Reggae","Digital Reggae","Reggae Fusion","Soul Reggae","Rockers","Dancehall Bashment","Trap-Riddim","Reggae-Hip-Hop","Roots Dub","One Drop","Steppers Dub"] },
+  { n:"Hip-Hop", subs:["Boom Bap","Trap","Lo-Fi Hip-Hop","Jazz Flow","Mumble Rap","Drill","Conscious Hip-Hop","West Coast","East Coast","Trap Soul","G-Funk","Phonk","Cloud Rap","Horrorcore","Grime Rap","Afro Rap","Alternative Rap","Old-School Hip-Hop","Golden Age","Trap Metal","Memphis Rap","Detroit Rap","Rap Rock","Emo Trap","UK Drill","Jungle Drill","Beat Tape","Soul Sample","Neo Boom Bap"] },
+  { n:"Country", subs:["Country Rock","Bluegrass","Outlaw Country","Country Pop","Honky-Tonk","Americana","Western Swing","Neo-Traditional Country","Bro-Country","Country Ballad","Gospel Country","Red Dirt","Texas Country","Progressive Country","Country Blues-Rock","Cowboy Ballad","Fiddle Country","Country Funk","Nashville","Outlaw Ballad","Two-Step"] },
+  { n:"Latin", subs:["Salsa","Merengue","Bachata","Cumbia","Reggaeton","Tango","Mariachi","Flamenco","Banda","Samba","Bolero","Cha-Cha","Mambo","Son Cubano","Ranchera","Vallenato","Tejano","Norteño","Corrido","Duranguense","Cumbia Sonidera","Salsa Romantica","Timba","Boogaloo","Guaracha","Pachanga","Salsa Dura","Latin Jazz Groove","Son Montuno"] },
+  { n:"World", subs:["Afrobeat","Highlife","Rai","Bhangra","Qawwali","Gamelan","Celtic","Klezmer","Fado","Taarab","Zydeco","Cajun","Tuvan Throat","Sitar","Ragga","Andean","Indian Classical","Bollywood","Gnawa","Sufi","Griot","Mbira","Kalimba","Steelband","Pan Flute","Oud","Santoor","Duduk","Tabla","Didgeridoo","Shakuhachi","Koto","Kora Solo","Balafon","Penny Whistle"] },
+  { n:"Classical", subs:["Baroque","Classical","Romantic","Impressionist","Avant-Classical","Neoclassical","Chamber","Orchestral","Opera","Contemporary Classical","Sacred","Concerto","Symphony","Symphonic Poem","Sonata","String Quartet","Piano Sonata","Sacred Suite","Fugue","Prelude","Overture","Ballet","Mass","Requiem","Cantata","Oratorio","Renaissance","Medieval","Gregorian","Piano Trio","String Symphony","Glass Harmonica"] },
+  { n:"New Age", subs:["Ambient","Meditation","Space Music","Spiritual","Nature Sounds","Healing","Cosmic Drift","Panoramic","Zen","Temple Music","Sacred Space","Northern Lights","Ocean Sounds","Forest Ambience"] },
+  { n:"Folk", subs:["Folk Rock","Indie Folk","Traditional Folk","Celtic Folk","Appalachian","Sea Shanty","Americana Folk","Psychedelic Folk","Freak Folk","Neo-Folk","Dark Folk","Appalachian Ballad","Protest Folk","Kraut-Folk","Gothic Folk","Slavic Folk","Nordic Folk","Gaelic Folk","Eastern Folk","Nomad Folk"] },
+  { n:"Metal", subs:["Heavy Metal","Thrash Metal","Doom Metal","Black Metal","Death Metal","Nu-Metal","Symphonic Metal","Progressive Metal","Power Metal","Sludge Metal","Stoner Metal","Gothic Metal","Folk Metal","Groove Metal","Industrial Metal","Melodic Death Metal","Technical Death Metal","Atmospheric Black Metal","Post-Metal","Djent","Crust Punk Metal","Drone Metal","Slamming Metal","Viking Metal","Pirate Metal","Oriental Metal","Djent Groove","Epic Metal","Symphonic Power"] },
+  { n:"Punk", subs:["Punk Rock","Hardcore Punk","Pop Punk","Post-Hardcore","Skate Punk","Anarcho-Punk","Ska Punk","Crust","Garage Punk","Street Punk","Queercore","Riot Grrrl","Horror Punk","Cowpunk","Folk Punk","Celtic Punk","D-Beat","Powerviolence","Grindcore","Fastcore","Emo Punk","Oi Punk","Dance Punk","Youth Anthem"] },
+  { n:"Gospel", subs:["Traditional Gospel","Contemporary Gospel","Soul Gospel","Black Gospel","Gospel Ensemble","Southern Gospel","Gospel Funk","Gospel Rock","Gospel Hip-Hop","Gospel Blues","Unplugged Gospel"] },
+  { n:"Ambient", subs:["Ambient","Drone","Dark Ambient","Space Ambient","Deep Ambient","Generative Ambient","Warm Ambient","Neon Ambient","Cinematic Ambient","Tape Loop Ambient","Field Recording","Weather System","Glacial Drift","Arctic Ambient","Underground Ambient","Temple Hum","Soft Contour","Glass Sea"] },
+  { n:"Chill", subs:["Chillout","Lo-Fi","Chillhop","Trip-Hop","Downtempo","Lounge","Balearic","Ambient Pop","Study Beats","Night Drive","Coffee Shop","Rainy Window","Sunset Cruising","Midnight Lounge","Hazy Groove","Chillstep","Sleepy Beats","Chill R&B","Midnight Chill","Foggy Groove"] },
+  { n:"Dance", subs:["Eurodance","Dancehall","Happy Hardcore","Hardstyle","Jumpstyle","Makina","Rave","Electroclash","Hands-Up","UK Hardcore","Dembow","Electro-Swing","Italo Dance","Handbag House","Bounce Music","New Beat","EBM Pop","Eurobeat","Paradisio","Energy 2000","Hi-NRG Rave","Gabber Light","Trancecore","Handbag Groove","Paradiso"] },
+  { n:"Electronic Latin", subs:["Latin House","Reggaeton","Moombahcore","Dembow","Latin Trap","Baile Funk","Kuduro","Latin Bass","Tropical House","Reggaeton Pop","Cumbia Electronica","Salsa Electronica","Latin Tech","Perreo"] },
+  { n:"Retro", subs:["Chiptune","8-bit","Video Game Music","Arcade","16-bit","Console Synth","Lo-fi Game","Bitpop","Nintendocore","Level Select","Boss Battle","Soundtrack Mode","Retro Arcade","Pixel Pop","Cassette Synth","8-bit Groove","Pixel March"] },
+  { n:"Cinematic", subs:["Film Score","Epic Orchestral","Trailer Music","Cinematic Ambient","Dramatic","Sci-Fi Score","Fantasy Score","Dark Cinematic","Western Score","Horror Score","Thriller Score","Romance Score","Noir Score","Action Score","War Score","Documentary Score","Space Opera","Superhero Theme","Climactic Build","Tension Cue","Emotional Score","Suspense Theme","Grand Finale Cue"] },
+  { n:"Theatrical", subs:["Musical","Broadway","Show Tune","Vaudeville","Cabaret","Operetta","Music Hall","Burlesque","Parody","Comedy Sketch","Melodrama","Ensemble Line","Gala Opening","Encore","Showstopper","Finale Number","Curtain Call"] },
+  { n:"Acoustic Pop", subs:["Acoustic","Intimate","Folk-Pop","Confessional","Indie Acoustic","Stripped-Down","Campfire","Solo Acoustic","Living Room","Unplugged","Porch Session","Backyard Groove","Wooden Swing"] },
+  { n:"Experimental", subs:["Avant-Garde","Noise","Musique Concrete","Sound Collage","Microtonal","Aleatoric","Outsider","Glitchcore","Deathstep","Hyperpop Noise","Free Improv","Spectral","Acousmatic","Concrete Beat","Plunderphonics","Radical","Psychogeographic","Liminal","Anomaly","Glitch Ambient","Micro Sound","Tape Experiment"] },
+  { n:"Easy Listening", subs:["Exotica","Loungecore","Muzak","Soft Rock","Adult Contemporary","Background","Elevator","Department Store","Lobby Vibes","Sunset Lounge","Golden Oldies","Kitsch","Nostalgia Hour","Afternoon Light","Porch Glow"] },
+  { n:"African", subs:["Afrobeat","Highlife","Afrobeats","Amapiano","Soukous","Bongo Flava","Gqom","Kwela","Mbalax","Benga","Makossa","Bacardi House","Mapouka","Gbedu","Afro-Gospel","Rhumba","Soukous Rumba","Juju","Fuji","Chimurenga","Ethio-Jazz","Coupé-Décalé","Ndombolo","Afro Disco","Soukous Groove","Highlife Dance"] },
+  { n:"Asian", subs:["J-Pop","K-Pop","C-Pop","Mandopop","Cantopop","City Pop","Trot","Enka","Kawaii Pop","Visual Kei","Bollywood","Desi Pop","Tamil Pop","Telugu Pop","Punjabi Pop","Anime Theme","Idol Pop","City Funk","Retro Asian","Thai Pop","Viet Pop","Pinoy Pop","City Pop Groove","Anime Pop","Kawaii Beat"] },
+  { n:"Caribbean", subs:["Soca","Calypso","Steelpan","Chutney","Zouk","Kizomba","Afro-Caribbean","Ska Revival","Reggaeton Caribe","Dancehall","Bouyon","Konpa","Haitian Compas","Merengue Caribe","Congo","Junkanoo","Carnival Music","Groove Island","Island Groove","Carnival Soca","Pan Yard"] },
+  { n:"Spanish", subs:["Flamenco","Rumba","Bolero","Sevillanas","Tango","Copla","Nueva Canción","Pasodoble","Jota","Fandango","Chotis","Muiñeira","Canción Española","Andalusian","Rumba Flamenca","Jota Dance"] },
+  { n:"Electronic Retro", subs:["Outrun","Synthwave","Darksynth","Vaporwave","Future Funk","Retrowave","City Pop Synth","Neon Synth","Cyberpunk Synth","Night Synth","Drive Synth","Synthwave Ballad","Lo-Fi Synth","Chrome Synth","Laser Pop","Midnight Drive"] },
+  { n:"Adult", subs:["Smooth Jazz","Soft Rock","AOR","Midnight Slow","Yacht Rock","Night Jazz","Golden Hour","After Hours","Rooftop Lounge","Candlelight","Terrace Night","Cocktail Hour","Champagne Room","Velvet Lounge"] },
+  { n:"Swing", subs:["Big Band","Jazz Swing","Jitterbug","Lindy Hop","Jump Swing","Neo-Swing","Electro-Swing","Gypsy Swing","Western Swing","Swing Revival","Hip-Hop Swing","Jump Jive","Swing Step","Lindy Bounce"] },
+  { n:"Big Band", subs:["Brass Section","Ballroom","Foxtrot","Quickstep","Swing Band","Jazz Orchestra","Show Band","Cabaret Swing","Marching Swing"] },
+  { n:"Bluegrass", subs:["Appalachian","Newgrass","Old-Time","Bluegrass Gospel","Progressive Bluegrass","Mountain Music","Banjo Drive","Fiddle Tune","Pickin' Fast","Bluegrass Ballad"] },
+  { n:"Americana", subs:["Roots Rock","Alt-Country","Heartland","Country-Soul","Folk-Americana","Gospel Roots","Outlaw","Prairie Music","River Songs","Frontier Ballad","Dustbowl","Woody Tribute"] },
+  { n:"Western", subs:["Cowboy Ballad","Spaghetti Western","Desert Cue","Ranch Swing","Trail Music","Gunslinger Theme","Sunset Rider","Canyon Echo","Wide Open Plains"] },
+  { n:"Cajun", subs:["Cajun Two-Step","Zydeco","Bal Musette","Creole","Bayou Boogie","Swamp Rock","Mardi Gras","Dance Hall","Pine Grove"] },
+  { n:"Polka", subs:["Classic Polka","Oberkrainer","Slovenian Style","Texas Polka","Festival Polka","Biergarten","Accordion Groove","Bavarian Dance"] },
+  { n:"Klezmer", subs:["Traditional Klezmer","Wedding March","Hora Dance","Freilach","Balkan Klezmer","Gypsy Klezmer","Eastern Klezmer","Klezmer Swing"] },
+  { n:"Gypsy", subs:["Gypsy Swing","Romani Dance","Ballet Folk","Taraf","Lăutari","Gypsy Jazz","Balkan Brass","Nomad Dance"] },
+  { n:"Bollywood", subs:["Filmi","Bhangra","Masala","Item Number","Devotional","Romance Ballad","Action Theme","Wedding Dance","Old Bollywood","Retro Film","Desi Pop","Monsoon Romance"] },
+  { n:"Indian Classical", subs:["Hindustani","Carnatic","Raga","Dhrupad","Khyal","Thumri","Kriti","Varnam","Tala Cycle","Sitar Raga","Sarangi","Bansuri","Tabla Solo","Sarod"] },
+  { n:"Middle Eastern", subs:["Arabic","Egyptian","Lebanese","Syrian","Khaleeji","Mawwal","Taqsim","Belly Dance","Oriental Groove","Desert Caravan","Oud Solo","Darbuka","Sufi Trance","Ney Flute"] },
+  { n:"Persian", subs:["Dastgah","Santoor","Tombak","Persian Classical","Persian Pop","Karnavay","Tar Melody","Sufi Song","Bazaar Walk","Farsi Ballad"] },
+  { n:"Turkish", subs:["Arabesque","Türkü","Saz Melody","Oud Groove","Istanbul Night","Ottoman Court","Kurdish Dance","Black Sea Dance","Anatolian Rock"] },
+  { n:"Greek", subs:["Rebetiko","Laïko","Sirtaki","Bouzouki","Zeibekiko","Nisiotika","Island Dance","Aegean","Taverna Night","Greek Folk","Athens Night"] },
+  { n:"Italian", subs:["Canzone","Neapolitan","Tarantella","Opera Pop","Sanremo Ballad","Italian Easy","Roma Night","Sicilian","Verona Serenade","Amalfi Coast"] },
+  { n:"French", subs:["Chanson","French Pop","Parisian","Yé-Yé","French House","Café Paris","Montmartre","Rive Gauche","Paris Night","Provence","Bistro","French Disco","Midnight Seine"] },
+  { n:"Portuguese", subs:["Fado","Balada","Corridinho","Rancheira","Atlantic Song","Lisbon Night","Porto Streets","Vira Dance"] },
+  { n:"German", subs:["Schlager","Biergarten","Bavarian","Munich Pop","Hamburg Beat","Berlin Underground","Rhine Waltz","Oktoberfest","German Rock","Volksmusik"] },
+  { n:"Nordic", subs:["Scandinavian Folk","Fiddlers","Winter Ballad","Northern Winter","Fjord","Midnight Sun","Forest Trail","Snowdrift","Aurora","Baltic Shore"] },
+  { n:"Celtic", subs:["Irish Jig","Reel","Scottish Highland","Highland Bagpipes","Shamrock","Clover Dance","Emerald","Celtic Rock","Gaelic Ballad","Isle Song","Céilí"] },
+  { n:"Slavic", subs:["Russian Folk","Balalaika","Khorovod","Siberian","Steppe","Cossack Dance","Ukrainian Hopak","Polish Mazurka","Czech Polka","Balkan Beat","Kolo"] },
+  { n:"Russian", subs:["Romance","Bard Song","Troika","Winter Kremlin","Soviet Retro","Taiga","Volga","Matryoshka","Folk Ensemble"] },
+  { n:"Brazilian", subs:["Samba","Bossa Nova","Forró","Sertanejo","Axé","Pagode","Funk Carioca","MPB","Tropicália","Choro","Marchinha","Frevo","Carimbo","Samba-Canção","Samba Enredo","Bossa Groove","Forró Dance"] },
+  { n:"Mexican", subs:["Mariachi","Ranchera","Corrido","Norteño","Banda","Duranguense","Tejano","Cumbia","Huapango","Son Jarocho","Bolero Ranchero","Reina"] },
+  { n:"Argentine", subs:["Tango","Milonga","Chacarera","Zamba","Candombe","Tango Nuevo","Porteño","Pampas","Gaucho Song","Río Ballad"] },
+  { n:"Andean", subs:["Pan Flute","Quena","Charango","Chiri","Huayno","Carnavalito","Sanjuanito","Altiplano","Inca Legacy","Andean Sunset"] },
+  { n:"Afro-Cuban", subs:["Son","Rumba","Guaguancó","Mambo","Cha-Cha","Descarga","Songo","Timba","Conga","Batá","Palo","Guaracha"] },
+  { n:"Reggaeton", subs:["Classic Reggaeton","Dembow","Perreo","Old-School","Trapeton","Urban","Party Riddim","Caribbean Flow","Neon Bounce"] },
+  { n:"Dancehall", subs:["Rub-A-Dub","Sly and Robbie","Ragga","Digital Dancehall","Gangsta Dancehall","Lovers","Riddim","Bashment","Dancehall Pop"] },
+  { n:"Electronic Dance", subs:["Electro","Progressive House","Future House","Big Room","Trap","Future Bass","Dubstep","Melodic Bass","Electro Pop","Mainstage","Festival Anthem","Bass House","Trancecore","Hands-Up Anthem","Crowd Drop"] },
+  { n:"Hardcore", subs:["Gabber","Hardcore","Speedcore","Frenchcore","Terror","Uptempo","Early Hardcore","Mainstream","Raw","Millennium","Hustle","Nu Gabber","Trashcore"] },
+  { n:"Gabber", subs:["Rotterdam","Hakken","Early Rave","Uptempo","Darkcore","J-core","Thunder","Stampede","Hooligan","Bunker"] },
+  { n:"Jungle", subs:["Ragga Jungle","Liquid Jungle","Old-School","Jump-Up","Intelligent","Atmospheric","Dark Jungle","Ragga Drum","Amen Break","Dancefloor"] },
+  { n:"Drum and Bass", subs:["Liquid","Neurofunk","Jump-Up","Techstep","Streamlined Drum","Deep","Soulful","Intelligent","Half-Time","Roller","Old-School","Jazz Step","Hip-Hop Drum"] },
+  { n:"Breakbeat", subs:["Big Beat","Nu Skool","Florida Breaks","Progressive Breaks","Breakbeat Hardcore","Funk Breaks","Trip Breaks","Old-School","Acid Breaks","Breaks House"] },
+  { n:"Dubstep", subs:["Brostep","Deep Dubstep","Riddim","Tearout","Melodic Dubstep","Midnight","Trapstep","Heavy Bass","Swingstep","Halftime","Darkstep"] },
+  { n:"Trap", subs:["Atlanta Trap","Trapstep","Riddim Trap","Chill Trap","Future Trap","Phonk Trap","Drill","Trench","Dark Trap","Neon Trap"] },
+  { n:"Bass", subs:["Future Bass","Glitch Bass","Wobble","Dub","Dirty Bass","Acid Bass","Neon Bass","Cinematic Bass","Deep Bass","Festival Bass"] },
+  { n:"UK Garage", subs:["2-Step","Speed Garage","Garage House","Dubstep Garage","Future Garage","Bassline","Grime","Slow Jam Garage","Night Garage"] },
+  { n:"Footwork", subs:["Juke","Battle","Ghetto Tech","Chicago Footwork","Tek","Fast Step","Juke House","Street Beat"] },
+  { n:"Jersey Club", subs:["Club Music","Bmore","Baltimore Break","Bounce Club","Ghetto House","Philly Club","Street Club"] },
+  { n:"Industrial", subs:["Industrial Rock","Industrial Metal","EBM","Power Noise","Electro-Industrial","Cyberpunk","Post-Industrial","Machine","Factory","Hydraulic","Grinding Gears"] },
+  { n:"Darkwave", subs:["Ethereal","Neoclassical Dark","Cold Wave","Gothic","Sadgaze","Twin Peaks","Night Swim","Moonlit","Cryptic","Cathedral Echo"] },
+  { n:"Goth", subs:["Gothic Rock","Deathrock","Dark Post-Punk","Occult","Batcave","Midnight","Velvet Darkness","Goth Pop","New Wave Dark"] },
+  { n:"Post-Punk", subs:["Dark Post-Punk","Dance Punk","No-Wave","Art Punk","Gothic Post-Punk","Chill Punk","Ruthless","Underground","Basement","Concrete"] },
+  { n:"Shoegaze", subs:["Dream Pop","Nu Gaze","Slowcore","Noise Pop","Dronegaze","Heavenly","Swirl","Floating","Haze","Opal Sky"] },
+  { n:"Britpop", subs:["Madchester","Baggy","Shoegaze Pop","Cool Britannia","Indie Dance","Manchester","Suede Swing","Union Jack"] },
+  { n:"New Wave", subs:["Synthpop","New Romantic","Cold Wave","Power Pop Wave","Art Rock Pop","Streamlined Wave","Futurist","Chrome","Neon Wave"] },
+  { n:"Krautrock", subs:["Motorik","Cosmic Rock","Berlin School","Cosmic Jams","Hypnotic Groove","Neon Motor","Railroad Beat","Autobahn"] },
+  { n:"Post-Rock", subs:["Instrumental","Slow Build","Crescendo","Ambi-Rock","Cinematic Rock","Skyline","Monument","Tidal","Vast","Undertow"] },
+  { n:"Emo", subs:["Midwest Emo","Emo Pop","Emo Revival","Math Emo","Crying on the Floor","Vintage","Twin Guitar","Diary","Polaroid","Bedroom"] },
+  { n:"Ska", subs:["Two-Tone","Traditional Ska","Ska Punk","Third Wave","Skinhead Reggae","Brass Ska","Jump Ska","Blue Beat","Rudie"] },
+  { n:"Dub", subs:["Dub Reggae","Dubstep Dub","Dub Instrumental","Rockers Dub","Psychedelic Dub","Space Dub","Roots Dub","King Tubby","Deep Dub","Dub Trio"] },
+  { n:"Salsa", subs:["Salsa Romantica","Timba","Salsa Dura","On2","Cali Style","Puerto Rican","Mambo Salsa","Cuban Salsa","Descarga Salsa","Salsa Brava"] },
+  { n:"Cumbia", subs:["Cumbia Sonidera","Cumbia Villera","Cumbia Electronica","Andean Cumbia","Chicha","Psychedelic Cumbia","Mexican Cumbia","Tropical","Cumbia Costeña","Digital Cumbia"] },
+  { n:"Samba", subs:["Samba de Roda","Partido Alto","Samba Enredo","Bateria","Samba Rock","Samba Reggae","Pagode","Samba-Canção","Batucada","Escola de Samba"] },
+  { n:"Electro-Swing", subs:["Jazz Hop","Swing House","Retro Swing","1920s","Roaring","Speakeasy","Cabaret Groove","Swing Revival","Lindy Electronica"] },
+  { n:"City Pop", subs:["Retro City","Night Drive","Summer Breeze","Kiss-FM","Sunset Avenue","Neon Highway","Vacation","Amber","Plastic Love","Harbor Lights"] },
+  { n:"Vaporwave", subs:["Mallsoft","Future Funk","Dreamhouse","Simpsonwave","Eccojams","Aesthetic","Corrupted","Smooth Pop","Neon Retro","Shopped"] },
+  { n:"Lo-Fi", subs:["Lo-Fi Hip-Hop","Lo-Fi Beats","Sleepy Tapes","Study Session","Coffee Beats","Rainy City","Midnight Tapes","VHS Sound","Chill Beats","Window Seat"] },
+  { n:"Synthwave", subs:["Outrun","Darksynth","Dreamwave","Retrowave","Chillsynth","Neon","Drive","Night Rider","Cyberpunk","Laser","Miami Nights"] },
+  { n:"Trip Hop", subs:["Bristol","Dusty Beats","Smokey","Downbeat","Twin Peaks","Drowsy","Moody","Velvet","Fog","Hip-Hop Downbeat"] },
+  { n:"Chillstep", subs:["Melodic Dubstep","Dream Dub","Atmospheric","Floating Bass","Sunset Dub","Deep Chill","Cloudstep","Aurora Dub"] },
+  { n:"Orchestral", subs:["Symphony","Film Score","Epic","Chamber","Renaissance","Baroque","Romantic","Streamlined Suite","Grand","Cathedral","Crescendo"] },
+  { n:"Lounge", subs:["Exotica","Space Age Pop","Tiki","Jet Set","Cocktail","Martini","Casino","Palm Springs","Red Velvet","Late Night","Palm Lounge","Casino Night","Vespa Ride"] },
+  { n:"Bolly Pop", subs:["Desi","Filmi Pop","Indian Fusion","Wedding Pop","Festival","Monsoon","Masala Pop","Crossover","Modern Desi"] },
+  { n:"Asian Traditional", subs:["Gamelan","Koto","Pipa","Erhu","Shakuhachi","Sitar","Tabla","Dizi","Gayageum","Guzheng"] },
+  { n:"Tropical", subs:["Tropical House","Beach Pop","Island Groove","Palm Breeze","Coconut","Cocktail Sunset","Hula","Tiki Breeze","Lagoon","Daydream Coast"] },
+  { n:"Space", subs:["Space Rock","Space Ambient","Cosmic","Orbital","Interstellar","Lunar","Nebula","Zero Gravity","Warp Drive","Void"] },
+  { n:"Fusion", subs:["Jazz Fusion","World Fusion","Latin Fusion","Eastern Fusion","Global Groove","Cross-Cultural","Hybrid","Tribal Fusion","Urban Fusion","Electro-Fusion"] },
+  { n:"Street", subs:["Street Funk","Street Soul","Sidewalk","Corner Groove","Block Party","Alley Beat","Concrete Rhythm","Street Jazz","Midnight Corner"] },
+  { n:"Groove", subs:["Soul Groove","Funk Groove","Disco Groove","Deep Groove","Neon Groove","Sunday Groove","Slow Groove","Smooth Groove","Boogie Groove","Midnight Groove"] },
+  { n:"Neon", subs:["Neon Pop","Neon Funk","Neon Soul","Neon Disco","Neon House","Neon Wave","City Lights","Electric Skyline","Neon Rain","Chrome Avenue"] },
+  { n:"Sunset", subs:["Sunset Chill","Golden Hour","Dusk Drive","Horizon Glow","Copper Sky","Amber Hour","Sunset Groove","Evening Breeze","Skyline Fade","Dusk Lounge"] },
+  { n:"Midnight", subs:["Midnight Drive","Late Night Groove","After Hours","Witching Hour","Blue Hour","Moonlight","Night Owl","Starlit","Velvet Night","Dark Hour"] },
+  { n:"Festival", subs:["Festival Anthem","Main Stage","Sunrise Set","Closing Set","Big Tent","Crowd Surge","Meadow","Bonfire","Summer Stage","Dawn Dance"] },
+  { n:"Ocean", subs:["Deep Sea","Ocean Drive","Blue Water","Tide Pool","Coral","Abyss","Seafoam","Wavecrest","Marine","Salt Air","Whale Call","Deep Current","Salt Spray","Moon Tide"] },
+  { n:"Forest", subs:["Deep Woods","Moss Trail","Canopy","Wildflower","Grove","Riverbank","Cabin","Firelight","Pine Scent","Understory","Old Growth","Fire Pit","Dawn Canopy","Fallen Log"] },
+  { n:"Desert", subs:["Desert Drive","Dunes","Canyon","Mirage","Cactus Hour","Heat Haze","Nomad","Sandstorm","Oasis","Highway","Star Dune","Dry Riverbed","Mesquite","Sun-Bleached"] },
+  { n:"Winter", subs:["Snowfall","Frozen Lake","Hearth","Icicle","Northwind","Snowdrift","Winter Solstice","Cabin Fire","Blue Frost","Arctic Hush","Hearth Glow","First Snow","Evergreen","Skate Pond","Snow Globe","Mistletoe","Santa's Workshop","Winter Wonder","Twinkle Lights","Gift Wrapping","Family Dinner","Eggnog","Cold Morning"] },
+  { n:"Spring", subs:["Morning Dew","Blooming","Cherry Blossom","Fresh Rain","Garden Path","Sunshine","Lilac","First Light","Meadow Song","Petals","Cherry Snow","Rain Puddle","Fresh Bloom","Robin's Hour"] },
+  { n:"Retro Futurist", subs:["Jetsons Groove","Atomic Age","Googie","Retro Space","Analog Future","Tape Future","Cassette Dreams","Analog Neon","Vintage Tomorrow"] },
+  { n:"Japanese", subs:["Enka Ballad","Taiko Beat","Matsuri Drum","Gagaku","Taiko","Shamisen","Shinobue","Bon Odori","Kabuki","Matsuri","Koto Ensemble","Festival Drums"] },
+  { n:"Broken Beat", subs:["London Groove","Nu Jazz Beat","Dilla Soul","Soulful Broken","Downtempo Broken","Future Beat","Clubbroken","Fuzzy Syncopation"] },
+  { n:"Balearic", subs:["Balearic Beat","Ibiza Sunset","Balearic House","Balearic Downtempo","Island Chill","Golden Pier","Mediterranean","Seaside Trance"] },
+  { n:"Chillwave", subs:["Dreamy Synth","Beach Retro","Glo-Fi","Hypnagogic","Vapor Chill","Misty Summer","Floating Synth","Washed Out","Analog Dreams"] },
+  { n:"Broken Bass", subs:["Wonky","UK Funky","Bubbling","Flo-Flo","Grime Instrumental","Swing Bass","Neon Bounce","Night Bus"] },
+  { n:"Video Game", subs:["RPG Overworld","Boss Battle","Dungeon Theme","Hub Music","Title Screen","Credits Theme","Level Clear","Victory Fanfare","Shop Theme","Battle BGM","Final Dungeon","Character Select","Pause Menu"] },
+  { n:"Library Music", subs:["Theme Building","Hip Hop Library","Light Jazz Cut","Drama Cue","Action Sting","Sports Montage","News Segment","Retro Library","TV Hour","Cue Sheet"] },
+  { n:"Circus", subs:["Big Top","Clown Theme","Trapeze","Carousel","Circus Waltz","Marquee","Feather Act","High Wire","Ringmaster","Sawdust Floor"] },
+  { n:"Marching", subs:["Military March","Brass Band","Drum Corps","Parade Step","Field March","Sousa Style","Fife and Drum","Half-Time Show"] },
+  { n:"Brass Band", subs:["New Orleans Brass","British Brass","Dixie Brass","Street Brass","Funeral Brass","Jazz Brass","Funk Horns","Second Line","Big Horn Section"] },
+  { n:"Carnival", subs:["Carnival Brass","Mardi Gras","Festa","Street Parade","Corso","Carnival Anthem","Floats and Feathers","Riviera","Costume Ball"] },
+  { n:"Ballroom", subs:["Viennese Waltz","Foxtrot","Quickstep","Jive","Paso Doble","Slalom Ballroom","Glide Floor","Grand Gala","Evening Dress"] },
+  { n:"Fashion", subs:["Runway Walk","Collection Reveal","Atelier","Tailor's Shop","Photo Shoot","Fabric Flow","Style Scout","Couture House","Milan Week","Fitting Room"] },
+  { n:"Spa", subs:["Steam Room","Thermal Soak","Massage Table","Aromatherapy","Sauna","Salt Room","Hot Stone","Eucalyptus","Serene Water","Detox Ritual"] },
+  { n:"Yoga", subs:["Sun Salutation","Vinyasa Flow","Balasana","Savasana","Chakra","Hatha","Kundalini","Downward Dog","Morning Flow","Deep Stretch"] },
+  { n:"Meditation", subs:["Zen Stillness","Mindfulness","Breath Work","Body Scan","Inner Peace","Present Moment","Lotus Position","Bell and Bowl"] },
+  { n:"Wellness", subs:["Relaxation","Zen Garden","Forest Bathing","Reset","Floating","Alpine Air","Private Retreat","Spa Day"] },
+  { n:"Weather", subs:["Soft Rain","Thunderstorm","Morning Fog","Clear Sky","High Winds","Dew Point","Barometric","Weather Front","First Drops","Clearing Skies"] },
+  { n:"Nature", subs:["Birdsong","Forest Rain","Waterfall","Mountain Air","Prairie Wind","Desert Dawn","Jungle Call","Ocean Waves","Alpine Meadow","Savanna Night","Cricket Hour"] },
+  { n:"Celestial", subs:["Starfield","Nebula Drift","Comet Trail","Moonrise","Constellation","Gravity Well","Solar Wind","Aurora Borealis","Shooting Star","Milky Way"] },
+  { n:"Underwater", subs:["Coral Reef","Deep Dive","Submarine","Atlantis","Ocean Floor","Bioluminescence","Pressure","Mermaid Cove","Seafoam Cave","Abyssal Drift"] },
+  { n:"Cave", subs:["Echo Chamber","Deep Earth","Stalactite","Crystal Grotto","Underground River","Cavern Drum","Earth Breath","Limestone Hall"] },
+  { n:"Mountain", subs:["Peak Climb","Alpine Horn","Summit Wind","Valley Echo","Cliff Trail","Highland Mist","Treeline","Glacier Pass","Ridge Run"] },
+  { n:"Harbor", subs:["Ship's Bell","Lighthouse","Foghorn","Dockside","Tugboat","Sail Away","Mooring","Pier Lights","Sea Fog","Anchor Drop"] },
+  { n:"Sailing", subs:["Open Sea","Jib Sheet","Trade Wind","Broad Reach","Harbor Lights","Regatta","Tall Ship","Far Horizon","Bow Wave"] },
+  { n:"Railway", subs:["Steam Train","Iron Horse","Crossing Bell","Whistle Stop","Boxcar","Caboose","Night Train","Express Line","Roundhouse","Furnace Rail"] },
+  { n:"Subway", subs:["Tunnel Rush","Platform Echo","Turnstile","Night Ride","Express Stop","Underground Flow","Last Train","Token Ride"] },
+  { n:"Airport", subs:["Gate Announce","Runway","Takeoff","Jetstream","Terminal","Layover","Turbulence","Touchdown","Cabin Lights"] },
+  { n:"Spaceport", subs:["Launch Pad","Countdown","Liftoff","Orbit Insertion","Docking","Mission Control","Rendezvous","Re-entry","Cryo Chamber"] },
+  { n:"Factory", subs:["Assembly Line Beat","Conveyor","Shift Change","Steel Works","Power Plant","Textile Mill","Pump Room","Gear Room","Foundry"] },
+  { n:"Workshop", subs:["Workbench","Woodshop","Tinkering","Restoration","Craftsman","Project Bench","Tool Room","Craft Corner"] },
+  { n:"Laboratory", subs:["Experiment","Beaker","Controlled Test","Observation","Discovery","Hypothesis","Empirical","Specimen"] },
+  { n:"Observatory", subs:["Telescope","Star Chart","Night Watch","Dome Turn","Planetarium","Celestial Map","Midnight Observation","Deep Field"] },
+  { n:"Library", subs:["Reading Room","Card Catalog","Study Carrel","Rare Books","Archive","Manuscript","Lending Desk","Serene Stacks","Book Restoration"] },
+  { n:"Museum", subs:["Gallery Hall","Grand Foyer","Exhibit","Ancient Wing","Sculpture Garden","Preservation","Docent Tour","Glass Case"] },
+  { n:"Studio", subs:["Recording Session","Take Two","Mixdown","Master Tape","Live Room","Control Room","Sound Check","Pressing","Rehearsal"] },
+  { n:"Restaurant", subs:["Kitchen Rush","Chef's Table","Wine Pour","Candlelit","Sunday Brunch","Late Night Kitchen","Service Foyer","Reservation"] },
+  { n:"Bar", subs:["Cocktail Shaker","Neon Bar","Last Call","Rustic Pub","Wine Bar","Tiki Bar","Rooftop Bar","Dive Bar","Happy Hour","Back Room"] },
+  { n:"Casino", subs:["Jackpot","Card Table","Wheel Spin","High Roller","Neon Glow","Chips and Cards","Vault","All In","Night Game"] },
+  { n:"Amusement", subs:["Roller Coaster","Ferris Wheel","Funhouse","Midway","Bumper Cars","Haunted Ride","Tilt-a-Whirl","Cotton Candy","Splash Zone"] },
+  { n:"Fair", subs:["County Fair","Prize Booth","Barnyard","Ring Toss","Funnel Cake","State Fair","Harvest Fair","Grandstand"] },
+  { n:"Gym", subs:["Workout","Circuit Training","Cardio Beat","Powerlifting","Spin Class","Cool Down","Stretching","Rep Room"] },
+  { n:"Sports", subs:["Stadium Anthem","Victory Lap","Home Run","Touchdown","Slap Shot","Fast Break","Second Wind","Game Day","Underdog","Comeback","Championship"] },
+  { n:"Motor Racing", subs:["Checkered Flag","Pit Stop","Engine Roar","Grid Line","Final Lap","Turbo Boost","Drafting","Burnout","Pole Position","Race Day"] },
+  { n:"Skate", subs:["Skate Park","Half Pipe","Ollie","Street Session","Cruiser","Downhill","Bowl Run","Kickflip","Session Spot"] },
+  { n:"Snowboard", subs:["Powder Run","Alpine","Freeride","Halfpipe","Backcountry","Fresh Tracks","Snow Park","First Chair"] },
+  { n:"Surfing", subs:["Big Wave","Point Break","Dawn Patrol","Lineup","Tubed","Coastal Wind","Wipeout","Reef Break"] },
+  { n:"Climbing", subs:["Face Route","Belay","Summit Push","Crag","Boulder Problem","Rope Team","Overhang","Multi-Pitch"] },
+  { n:"Camping", subs:["Campfire","Tent Night","Starry Sky","Trailhead","Bedroll","Morning Fog","Cold Creek","Marshmallow"] },
+  { n:"Hiking", subs:["Trail Mix","Ridge Line","Switchback","Timberline","Waypoint","Camp Spot","Canyon Rim","Scenic Overlook"] },
+  { n:"Fishing", subs:["Dawn Cast","Still Water","River Bend","Old Dock","Tackle Box","Catch of the Day","Lakeside","Still Pier"] },
+  { n:"Garden", subs:["Herb Bed","Rose Bed","Greenhouse","Watering Can","Pruning","Trellis","Pollinator","Seedling","Cottage Plot"] },
+  { n:"Farm", subs:["Barnyard","Tractor","Hayloft","Cornfield","Pasture","Milking Time","Harvest Season","Farmhouse","Silo View"] },
+  { n:"Countryside", subs:["Rolling Hills","Winding Lane","Stone Wall","Orchard Road","Pasture","Village Green","Mill Pond","Country Church","Bridle Path"] },
+  { n:"Village", subs:["Town Square","Market Day","Cobblestone","Fountain","Clock Tower","Festival Night","Village Fete","Old Stone House"] },
+  { n:"Small Town", subs:["Main Street","Porch Swing","Corner Store","High School","Friday Night Lights","Town Hall","Post Office","Front Lawn"] },
+  { n:"City", subs:["Skyscraper","Rooftop","Night Skyline","Park Bench","Crosswalk","Corner Market","City Hall","Rush Hour","Alleyway","Neon Crossing"] },
+  { n:"River", subs:["Riverbank","Slow Current","Paddleboat","Ferry Crossing","Rapids","Steamboat","Canal","Delta","Waterwheel"] },
+  { n:"Lake", subs:["Still Morning","Rowing","Dock Sunrise","Loonsong","Cabin View","Glass Water","Inlet","Reflecting"] },
+  { n:"Sky", subs:["Cloud Drift","Thunderhead","Rainbow","Starlight","Lightning","Blue Hour","High Altitude","Open Ceiling"] },
+  { n:"Wind", subs:["Breeze","Gale","Zephyr","Trade Wind","Gust","Swaying Branches","Kite Weather","Chiming"] },
+  { n:"Storm", subs:["Thunder Roll","Rain Squall","Lightning Strike","Dark Sky","Storm Warning","Clearing Sky","After the Storm","Bent Trees"] },
+  { n:"Ice", subs:["Frozen Tundra","Ice Cave","Ice Crystal","Glacier Blue","Sleet","Icicle","Black Ice","Polar Pack"] },
+  { n:"Savanna", subs:["Acacia","Golden Grass","Migration","Red Earth","Baobab","Sunset Plain","Herd Beat","High Grass"] },
+  { n:"Prairie", subs:["Open Sky","Tall Grass","Buffalo Trail","Dust Storm","Homestead","Sod House","Wide Horizon","Wheat Wave"] },
+  { n:"Tundra", subs:["Permafrost","Frozen Moss","Arctic Circle","Muskox","Polar Night","Northern Wind","Snow Plain"] },
+  { n:"Wetland", subs:["Marsh","Swamp","Bog","Cattail","Firefly Night","Duck Blind","Lily Pad","Reed Wind"] },
+  { n:"Mangrove", subs:["Root Canal","Tidal Forest","Mudflat","Waterline","Brackish","Prop Roots","Coastal Shelter","Crab Walk"] },
+  { n:"Volcanic", subs:["Magma","Ash Cloud","Lava Field","Caldera","Obsidian","Steam Vent","Black Sand","Eruption"] },
+  { n:"Geothermal", subs:["Hot Springs","Mud Pot","Steam Field","Thermal Pool","Geyser","Sulfur Crystals","Underground Heat"] },
+  { n:"Canyon", subs:["Rim Trail","River Cut","Red Wall","Lookout Point","Shadowed Walls","Wind Tunnel","Badlands","Stone Spire"] },
+  { n:"Mesa", subs:["Table Rock","Butte","Flat Top","Desert Horizon","Pillar","Turret","Outcropping","High Plateau"] },
+  { n:"Oasis", subs:["Palm Springs","Waterhole","Desert Garden","Caravan Stop","Date Palm","Cool Water","Shade Tree","Well Spring"] },
+  { n:"Rainforest", subs:["Emerald Canopy","Cloud Forest","Waterfall Basin","Tree Frog","Strangler Fig","Moss Floor","Bromeliad","Canopy Walk"] },
+  { n:"Boreal", subs:["Taiga","Spruce Line","Pine Barrens","Northern Woods","Fire Scar","Moose Meadow","Birch Stand","Cold River"] },
+  { n:"Shibuya-Kei", subs:["Tokyo Pop","Retro J-Pop","Sample City","Urban Gloss","Harajuku Beat","Neon Department","Karaoke Night"] },
+  { n:"Nightcore", subs:["Speed Up","Pitch Shift","Anime Pop","Power Chord","Blazing Tempo","Twinkling Byte","Candy Rush"] },
+  { n:"Tibetan", subs:["Mantra","Meditation Bowls","Prayer Flags","Monastery Hall","Himalayan Wind","Cymbal Dawn","Sacred Steps"] },
+  { n:"Mongolian", subs:["Morin Khuur","Steppe Call","Horsehead Fiddle","Ger Fire","Nomad Trail","Throat Wind","Khan's Ride"] },
+  { n:"Korean", subs:["Gugak","Samulnori","Trad Fusion","Arirang","Court Music","Pungmul","Hangul Groove"] },
+  { n:"Vietnamese", subs:["Dan Bau","Hue Music","Delta Breeze","Ca Tru","Highland Gong","Lotus Moon","Saigon Streets"] },
+  { n:"Chinese", subs:["Guzheng","Pipa","Erhu Solo","Sichuan Style","Cantonese Opera","Peking Court","Dragon Dance","Silk Road"] },
+  { n:"Thai", subs:["Piphat","Luk Thung","Isan","Temple Bells","Bangkok Night","Songkran","Mekong Shore"] },
+  { n:"Filipino", subs:["Kundiman","Harana","Tinikling","Kulintang","Balitaw","Sarsuwela","Island Serenade"] },
+  { n:"Hawaiian", subs:["Slack Key","Ukulele","Hula","Steel Guitar","Lei Garden","Maui Sunset","Wave and Palm","Aloha Hour"] },
+  { n:"Polynesian", subs:["Tahitian","Haka","Samoa","Cook Island","Tongan","Fijian","Pareu Beat","South Pacific"] },
+  { n:"Aboriginal", subs:["Didgeridoo","Clapstick","Corroboree","Yidaki","Red Center","Dreamtime","Outback Wind"] },
+  { n:"Amazonian", subs:["Jungle Flute","Panpipe","Tribal Beat","Canopy Rhythm","Ritual Drums","River Tribe","Feather Dance"] },
+  { n:"Native", subs:["Flute Song","Drum Circle","Eagle Dance","Sunrise Ceremony","Tepee Night","Honor Beat","Elder's Tale"] },
+  { n:"Egyptian", subs:["Mahraganat","Shaabi","Bellydance","Nile Groove","Cairo Night","Pharaoh's Court","Desert Love","Fellahin"] },
+  { n:"North African", subs:["Chaabi","Amazigh","Tuareg","Malouf","Maghreb Beat","Sahara Highway","Atlas Song","Darbuka Hour"] },
+  { n:"Southern African", subs:["Mbube","Isicathamiya","Maskanda","Kwaito","Mbaqanga","Shangaan","Marabi","Soweto Dawn"] },
+  { n:"Lusophone", subs:["Morna","Coladeira","Batuque","Funana","Cape Verde","Porto Groove","Atlantic Soul"] },
+  { n:"Operatic Pop", subs:["Power Ballad","Aria Pop","Soprano Rise","Tenor Line","Grand Finale","Music Box Stage","Encore Lights"] },
+  { n:"Steampunk", subs:["Brass Clockwork","Victorian Future","Airship","Cogwheel","Steam Engine","Goggles and Gears","Gaslamp","Sky Harbor"] },
+  { n:"Dieselpunk", subs:["Great War","Art Deco Machine","Pulp Future","Oil and Chrome","Propaganda March","Airfield","Wrench and Rivet"] },
+  { n:"Solarpunk", subs:["Solar Garden","Living Architecture","Eco Future","Terra Vista","Bright Tomorrow","Botanical City","Glass Dome"] },
+  { n:"Atompunk", subs:["Atomic Age","Googie","Sputnik Era","Rocket Age","Nuclear Family","Fallout Lounge","Retro Lab"] },
+  { n:"Cassette", subs:["Tape Hiss","Analog Warm","Worn VHS","Reel to Reel","Lo-fi Tape","Found Tape","Magnetic Memories","Playback"] },
+  { n:"Vinyl", subs:["Crackle Pop","Record Player","Dusty Groove","45 RPM","Turntable","Needle Drop","A-Side","B-Side","Crate Find"] },
+  { n:"Jukebox", subs:["Diners","Vintage Pop","Oldies Hour","Coin Slot","Neon Sign","Grease Groove","Malt Shop"] },
+  { n:"Diner", subs:["Soda Fountain","Milkshake","Retro Counter","Roadside","Open All Night","Pie Case","Checkered Floor"] },
+  { n:"Motel", subs:["Road Trip","Desert Motel","Neon Vacancy","Highway Night","Open Road","Rest Stop","Vacancy Sign"] },
+  { n:"Road Trip", subs:["Highway","Cross Country","Sunroof","Endless Road","Map Quest","Horizon Line","Coast Highway","Route 66"] },
+  { n:"Summer", subs:["Heatwave","Sunshine Pop","Pool Party","Ice Cream Truck","Beach Day","Bonfire","Fireflies","Lemonade","Sand Between Toes","Golden Tan"] },
+  { n:"Autumn", subs:["Falling Leaves","Pumpkin Spice","Crisp Air","Harvest Moon","Woodsmoke","Golden Foliage","Scarecrow","Apple Orchard"] },
+  { n:"Halloween", subs:["Haunted House","Witch's Brew","Pumpkin Carving","Trick or Treat","Black Cat","Full Moon","Graveyard Fog","Ghost Story","Candy Corn"] },
+  { n:"Birthday", subs:["Party Hat","Cake and Candles","Confetti","Balloon Pop","Presents","Happy Celebration","Carnival Games","Photo Booth"] },
+  { n:"Wedding", subs:["Aisle Walk","First Dance","Champagne Toast","Golden Ring","White Dress","Vows","Reception","Bouquet","Honeymoon"] },
+  { n:"Ceremonial", subs:["Coronation","State Occasion","Royal Salute","Pomp and Pageantry","Solemn Procession","Court Anthem","Grand Entrance"] },
+  { n:"Music Box", subs:["Crank Handle","Spinning Ballerina","Jewel Box","Lullaby Gear","Antique Tune","Painted Lid","Wind-Up Heart"] },
+  { n:"Toy", subs:["Marionette","Shadow Play","Hand Puppet","Dollhouse","Rocking Horse","Jack in the Box","Spinning Top","Toy Soldier"] },
+  { n:"Puppetry", subs:["String Work","Wooden Stage","Curtain Rise","Papier Mache","Puppet Parade","Backstage"] },
+  { n:"Kaleidoscope", subs:["Mosaic","Stained Glass","Prism","Shimmer","Facet","Refraction","Painted Light","Crystal Turn"] },
+  { n:"Crystal", subs:["Crystal Chime","Quartz","Gemstone","Diamond Light","Amethyst","Moonstone","Geode","Facet Dream","Tumble Polish"] },
+  { n:"Aura", subs:["Golden Light","Purple Haze","Emerald Field","Crimson Sky","Silver Glow","Indigo Night","Rainbow Field"] },
+  { n:"Ethereal", subs:["Airy Harmonies","Cloud Drift","Angelic Bells","Floating","Translucent","Misty","Dream Gaze","Opal Air"] },
+  { n:"Glass", subs:["Crystal Clear","Stained Glass","Glass Harp","Wine Glass","Chandelier","Crystal Cave","Glassblowing"] },
+  { n:"Lighthouse", subs:["Beacon Sweep","Cliff Edge","Raging Sea","Lens Room","Harbor Watch","Light Signal","Fog Line"] },
+  { n:"Port", subs:["Container Yard","Crane Lift","Customs","Barge Row","Deck Cargo","Shore Leave","Pilot Boat"] },
+  { n:"Temple", subs:["Shrine Bell","Incense","Stone Gate","Monk's Path","Silent Hall","Water Ritual","Lantern Night"] },
+  { n:"Monastery", subs:["Stone Cloister","Scriptorium","Morning Chimes","Garden Wall","Candle Study","Contemplation"] },
+  { n:"Church", subs:["Pipe Organ","Hymn","Psalm","Vespers","Pew and Candle","Stained Light","Sunday Service","Bells at Dawn"] },
+  { n:"Street Market", subs:["Vendor Calls","Fresh Produce","Spice Stall","Bazaar","Night Market","Flea Market","Produce Row","Curbside"] },
+  { n:"Bazaar", subs:["Carpet Lane","Copper Ware","Scented Air","Silk Trade","Alley Bazaar","Gold Souk","Bargain Hour"] },
+  { n:"Carnival of Venice", subs:["Mask Parade","Gondola","Canal Night","Mardi Gras","Costume Ball","Piazza","Feathered Mask","Marble Floor"] },
+  { n:"Nocturne", subs:["Night Study","Dark Reverie","After Dark","Moon Shadow","Candle Hour","Star Gaze","Hush","Midnight Waltz"] },
+  { n:"Interlude", subs:["Soft Bridge","Scene Change","Breather","Between Acts","Soft Fade","Cold Open","Second Chapter"] },
+  { n:"Acoustic Session", subs:["Unplugged","Living Room","Back Porch","Campfire","Stairwell","Café Corner","Basement Tape","Solo Take"] },
+  { n:"Retro Soul", subs:["Northern Grit","Doowop","Street Corner","Classic Ballad","Soul Shuffle","Old School","Blues Ballad","Sunday Gospel-Lite"] },
+  { n:"Golden Oldies", subs:["Big Band Era","Crooner","Pocket Watch","Amber Vinyl","Grand Piano","Hotel Ballroom","Mothball Attic"] }
+];
 /* ---------------------------- WEIRDNESS ----------------------------
    Weirdness picks a CATEGORY first, then a style inside it. The old
    version weighted every style individually, so category weights were
@@ -853,10 +1131,34 @@ function weirdCategory(){
   return "rare";
 }
 function pickStyle(){
-  const cat = weirdCategory();
-  const pool = STYLES_BY_CAT[cat];
-  if(!pool || !pool.length) return pick(STYLES.map(s=>s.n));
-  return pick(pool);
+  // In Techno-Only mode we draw from the curated techno pool (with the
+  // weirdness category bias). Otherwise we draw a non-techno sub+genre combo.
+  if(state.techOnly){
+    const cat = weirdCategory();
+    const pool = STYLES_BY_CAT[cat];
+    if(!pool || !pool.length) return pick(STYLES.map(s=>s.n));
+    return pick(pool);
+  }
+  return pickGenreCombo();
+}
+/* Build "sub-style + genre" ("Bebop Jazz"); if the sub already names the
+   genre ("Soul Jazz" + "Jazz") just use the sub to avoid "Soul Jazz Jazz". */
+function genreComboName(g, sub){
+  const s = sub.trim(), gn = g.n.trim();
+  if(s.toLowerCase()===gn.toLowerCase() || s.toLowerCase().endsWith(gn.toLowerCase())) return s;
+  return s + " " + gn;
+}
+/* Roll a random genre + a random sub-style of that genre, e.g. "Bebop Jazz". */
+function pickGenreCombo(){
+  const g = pick(GENRES);
+  const sub = pick(g.subs);
+  return genreComboName(g, sub);
+}
+/* Roll a random genre + sub-style that differs from an already-chosen combo. */
+function pickGenreComboOther(avoid){
+  let c = pickGenreCombo(); let guard = 0;
+  while(c===avoid && guard++<8){ c = pickGenreCombo(); }
+  return c;
 }
 /* Weirdness also biases HARMONY: low = familiar minor modes, high = the
    alien scales. This is why the slider now audibly changes the melody. */
@@ -1653,6 +1955,17 @@ const ATOM_BY_KEY = {}; ATOMS.forEach(a=>ATOM_BY_KEY[a.key]=a);
 const ROLL_FN = {
   primary:      s=>{ s.primaryStyle = pickStyle(); },
   secondary:    s=>{ s.secondaryStyle = pickSecondary(s.primaryStyle); },
+  /* Roll a whole new style + sub-style combo (non-techno) into BOTH slots,
+     or two techno styles when Techno-Only mode is on. */
+  genre:        s=>{
+    if(s.techOnly){
+      s.primaryStyle = pickStyle();
+      s.secondaryStyle = pickSecondary(s.primaryStyle);
+    }else{
+      s.primaryStyle = pickGenreCombo();
+      s.secondaryStyle = pickGenreComboOther(s.primaryStyle);
+    }
+  },
   bpm:          s=>{ s.bpm = rollBpmValue(); },
   key:          s=>{ s.rootPc = Math.floor(rng()*12); s.scaleId = pickScaleId(); s.chordColor = scaleOf(s).n; },
   feeling:      s=>{ s.feeling=pick(FEELINGS); s.flavor=pick(FLAVORS); },
@@ -1723,6 +2036,7 @@ function defaultState(){
   return {
     seed: newSeed(),
     primaryStyle:"", secondaryStyle:"", bpm:140, rootPc:9, scaleId:"aeolian",
+    techOnly:false,
     microMelody:"off", microBass:"off",
     feeling:"", flavor:"", direction:"", leadVoice:"", leadPerf:"", contour:"", rhythm:"",
     harmony:"", chordColor:"", arpeggio:"",
@@ -2046,6 +2360,11 @@ function render(){
   $("v-primary").textContent = state.primaryStyle || "— roll me";
   $("v-secondary").textContent = state.secondaryStyle || "— none";
   $("v-secondary").classList.toggle("dim", !state.secondaryStyle);
+  $("techOnlyChk").checked = !!state.techOnly;
+  $("genreHint").textContent = state.techOnly
+    ? "techno pool only · 🎲 rolls two techno styles"
+    : GENRES.length + " genres · rolls a sub-style combo";
+  $("genreHint").className = "val dim";
   $("bpmInput").value = state.bpm;
   $("influenceSel").value = state.influence;
   $("weirdness").value = state.weirdness;
@@ -2253,23 +2572,48 @@ function afterChange(){ render(); updateURL(); saveAuto(); Audition.refresh(); }
 let pickerTarget = "primary";
 function openPicker(target){
   pickerTarget = target;
-  $("styleModalTitle").textContent = target==="primary" ? "Select primary style" : "Select secondary influence";
+  $("styleModalTitle").textContent = target==="primary" ? "Select style" : "Select secondary influence";
   $("styleSearch").value = "";
   renderStyleGrid("");
   $("styleModal").classList.add("open");
 }
 function renderStyleGrid(query){
   const q = query.trim().toLowerCase();
+  const grid = $("styleGrid");
+  grid.innerHTML = "";
+  const isTech = !!state.techOnly;
+  if(!isTech){
+    // Genre mode: show each genre with its sub-styles as pickable combos.
+    const filtered = GENRES.filter(g=>!q || g.n.toLowerCase().includes(q) || g.subs.some(s=>s.toLowerCase().includes(q)));
+    if(!filtered.length){ grid.innerHTML = '<div class="readout">No genres match "'+escapeHtml(query)+'"</div>'; return; }
+    filtered.forEach(g=>{
+      const head = document.createElement("div");
+      head.className = "styleopt";
+      head.style.cursor="default"; head.style.background="rgba(63,199,255,.06)";
+      head.innerHTML = '<span style="font-weight:bold">'+escapeHtml(g.n)+'</span><span class="cat genre">'+g.subs.length+' subs</span>';
+      head.addEventListener("click", ()=>selectStyle(g.n));
+      grid.appendChild(head);
+      const subs = g.subs.filter(s=>!q || s.toLowerCase().includes(q));
+      subs.forEach(sub=>{
+        const combo = genreComboName(g, sub);
+        const el = document.createElement("div");
+        el.className = "styleopt";
+        el.innerHTML = '<span>'+escapeHtml(sub)+'</span><span class="cat genre">sub</span>';
+        el.addEventListener("click", ()=>selectStyle(combo));
+        grid.appendChild(el);
+      });
+    });
+    return;
+  }
+  // Techno-Only mode: show the curated techno pool.
   const seen = new Set();
   const styles = STYLES.filter(st=>{ if(seen.has(st.n)) return false; seen.add(st.n); return true; });
   const filtered = styles.filter(st=>!q || st.n.toLowerCase().includes(q));
-  const grid = $("styleGrid");
-  grid.innerHTML = "";
-  if(!filtered.length){ grid.innerHTML = '<div class="readout">No styles match "'+escapeHtml(query)+'"</div>'; return; }
+  if(!filtered.length){ grid.innerHTML = '<div class="readout">No techno styles match "'+escapeHtml(query)+'"</div>'; return; }
   filtered.forEach(st=>{
     const el = document.createElement("div");
     el.className = "styleopt";
-    el.innerHTML = '<span>'+escapeHtml(st.n)+'</span><span class="cat '+st.c+'">'+st.c+'</span>';
+    el.innerHTML = '<span>'+escapeHtml(st.n)+'</span><span class="cat tech">'+st.c+'</span>';
     el.addEventListener("click", ()=>selectStyle(st.n));
     grid.appendChild(el);
   });
@@ -3100,7 +3444,10 @@ $("styleModalClose").addEventListener("click", ()=>$("styleModal").classList.rem
 $("styleModal").addEventListener("click", e=>{ if(e.target.id==="styleModal") $("styleModal").classList.remove("open"); });
 $("styleSearch").addEventListener("input", e=>renderStyleGrid(e.target.value));
 
-$("weirdness").addEventListener("input", e=>{ state.weirdness = parseInt(e.target.value); $("weirdnessRead").innerHTML = weirdReadout(state.weirdness); });
+$("techOnlyChk").addEventListener("change", e=>{
+  commit(); state.techOnly = !!e.target.checked; afterChange();
+  toast(state.techOnly ? "⛓ Techno-Only mode ON — roller + list now use the techno pool" : "🌍 Genre mode ON — roller + list now use every genre (no techno)");
+});
 $("weirdness").addEventListener("change", ()=>{ commit(); afterChange(); });
 $("influenceSel").addEventListener("change", e=>{ commit(); state.influence = e.target.value; afterChange(); });
 $("durationSel").addEventListener("change", e=>{ commit(); state.duration = e.target.value; afterChange(); });
@@ -3181,7 +3528,7 @@ document.addEventListener("keydown", e=>{
 window.NF = {
   get state(){ return state; }, set state(v){ state = v; rng = mulberry32(state.seed); },
   get currentTab(){ return currentTab; }, set currentTab(v){ currentTab = v; },
-  STYLES, ATOMS, ROLL_FN, GROUPS, SCALES, LAYERS, CONCEPT, MELODY_CONCEPT, MELODY_FORCE, COMMANDS,
+  STYLES, GENRES, ATOMS, ROLL_FN, GROUPS, SCALES, LAYERS, CONCEPT, MELODY_CONCEPT, MELODY_FORCE, COMMANDS,
   melodyConceptLine,
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
