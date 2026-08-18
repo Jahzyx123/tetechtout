@@ -57,9 +57,21 @@ python3 -m http.server 8080
   wide detune). These are real cent offsets: the audition engine bends the oscillators
   by exactly the amount the prompt describes.
 - **Huge expanded pools for bass, melody, feeling and drums** — 150+ feelings, 90+ flavors,
-  85+ lead voices, 65+ bass voices, 35+ bass moves, 30+ grooves, 30+ kicks, 30+ intensities
+  150+ lead voices, 120+ bass voices, 35+ bass moves, 30+ grooves, 30+ kicks, 30+ intensities
   and more, all new entries validated against the safety sanitizer so nothing gets censored
   out of a prompt.
+- **Lead & Bass 📜 pickers** — the Lead (melody) and Bass Voice rows each have a 📜 button that
+  opens a searchable list so you can pick a voice manually instead of rolling.
+- **Counter-melody 🎼+** — roll a second lead line with its own voice/direction/performance/
+  contour/rhythm, and choose whether it **supports**, **follows** or **counters** the main
+  melody. Added to the Style Prompt and Full Brief.
+- **Voice concept 🎤+** — the same idea for the low end: a second bass/voice line with its own
+  voice + movement and a supports/follows/counters role relative to the main bass.
+- **Equal-chance style odds ⚖** — a toggle that makes every genre and every sub-style have
+  exactly the same odds of appearing. Off = genre-first (genres with more sub-styles show
+  more often).
+- **BPM/Key hide now restorable** — the show/hide buttons for BPM and Key moved into the
+  Style & Tempo card header, so hiding them no longer makes them impossible to bring back.
 - **24 optional detail layers** (acid, glitch, saturation, sidechain, polyrhythm, …), all OFF
   by default.
 
@@ -141,6 +153,6 @@ subsystems — key engine, energy arc, scoring, A/B, command palette, and saniti
 
 ```bash
 npm i -D jsdom
-node qa/test.js     # 56 checks (genre combos, techno mode, expanded pools, audition fidelity, genre-aware BPM)
+node qa/test.js     # 59 checks (genre combos, techno mode, expanded pools, audition fidelity, genre-aware BPM, counter-melody, equal-chance)
 node qa/pools.js    # runs every pool phrase (incl. all 2800+ genre combos) through the live sanitizer
 ```

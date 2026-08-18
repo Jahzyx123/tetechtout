@@ -79,7 +79,7 @@ t("hide removes content from prompt", ()=>{ w.NF.doRoll("power");
   return (!noDrums.includes("Drums:") && full.includes("Drums:")) || "hide failed";});
 t("all data-roll targets resolve", ()=>{ const bad=[];
   d.querySelectorAll("[data-roll]").forEach(el=>{const k=el.getAttribute("data-roll");
-    if(!w.NF.ROLL_FN[k] && !w.NF.GROUPS[k] && !["fuse","clear-secondary","variations","power"].includes(k)) bad.push(k);});
+    if(!w.NF.ROLL_FN[k] && !w.NF.GROUPS[k] && !["fuse","clear-secondary","clear-counter","clear-voice-concept","variations","power"].includes(k)) bad.push(k);});
   return bad.length===0||bad.join(",");});
 t("all data-lock keys exist", ()=>{ const bad=[];
   d.querySelectorAll("[data-lock]").forEach(el=>{const k=el.getAttribute("data-lock");
@@ -229,6 +229,28 @@ t("expanded bass/melody/drum/groove pools", ()=>{
   const bad=[];
   for(const [k,v] of Object.entries(need)){ const c=cnt(k); if(c<v) bad.push(k+"="+c+"<"+v); }
   return bad.length===0 || bad.join(", ");});
+t("equal-chance mode is selectable + applies", ()=>{
+  S().equalChance=true;
+  // Equal chance picks uniformly across all combos; primary and secondary
+  // should still be different genres and set valid styles.
+  const seen=new Set();
+  for(let i=0;i<30;i++){ w.NF.doRoll("genre"); seen.add(S().primaryGenre); }
+  S().equalChance=false;
+  return (seen.size>0 && S().primaryStyle.length>2) || "equal chance broken";});
+t("counter-melody + voice concept roll into prompts", ()=>{
+  w.NF.doRoll("counter-melody"); w.NF.doRoll("voice-concept");
+  const sp=w.NF.buildStylePrompt(), br=w.NF.buildFullBrief();
+  const hasCounter = S().counterMelody && S().counterMelody.voice && sp.includes("Counter-melody") && br.includes("COUNTER-MELODY");
+  const hasSecond = S().voiceConcept && S().voiceConcept.voice && sp.includes("Second line") && br.includes("SECOND LINE");
+  const roles=["supports","follows","counters"].includes(S().counterMelodyRelation);
+  return (hasCounter && hasSecond && roles) || ("counter:"+hasCounter+" second:"+hasSecond+" roles:"+roles);});
+t("bass/lead pool pickers resolve + big batches", ()=>{
+  const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
+  const cnt=n=>{ const m=src.match(new RegExp("const "+n+" = \\[([\\s\\S]*?)\\n\\];")); return m?[...m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].length:0; };
+  const ok = cnt("LEADS")>=110 && cnt("BASS_VOICES")>=100;
+  const hasPicker = !!w.NF.PICKER_POOLS && !!w.NF.PICKER_POOLS.leadVoice && !!w.NF.PICKER_POOLS.bassVoice;
+  return (ok && hasPicker) || ("leads:"+cnt("LEADS")+" bass:"+cnt("BASS_VOICES")+" picker:"+hasPicker);});
+
 t("audition engine has new genre-feel + pattern voices", ()=>{
   const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
   const checks=["function styleFeel()","function snare(","function tom(","function shaker(","function percExtra()","offbeatSk","breakbeat ?"];

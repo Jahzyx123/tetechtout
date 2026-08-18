@@ -323,7 +323,7 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
 
       <!-- STYLE & TEMPO -->
       <div class="card" id="styleCard">
-        <h2><span class="dot"></span>Style &amp; Tempo<span class="spacer"></span><button class="hidebtn" data-hide="styleCard">👁</button></h2>
+        <h2><span class="dot"></span>Style &amp; Tempo<span class="spacer"></span><button class="hidebtn" data-hide="bpm" title="Show/hide BPM row">👁</button><button class="hidebtn" data-hide="key" title="Show/hide Key row">👁</button><button class="hidebtn" data-hide="styleCard" title="Show/hide whole card">👁</button></h2>
         <div class="cardbody">
           <div class="row"><span class="lbl">Primary</span>
             <span class="val" id="v-primary">—</span>
@@ -355,6 +355,12 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
             </select>
             <span class="readout" id="influenceRead"></span>
           </div>
+          <div class="row"><span class="lbl">Style odds</span>
+            <label class="techonly-toggle" title="Equal chance — every genre and every sub-style has exactly the same odds of appearing. Off = genre-first (genres with more sub-styles appear more often).">
+              <input type="checkbox" id="equalChanceChk">
+              <span>Equal chance</span>
+            </label>
+          </div>
           <div class="row"><span class="lbl">Weirdness</span>
             <input type="range" id="weirdness" min="0" max="100" value="50">
             <span class="readout" id="weirdnessRead">50</span>
@@ -363,7 +369,6 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
             <input type="number" id="bpmInput" min="100" max="200" step="1">
             <button class="lock" data-lock="bpm">🔓</button>
             <button class="mini miniroll" data-roll="bpm">🎲</button>
-            <button class="hidebtn" data-hide="bpm">👁</button>
           </div>
           <div class="row" id="keyRow"><span class="lbl">Key</span>
             <select id="rootSel" title="Root note"></select>
@@ -371,7 +376,6 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
             <span class="readout" id="keyRead"></span>
             <button class="lock" data-lock="key">🔓</button>
             <button class="mini miniroll" data-roll="key">🎲</button>
-            <button class="hidebtn" data-hide="key">👁</button>
           </div>
         </div>
       </div>
@@ -410,6 +414,19 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
             <div class="citem"><div class="clbl">Hook shape</div><div class="cval" id="v-mchook">—</div></div>
           </div>
           <div id="feelRows"></div>
+          <div class="row" id="counterRow"><span class="lbl">Counter-melody</span>
+            <span class="val dim" id="v-counter">— roll to add a second line</span>
+            <button class="mini miniroll" data-roll="counter-melody" title="Roll a counter-melody">🎼+</button>
+            <button class="mini miniroll" data-roll="clear-counter" title="Clear counter-melody">✕</button>
+          </div>
+          <div class="row" id="counterRelRow"><span class="lbl">Counter role</span>
+            <select id="counterRelSel">
+              <option value="supports" selected>Supports the main melody</option>
+              <option value="follows">Follows the main melody</option>
+              <option value="counters">Counters the main melody</option>
+            </select>
+            <button class="mini miniroll" data-roll="counter-relation" title="Randomize role">🎲</button>
+          </div>
           <div class="row"><span class="lbl">Microtonal</span>
             <span class="toggle" id="microMelodyBtn"><span class="led"></span>🎚 Microtonality</span>
             <select id="microMelodySel"></select>
@@ -428,6 +445,19 @@ kbd{background:#04120a;border:1px solid var(--line-bright);border-radius:4px;pad
         <h2><span class="dot"></span>Bass<span class="spacer"></span><button class="hidebtn" data-hide="bassCard">👁</button></h2>
         <div class="cardbody">
           <div id="bassRows"></div>
+          <div class="row" id="voiceConceptRow"><span class="lbl">Voice concept</span>
+            <span class="val dim" id="v-voiceconcept">— roll to add a second voice</span>
+            <button class="mini miniroll" data-roll="voice-concept" title="Roll a second bass voice line">🎤+</button>
+            <button class="mini miniroll" data-roll="clear-voice-concept" title="Clear voice concept">✕</button>
+          </div>
+          <div class="row" id="voiceRelRow"><span class="lbl">Voice role</span>
+            <select id="voiceRelSel">
+              <option value="supports" selected>Supports the main bass</option>
+              <option value="follows">Follows the main bass</option>
+              <option value="counters">Counters the main bass</option>
+            </select>
+            <button class="mini miniroll" data-roll="voice-relation" title="Randomize role">🎲</button>
+          </div>
           <div class="row"><span class="lbl">Microtonal</span>
             <span class="toggle" id="microBassBtn"><span class="led"></span>🎚 Microtonality</span>
             <select id="microBassSel"></select>
@@ -1134,6 +1164,7 @@ function pickStyle(){
   // In Techno-Only mode we draw from the curated techno pool (with the
   // weirdness category bias). Otherwise we draw a non-techno sub+genre combo.
   if(state.techOnly){
+    if(state.equalChance) return pick(STYLES.map(s=>s.n));
     const cat = weirdCategory();
     const pool = STYLES_BY_CAT[cat];
     if(!pool || !pool.length) return pick(STYLES.map(s=>s.n));
@@ -1160,13 +1191,28 @@ function pickGenreComboOther(avoid){
   while(c===avoid && guard++<8){ c = pickGenreCombo(); }
   return c;
 }
+/* Flat list of every sub+genre combo, so Equal-chance can weigh them all the same. */
+function allCombos(){
+  const out=[];
+  for(const g of GENRES) for(const sub of g.subs) out.push(genreComboName(g, sub));
+  return out;
+}
 /* Genre + combo pair (kept separate so we can drive BPM + avoid repeats). */
 function pickGenreObj(){
+  if(state.equalChance){
+    const c = pick(allCombos());
+    return {genre: genreOfStyle(c) || "", combo:c};
+  }
   const g = pick(GENRES);
   return {genre:g.n, combo:genreComboName(g, pick(g.subs))};
 }
 /* A genre + combo pair whose GENRE differs from an avoid value. */
 function pickGenreObjOther(avoidGenre){
+  if(state.equalChance){
+    let c = pick(allCombos()); let guard = 0;
+    while((genreOfStyle(c)===avoidGenre) && guard++<8) c = pick(allCombos());
+    return {genre: genreOfStyle(c) || "", combo:c};
+  }
   let g = pick(GENRES); let guard = 0;
   while(g.n===avoidGenre && guard++<8) g = pick(GENRES);
   return {genre:g.n, combo:genreComboName(g, pick(g.subs))};
@@ -1410,7 +1456,24 @@ const LEADS = [
   "crisp plucked psaltery",
   "ethereal glassy pad",
   "sunlit acoustic-guitar lead",
-  "deep sax-synth croon"
+  "deep sax-synth croon",
+  "blooming pad-string hybrid","glassy sine-bell hook","warm detuned organ lead","piercing octave-stack lead",
+  "soft celesta-chime lead","mellow electric-piano lead","buzzing resonant lead","airy whistle-tone lead",
+  "heavy unison saw lead","liquid metal synth lead","sparkling FM bell cascade","smoky brass lead",
+  "dreamy ensemble-pad lead","springy marimba-pluck lead","ethereal high-harmonic lead","gritty mono bass-lead unison",
+  "bright harpsichord-synth lead","deep warm baritone synth","fluttering vibrato lead","metallic sheen lead",
+  "windy breathy flute-synth","thick detuned lead","twin-tone humanized lead","frozen crystal-pluck lead",
+  "pulsing gate-triggered lead","hollow music-box note","vintage tape-echo lead","wide warm-pad lead",
+  "snappy pluck-hook lead","rolling rhythmic stabs lead","silky sawtooth glissando lead","resonant wooden-block tone",
+  "cinematic low brass lead","airy mid-range pad lead","cutting square-lead accent","liquid filter-swept lead",
+  "melodic 303 pluck lead","echoed bell refrain","soft mallet-hammer tone","distant organ-swell lead",
+  "glowing warm pad lead","tight plucked electric lead","fluttery tremolo lead","shimmering overtone lead",
+  "deep breathing sub-lead unison","round vibraphone tone","haunting glockenspiel hook","smooth alto-flute synth",
+  "rich French-horn synth","noble trumpet-synth call","mellow clarinet synth","airy pan-flute blend",
+  "deep cello-bow synth lead","warm viola drone lead","bright piccolo-peep lead","soft oboe lament lead",
+  "reedy bassoon-synth line","round tuba-bottom lead","soft music-box loop","crisp koto-pluck lead",
+  "bright shakuhachi tone","resonant sitar-twist lead","metallic guzheng pluck","warm ukulele-strum lead",
+  "soft harp-gliss lead","ethereal glass-arp lead","deep resonance-bowl tone","sparkling chime-octave lead"
 ];
 const PERFS = [
   "played with wide vibrato","played with huge pitch bends","performed with aggressive gating",
@@ -1678,7 +1741,21 @@ const BASS_VOICES = [
   "elastic rubber-band bass",
   "dark bowed-string bass",
   "sunny mid-forward bass",
-  "bouncy slap-style bass"
+  "bouncy slap-style bass",
+  "deep church-organ sub","warm double-bass bow","tight plucked upright","round synth-string bass",
+  "boomy hand-drum bass","soft flannel-synth bass","gritty octave-fuzz bass","smooth electric-jazz bass",
+  "looping sub-wobble bass","glassy sine-root bass","thick minimoog bass","rolling dubwise sub",
+  "punchy disco-slap bass","warm motown-style bass","dark bowed cello bass","airy fretless bass",
+  "buzzy analog sequencer bass","soft pad-like sub","metallic FM staccato bass","heavy palm-mute rock bass",
+  "snappy pop bass","lush chorused bass","dry percussive pluck bass","huge fifth-stack drone bass",
+  "micro-swept acid bass","elastic formant bass","crisp pick-style bass","warm triangle-wave bass",
+  "deep phase-shifted sub","growling dual-saw bass","tight clicky sub","rolling triangle bassline",
+  "soft mellow sine sub","aggressive square-stab bass","wide detuned unison bass","soft wood-tone bass",
+  "bowed viola bottom","hollow boomy tuba bass","rich baritone-sax bass","brassy synth bass",
+  "clean digital sub","dusty vinyl bass","warm spring-reverb bass","slippery slide-synth bass",
+  "resonant modal drone bass","breathing sub-bass swell","tight gate-stab bass","fuzzy overdrive bass",
+  "round kick-locked sub","airy open-fifth bass","deep ambient subbed bass","crisp clave-tied bass",
+  "shimmering high-bass pluck","rolling pseudo-acoustic bass","fat tape-saturated bass","clean mono root bass"
 ];
 const BASS_MOVES = [
   "rolling octave movement","syncopated offbeat movement","driving eighth-note movement",
@@ -2367,14 +2444,14 @@ const ATOMS = [
   {key:"key",          card:"styleCard",      label:"Key",           display:s=>keyName(s)+" · "+camelot(s)},
   {key:"feeling",      card:"feelCard",       label:"Feeling",       display:s=>`${s.feeling} · ${s.flavor}`},
   {key:"direction",    card:"feelCard",       field:"direction",     label:"Direction"},
-  {key:"leadVoice",    card:"feelCard",       field:"leadVoice",     label:"Lead"},
+  {key:"leadVoice",    card:"feelCard",       field:"leadVoice",     label:"Lead", pick:"leadVoice"},
   {key:"leadPerf",     card:"feelCard",       field:"leadPerf",      label:"Perform"},
   {key:"harmony",      card:"feelCard",       field:"harmony",       label:"Harmony"},
   {key:"chordColor",   card:"feelCard",       field:"chordColor",    label:"Color"},
   {key:"arpeggio",     card:"feelCard",       field:"arpeggio",      label:"Arp"},
   {key:"contour",      card:"feelCard",       field:"contour",       label:"Contour"},
   {key:"rhythm",       card:"feelCard",       field:"rhythm",        label:"Rhythm"},
-  {key:"bassVoice",    card:"bassCard",       field:"bassVoice",     label:"Voice"},
+  {key:"bassVoice",    card:"bassCard",       field:"bassVoice",     label:"Voice", pick:"bassVoice"},
   {key:"bassMovement", card:"bassCard",       field:"bassMovement",  label:"Movement"},
   {key:"bassRel",      card:"bassCard",       field:"bassRel",       label:"Rel. to lead"},
   {key:"kick",         card:"drumsCard",      field:"kick",          label:"Kick"},
@@ -2436,6 +2513,17 @@ const ROLL_FN = {
   concept:      s=>{ for(const k in s.concept) s.concept[k]=pick(CONCEPT[k]); },
   melodyConcept:s=>{ if(!s.melodyConcept) s.melodyConcept={};
                      for(const k in MELODY_CONCEPT) s.melodyConcept[k]=pick(MELODY_CONCEPT[k]); },
+  /* Counter-melody: a second lead line with its own concept, and a role
+     (supports / follows / counters) relative to the main melody. */
+  "counter-melody": s=>{ s.counterMelody = {
+    voice: pick(LEADS), direction: pick(DIRECTIONS), perf: pick(PERFS),
+    contour: pick(CONTOURS), rhythm: pick(RHYTHMS)
+  }; },
+  "counter-relation": s=>{ s.counterMelodyRelation = pick(["supports","follows","counters"]); },
+  /* Voice concept: a second bass/voice line with its own voice + movement,
+     and a role relative to the main bass. */
+  "voice-concept": s=>{ s.voiceConcept = { voice: pick(BASS_VOICES), movement: pick(BASS_MOVES) }; },
+  "voice-relation": s=>{ s.voiceRelation = pick(["supports","follows","counters"]); },
   arrangement:  s=>{ s.arrangement = pickArrangementFor(s); }
 };
 
@@ -2482,6 +2570,8 @@ function defaultState(){
     feeling:"", flavor:"", direction:"", leadVoice:"", leadPerf:"", contour:"", rhythm:"",
     harmony:"", chordColor:"", arpeggio:"",
     bassVoice:"", bassMovement:"", bassRel:"",
+    counterMelody:{voice:"",direction:"",perf:"",contour:"",rhythm:""}, counterMelodyRelation:"supports",
+    voiceConcept:{voice:"",movement:""}, voiceRelation:"supports",
     kick:"", hats:"", snare:"", perc:"", toms:"", groove:"", swing:"", sync:"", intensity:"",
     concept:{world:"",location:"",visual:"",narrative:"",sensation:"",event:"",conflict:"",crowd:"",title:"",transform:""},
     melodyConcept:{story:"",role:"",motion:"",hook:""},
@@ -2489,6 +2579,7 @@ function defaultState(){
     instrumental:true, vocalMode:false,
     layers:{}, locks:defaultLocks(), hidden:defaultHidden(),
     weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced",
+    equalChance:false,
     variations:[]
   };
 }
@@ -2579,6 +2670,26 @@ function bassLine(){
   const mb = microOf(state.microBass);
   if(mb.desc) s += ", " + mb.desc;
   return s;
+}
+const COUNTER_ROLE = {
+  supports: "supporting the main melody",
+  follows:  "following the main melody",
+  counters: "countering the main melody"
+};
+function counterMelodyLine(){
+  const cm = state.counterMelody; if(!cm || !cm.voice) return "";
+  const rel = COUNTER_ROLE[state.counterMelodyRelation] || COUNTER_ROLE.supports;
+  return "Counter-melody: " + cm.voice + ", " + cm.direction + ", " + cm.perf + ", " + cm.contour + ", " + cm.rhythm + "; " + rel;
+}
+const VOICE_ROLE = {
+  supports: "supporting the main bass",
+  follows:  "following the main bass",
+  counters: "countering the main bass"
+};
+function voiceConceptLine(){
+  const vc = state.voiceConcept; if(!vc || !vc.voice) return "";
+  const rel = VOICE_ROLE[state.voiceRelation] || VOICE_ROLE.supports;
+  return "Second line: " + vc.voice + ", " + vc.movement + "; " + rel;
 }
 function drumLine(){
   return "Drums: " + state.kick + ", " + state.hats + ", " + state.snare + ", " + state.perc + ", " + state.groove;
@@ -2684,16 +2795,20 @@ function buildStylePrompt(){
   const blocks = [{t: styleLine(), required:true, priority:1}];
   if(!state.hidden.feelCard){
     blocks.push({t: emotionLine(), required:true, priority:2});
-    blocks.push({t: melodyLine(), required:true, priority:3});
+    const cml = counterMelodyLine();
+    blocks.push({t: melodyLine() + (cml ? " " + cml : ""), required:true, priority:3});
     const mcl = melodyConceptLine(false);
     if(mcl) blocks.push({t: mcl, compact: melodyConceptLine(true), required:false, priority:6.5});
   }
-  if(!state.hidden.bassCard) blocks.push({t: bassLine(), required:true, priority:4});
+  if(!state.hidden.bassCard){
+    const vcl = voiceConceptLine();
+    blocks.push({t: bassLine() + (vcl ? " " + vcl : ""), required:true, priority:4});
+  }
   if(!state.hidden.drumsCard) blocks.push({t: drumLine(), required:true, priority:5});
   if(!state.hidden.conceptCard) blocks.push({t: conceptLine(false), compact: conceptLine(true), required:true, priority:6});
   if(!state.hidden.arrangementCard) blocks.push({t: arrangementLine(), required:false, priority:7});
   blocks.push({t: layerLine(), required:false, priority:8});
-  let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 1 : 20), ". ");
+  let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20), ". ");
   body = sanitize(body);
   body = body.replace(/[.\s]+$/,"");
   const v = vocalLine();
@@ -2725,8 +2840,14 @@ function buildFullBrief(){
       sec.push("MELODY: " + state.leadVoice + ", " + state.leadPerf + "; " + state.contour + "; " + state.rhythm + ".");
       sec.push("HARMONY: " + state.harmony + " in " + state.chordColor + "; " + state.arpeggio + ".");
     }
+    const cml2 = counterMelodyLine().replace(/^Counter-melody:\s*/i, "");
+    if(cml2) sec.push("COUNTER-MELODY: " + cml2 + ".");
   }
-  if(!state.hidden.bassCard) sec.push("BASS: " + state.bassVoice + ", " + state.bassMovement + ", " + state.bassRel + ".");
+  if(!state.hidden.bassCard){
+    sec.push("BASS: " + state.bassVoice + ", " + state.bassMovement + ", " + state.bassRel + ".");
+    const vcl2 = voiceConceptLine().replace(/^Second line:\s*/i, "");
+    if(vcl2) sec.push("SECOND LINE: " + vcl2 + ".");
+  }
   if(!state.hidden.drumsCard) sec.push("DRUMS: " + state.kick + "; " + state.hats + "; " + state.snare + "; " + state.perc + "; " + state.toms + "; " + state.groove + "; " + state.swing + "; " + state.sync + "; " + state.intensity + ".");
   if(!state.hidden.arrangementCard){
     sec.push("ARRANGEMENT: " + state.arrangement);
@@ -2802,6 +2923,19 @@ function render(){
   $("v-secondary").textContent = state.secondaryStyle || "— none";
   $("v-secondary").classList.toggle("dim", !state.secondaryStyle);
   $("techOnlyChk").checked = !!state.techOnly;
+  $("equalChanceChk").checked = !!state.equalChance;
+  if(state.counterMelody && state.counterMelody.voice){
+    $("v-counter").textContent = state.counterMelody.voice + " · " + state.counterMelody.direction;
+  } else {
+    $("v-counter").textContent = "— roll to add a second line";
+  }
+  $("counterRelSel").value = state.counterMelodyRelation || "supports";
+  if(state.voiceConcept && state.voiceConcept.voice){
+    $("v-voiceconcept").textContent = state.voiceConcept.voice + " · " + state.voiceConcept.movement;
+  } else {
+    $("v-voiceconcept").textContent = "— roll to add a second voice";
+  }
+  $("voiceRelSel").value = state.voiceRelation || "supports";
   if(state.techOnly){
     $("genreHint").textContent = "techno pool only · 🎲 rolls two techno styles";
   } else if(state.primaryGenre){
@@ -2902,7 +3036,9 @@ function fieldRowHtml(atom){
   return '<div class="row"><span class="lbl">'+atom.label+'</span>'+
     '<span class="val" id="v-'+atom.key+'">—</span>'+
     '<button class="lock" data-lock="'+atom.key+'">🔓</button>'+
-    '<button class="mini miniroll" data-roll="'+atom.key+'">🎲</button></div>';
+    '<button class="mini miniroll" data-roll="'+atom.key+'">🎲</button>'+
+    (atom.pick ? '<button class="mini listbtn" data-pick="'+atom.pick+'">📜</button>' : '')+
+    '</div>';
 }
 
 function renderLayers(){
@@ -2984,6 +3120,14 @@ function doRoll(kind){
     commit(); state.secondaryStyle = ""; afterChange(); toast("Secondary cleared");
     return;
   }
+  if(kind==="clear-counter"){
+    commit(); state.counterMelody = {voice:"",direction:"",perf:"",contour:"",rhythm:""}; afterChange(); toast("Counter-melody cleared");
+    return;
+  }
+  if(kind==="clear-voice-concept"){
+    commit(); state.voiceConcept = {voice:"",movement:""}; afterChange(); toast("Voice concept cleared");
+    return;
+  }
   if(kind==="variations"){
     commit(); beginRoll(); generateVariations();
     flash($("variationsCard")); afterChange(); toast("🎲 3 variations generated");
@@ -3014,10 +3158,18 @@ function flash(el){ if(!el) return; el.classList.remove("flash"); void el.offset
 function afterChange(){ render(); updateURL(); saveAuto(); Audition.refresh(); }
 
 /* ---------------------------- STYLE PICKER ---------------------------- */
+const PICKER_POOLS = {
+  leadVoice:  {arr: ()=>LEADS,        field:"leadVoice",     label:"Lead voice"},
+  bassVoice:  {arr: ()=>BASS_VOICES,  field:"bassVoice",     label:"Bass voice"}
+};
 let pickerTarget = "primary";
 function openPicker(target){
   pickerTarget = target;
-  $("styleModalTitle").textContent = target==="primary" ? "Select style" : "Select secondary influence";
+  if(PICKER_POOLS[target]){
+    $("styleModalTitle").textContent = "Select " + PICKER_POOLS[target].label;
+  } else {
+    $("styleModalTitle").textContent = target==="primary" ? "Select style" : "Select secondary influence";
+  }
   $("styleSearch").value = "";
   renderStyleGrid("");
   $("styleModal").classList.add("open");
@@ -3026,6 +3178,19 @@ function renderStyleGrid(query){
   const q = query.trim().toLowerCase();
   const grid = $("styleGrid");
   grid.innerHTML = "";
+  const pool = PICKER_POOLS[pickerTarget];
+  if(pool){
+    const list = pool.arr().filter(v=>!q || v.toLowerCase().includes(q));
+    if(!list.length){ grid.innerHTML = '<div class="readout">No matches for "'+escapeHtml(query)+'"</div>'; return; }
+    list.forEach(v=>{
+      const el = document.createElement("div");
+      el.className = "styleopt";
+      el.innerHTML = '<span>'+escapeHtml(v)+'</span><span class="cat genre">'+pool.label.split(" ")[0].toLowerCase()+'</span>';
+      el.addEventListener("click", ()=>selectStyle(v));
+      grid.appendChild(el);
+    });
+    return;
+  }
   const isTech = !!state.techOnly;
   if(!isTech){
     // Genre mode: show each genre with its sub-styles as pickable combos.
@@ -3065,6 +3230,14 @@ function renderStyleGrid(query){
 }
 function selectStyle(name){
   commit();
+  const pool = PICKER_POOLS[pickerTarget];
+  if(pool){
+    state[pool.field] = name;
+    $("styleModal").classList.remove("open");
+    afterChange();
+    toast("Selected "+pool.label+": "+name);
+    return;
+  }
   if(pickerTarget==="primary") state.primaryStyle = name;
   else state.secondaryStyle = name;
   $("styleModal").classList.remove("open");
@@ -3993,6 +4166,18 @@ $("techOnlyChk").addEventListener("change", e=>{
   commit(); state.techOnly = !!e.target.checked; afterChange();
   toast(state.techOnly ? "⛓ Techno-Only mode ON — roller + list now use the techno pool" : "🌍 Genre mode ON — roller + list now use every genre (no techno)");
 });
+$("equalChanceChk").addEventListener("change", e=>{
+  commit(); state.equalChance = !!e.target.checked; afterChange();
+  toast(state.equalChance ? "⚖ Equal chance ON — every genre + sub-style has the same odds" : "⚖ Equal chance OFF — genre-first weighting");
+});
+$("counterRelSel").addEventListener("change", e=>{
+  commit(); state.counterMelodyRelation = e.target.value; afterChange();
+  toast("Counter-melody will now be " + (COUNTER_ROLE[e.target.value]||"supporting the main melody"));
+});
+$("voiceRelSel").addEventListener("change", e=>{
+  commit(); state.voiceRelation = e.target.value; afterChange();
+  toast("Voice concept will now be " + (VOICE_ROLE[e.target.value]||"supporting the main bass"));
+});
 $("weirdness").addEventListener("change", ()=>{ commit(); afterChange(); });
 $("influenceSel").addEventListener("change", e=>{ commit(); state.influence = e.target.value; afterChange(); });
 $("durationSel").addEventListener("change", e=>{ commit(); state.duration = e.target.value; afterChange(); });
@@ -4074,6 +4259,7 @@ window.NF = {
   get state(){ return state; }, set state(v){ state = v; rng = mulberry32(state.seed); },
   get currentTab(){ return currentTab; }, set currentTab(v){ currentTab = v; },
   STYLES, GENRES, ATOMS, ROLL_FN, GROUPS, SCALES, LAYERS, CONCEPT, MELODY_CONCEPT, MELODY_FORCE, COMMANDS,
+  LEADS, BASS_VOICES, PICKER_POOLS,
   tempoForGenre, genreOfStyle,
   melodyConceptLine,
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
