@@ -79,7 +79,7 @@ t("hide removes content from prompt", ()=>{ w.NF.doRoll("power");
   return (!noDrums.includes("Drums:") && full.includes("Drums:")) || "hide failed";});
 t("all data-roll targets resolve", ()=>{ const bad=[];
   d.querySelectorAll("[data-roll]").forEach(el=>{const k=el.getAttribute("data-roll");
-    if(!w.NF.ROLL_FN[k] && !w.NF.GROUPS[k] && !["fuse","clear-secondary","variations","power"].includes(k)) bad.push(k);});
+    if(!w.NF.ROLL_FN[k] && !w.NF.GROUPS[k] && !["fuse","clear-secondary","clear-counter","clear-voice-concept","variations","power"].includes(k)) bad.push(k);});
   return bad.length===0||bad.join(",");});
 t("all data-lock keys exist", ()=>{ const bad=[];
   d.querySelectorAll("[data-lock]").forEach(el=>{const k=el.getAttribute("data-lock");
@@ -158,11 +158,14 @@ t("no pool phrase is self-censoring", ()=>{
     for(const k in (s.concept||{})){ if(s.concept[k] && w.NF.isDirty(String(s.concept[k]).toLowerCase())) return "concept."+k+" = "+s.concept[k]; }
   } return true;});
 t("weirdness measurably shifts style mix", ()=>{
+  // Weirdness biases the curated techno pool — which is only used in
+  // Techno-Only mode (the default genre roller never includes techno).
+  S().techOnly=true;
   const cat={}; w.NF.STYLES.forEach(x=>cat[x.n]=x.c);
   const sample=wd=>{ S().weirdness=wd; let rare=0;
     for(let i=0;i<600;i++){ w.NF.doRoll("primary"); if(cat[S().primaryStyle]==="rare") rare++; }
     return rare/600; };
-  const lo=sample(0), hi=sample(100); S().weirdness=50;
+  const lo=sample(0), hi=sample(100); S().weirdness=50; S().techOnly=false;
   if(lo>0.12) return "weirdness 0 still gives "+(lo*100).toFixed(0)+"% rare";
   if(hi<0.60) return "weirdness 100 only gives "+(hi*100).toFixed(0)+"% rare";
   return true;});
@@ -191,6 +194,83 @@ t("27+ scales, all intervals valid", ()=>{
     if(s.iv.some(x=>x<0||x>11)) return s.id+" interval out of range";
     if(new Set(s.iv).size!==s.iv.length) return s.id+" duplicate intervals";
   } return true;});
+
+t("genre roll never uses techno in normal mode", ()=>{
+  S().techOnly=false;
+  const seen=new Set();
+  for(let i=0;i<80;i++){ w.NF.doRoll("genre"); seen.add(S().primaryStyle); seen.add(S().secondaryStyle); }
+  const anyTech=[...seen].some(x=>/techno|tekno/i.test(x));
+  S().primaryStyle=""; S().secondaryStyle="";
+  return (!anyTech && seen.size>=30) || ("tech leak or too few="+seen.size);});
+t("techno-only mode uses techno pool", ()=>{
+  S().techOnly=true;
+  const techNames=new Set(w.NF.STYLES.map(x=>x.n));
+  const seen=new Set();
+  for(let i=0;i<60;i++){ w.NF.doRoll("genre"); seen.add(S().primaryStyle); }
+  const leaked=[...seen].filter(x=>!techNames.has(x));
+  S().techOnly=false;
+  return (leaked.length===0 && seen.size>=20) || ("non-tech leaked="+JSON.stringify(leaked.slice(0,5)));});
+t("genre pool is large", ()=> w.NF.GENRES.length>=30 || w.NF.GENRES.length);
+t("genre roll fills both slots", ()=>{ S().techOnly=false; w.NF.doRoll("genre");
+  return (S().primaryStyle.length>2 && S().secondaryStyle.length>2 && S().primaryStyle!==S().secondaryStyle) ||
+    (S().primaryStyle+" | "+S().secondaryStyle);});
+t("genre pool itself contains no techno", ()=>{
+  const leak=[];
+  for(const g of w.NF.GENRES){
+    if(/techno|tekno/i.test(g.n)) leak.push("genre:"+g.n);
+    for(const s of g.subs){ if(/techno|tekno/i.test(s)) leak.push(g.n+"::"+s); }
+  }
+  return leak.length===0 || ("techno in genre pool: "+JSON.stringify(leak));});
+
+t("expanded bass/melody/drum/groove pools", ()=>{
+  const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
+  const cnt=n=>{ const m=src.match(new RegExp("const "+n+" = \\[([\\s\\S]*?)\\n\\];")); return m?[...m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].length:0; };
+  const need={FEELINGS:140,BASS_VOICES:55,BASS_MOVES:28,KICKS:30,HATS:28,GROOVES:30,SWINGS:20,INTENSITIES:25,LEADS:60,DIRECTIONS:55};
+  const bad=[];
+  for(const [k,v] of Object.entries(need)){ const c=cnt(k); if(c<v) bad.push(k+"="+c+"<"+v); }
+  return bad.length===0 || bad.join(", ");});
+t("equal-chance mode is selectable + applies", ()=>{
+  S().equalChance=true;
+  // Equal chance picks uniformly across all combos; primary and secondary
+  // should still be different genres and set valid styles.
+  const seen=new Set();
+  for(let i=0;i<30;i++){ w.NF.doRoll("genre"); seen.add(S().primaryGenre); }
+  S().equalChance=false;
+  return (seen.size>0 && S().primaryStyle.length>2) || "equal chance broken";});
+t("counter-melody + voice concept roll into prompts", ()=>{
+  w.NF.doRoll("counter-melody"); w.NF.doRoll("voice-concept");
+  const sp=w.NF.buildStylePrompt(), br=w.NF.buildFullBrief();
+  const hasCounter = S().counterMelody && S().counterMelody.voice && sp.includes("Counter-melody") && br.includes("COUNTER-MELODY");
+  const hasSecond = S().voiceConcept && S().voiceConcept.voice && sp.includes("Second line") && br.includes("SECOND LINE");
+  const roles=["supports","follows","counters"].includes(S().counterMelodyRelation);
+  return (hasCounter && hasSecond && roles) || ("counter:"+hasCounter+" second:"+hasSecond+" roles:"+roles);});
+t("bass/lead pool pickers resolve + big batches", ()=>{
+  const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
+  const cnt=n=>{ const m=src.match(new RegExp("const "+n+" = \\[([\\s\\S]*?)\\n\\];")); return m?[...m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].length:0; };
+  const ok = cnt("LEADS")>=110 && cnt("BASS_VOICES")>=100;
+  const hasPicker = !!w.NF.PICKER_POOLS && !!w.NF.PICKER_POOLS.leadVoice && !!w.NF.PICKER_POOLS.bassVoice;
+  return (ok && hasPicker) || ("leads:"+cnt("LEADS")+" bass:"+cnt("BASS_VOICES")+" picker:"+hasPicker);});
+
+t("audition engine has new genre-feel + pattern voices", ()=>{
+  const src=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
+  const checks=["function styleFeel()","function snare(","function tom(","function shaker(","function percExtra()","offbeatSk","breakbeat ?"];
+  const missing=checks.filter(c=>!src.includes(c));
+  return missing.length===0 || ("missing: "+missing.join(", "));});
+t("genre roll matches BPM to genre + avoids same genre", ()=>{
+  S().techOnly=false; S().locks.bpm=false;
+  let same=0, outOfRange=0;
+  for(let i=0;i<40;i++){
+    w.NF.doRoll("genre");
+    const b=S().bpm;
+    if(S().primaryGenre===S().secondaryGenre) same++;
+    if(b<60||b>200) outOfRange++;
+  }
+  // force a couple of clearly-tempo'd genres
+  const force=(p,s)=>{ S().primaryGenre=p; S().primaryStyle=p+" X"; S().secondaryGenre=s; S().secondaryStyle=s+" Y"; return w.NF.tempoForGenre(p,s); };
+  const dnb=force("Drum and Bass","Electronic"); const ska=force("Ska","Reggae");
+  S().locks.bpm=false;
+  return (same===0 && outOfRange===0 && dnb>=140 && dnb<=190 && ska>=60 && ska<=110) ||
+    ("same="+same+" oob="+outOfRange+" dnb="+dnb+" ska="+ska);});
 
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);
