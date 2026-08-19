@@ -93,8 +93,6 @@ python3 -m http.server 8080
 - **Prompt score** — six weighted metrics (length, melodic clarity, instrumentation coverage,
   style focus, energy density, harmonic definition) with actionable notes on each.
 - **A/B slots** — stash an idea in slot B, keep working, then flip between them.
-- **Engineer & DJ pack** — key-derived kick tuning in Hz, sidechain timings, stereo and master
-  notes, cue advice and a compatible BPM/Camelot mixing range.
 
 ### Workflow
 - **Command palette** (<kbd>⌘K</kbd> / <kbd>Ctrl+K</kbd>) with fuzzy search over every action.
