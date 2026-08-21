@@ -93,8 +93,6 @@ python3 -m http.server 8080
 - **Prompt score** — six weighted metrics (length, melodic clarity, instrumentation coverage,
   style focus, energy density, harmonic definition) with actionable notes on each.
 - **A/B slots** — stash an idea in slot B, keep working, then flip between them.
-- **Engineer & DJ pack** — key-derived kick tuning in Hz, sidechain timings, stereo and master
-  notes, cue advice and a compatible BPM/Camelot mixing range.
 
 ### Workflow
 - **Command palette** (<kbd>⌘K</kbd> / <kbd>Ctrl+K</kbd>) with fuzzy search over every action.
@@ -122,8 +120,7 @@ python3 -m http.server 8080
 |---|---|
 | **Style Prompt** | ≤1000 chars, ready to paste into Suno's style box |
 | **Full Brief** | ≤3000 chars, full production brief with energy arc |
-| **Suno Kit** | style + brief + section tags + energy arc + vocal policy + engineer & DJ notes |
-| **Engineer** | mix/master and DJ metadata on its own |
+| **Suno Kit** | style + brief + section tags + energy arc + vocal policy + concept |
 
 ---
 
@@ -140,7 +137,7 @@ python3 -m http.server 8080
 | <kbd>L</kbd> | Style library |
 | <kbd>I</kbd> | Toggle instrumental safety |
 | <kbd>S</kbd> | Copy share link |
-| <kbd>1</kbd>–<kbd>4</kbd> | Switch output tab |
+| <kbd>1</kbd>–<kbd>3</kbd> | Switch output tab |
 | <kbd>⌘Z</kbd> / <kbd>⌘⇧Z</kbd> | Undo / redo |
 | <kbd>?</kbd> | All shortcuts |
 
