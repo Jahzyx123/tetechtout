@@ -75,6 +75,28 @@ python3 -m http.server 8080
 - **24 optional detail layers** (acid, glitch, saturation, sidechain, polyrhythm, …), all OFF
   by default.
 
+### 🚀 Idea Engine — Sparks & Wildcards (massive upgrade)
+- **607 random sparks** across eleven pools: ideas, titles, genre mash-ups,
+  production constraints, tips, vibe lines, scenes, objects, concept
+  transformations, composition challenges and chaos status lines. Roll until
+  one gives you a whole song.
+- **One-click Inspiration card** — 💡 Idea, 🏷 Title, 🧬 Mash-up, ⛓ Constraint,
+  🛠 Tip, 🌊 Vibe, 🗺 Scene, 🔩 Object, 🪄 Transform, 🎯 Challenge.
+- **Apply buttons** — push the current Title, Mash-up or Transform directly
+  into the Concept or Primary style, and **📋 Copy** the spark with the current
+  recipe attached.
+- **🔥 Mega Chaos Roll** — rerolls a huge bundle of atom groups (feeling,
+  melody, bass, drums, harmony, techno lab, sound design, mix, spatial, groove,
+  texture, rhythm, key), maxes drive/acid/duration/melodic force, switches on
+  the detail layers, drops in a random title + transform, then flashes a live
+  score readout. Lock anything you love before you roll.
+- **Huge word-pool expansion** — hundreds of additional entries were pushed
+  into the existing pools: 178 feelings, 120 flavors, 97 directions, 204 lead
+  voices, 169 bass voices, 83 kicks, 77 grooves, 72 hats, and more. All entries
+  pass the instrumental-only sanitizer and maximum-energy filter.
+- **Keyboard/command access** — every spark action appears in the ⌘ command
+  palette, so you can fire one from anywhere.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed

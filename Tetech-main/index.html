@@ -447,6 +447,34 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
     <!-- ======================= CONTROLS ======================= -->
     <section class="controls">
 
+      <!-- IDEA ENGINE / SPARKS -->
+      <div class="card" id="sparkCard">
+        <h2><span class="dot"></span>Idea Engine — Sparks &amp; Wildcards<span class="spacer"></span><span class="readout" id="sparkCount"></span></h2>
+        <div class="cardbody">
+          <div class="bigval" id="v-spark">— press any button for a random spark —</div>
+          <div class="cluster">
+            <button class="push" id="sparkIdeaBtn">💡 Idea</button>
+            <button class="push" id="sparkTitleBtn">🏷 Title</button>
+            <button class="push" id="sparkMashBtn">🧬 Mash-up</button>
+            <button class="push" id="sparkConstraintBtn">⛓ Constraint</button>
+            <button class="push" id="sparkTipBtn">🛠 Tip</button>
+            <button class="push" id="sparkVibeBtn">🌊 Vibe</button>
+            <button class="push" id="sparkSceneBtn">🗺 Scene</button>
+            <button class="push" id="sparkObjectBtn">🔩 Object</button>
+            <button class="push" id="sparkTransformBtn">🪄 Transform</button>
+            <button class="push" id="sparkChallengeBtn">🎯 Challenge</button>
+          </div>
+          <div class="cluster">
+            <button class="sm power" id="sparkMegaBtn">🔥 Mega Chaos Roll</button>
+            <button class="sm" id="sparkTitleApplyBtn" title="Put the current title spark into the Concept title">🏷 Apply title</button>
+            <button class="sm" id="sparkMashApplyBtn" title="Put the current mash-up into the Primary style">🧬 Apply mash-up</button>
+            <button class="sm" id="sparkTransformApplyBtn" title="Put the current transform into the Concept transformation">🪄 Apply transform</button>
+            <button class="sm" id="sparkCopyBtn">📋 Copy spark</button>
+          </div>
+          <div class="readout" id="sparkMeta">Hundreds of random sparks are loaded. Roll until one gives you a whole song.</div>
+        </div>
+      </div>
+
       <!-- STYLE & TEMPO -->
       <div class="card" id="styleCard">
         <h2><span class="dot"></span>Style &amp; Tempo<span class="spacer"></span><button class="hidebtn" data-hide="bpm" title="Show/hide BPM row">👁</button><button class="hidebtn" data-hide="key" title="Show/hide Key row">👁</button><button class="hidebtn" data-hide="styleCard" title="Show/hide whole card">👁</button></h2>
@@ -5032,6 +5060,1044 @@ const STEREO_ENHANCE_TYPES = [
   "rave-charged stereo bloom"
 ];
 
+
+/* ==================================================================
+   IDEA ENGINE / WILDCARD LAB (massive upgrade)
+   Hundreds of spark-style random ideas, titles, mashups, constraints,
+   tips, vibes, places, objects, transformations and challenges, plus
+   a huge expansion of the existing word pools via runtime .push().
+   ================================================================== */
+const SPARK_IDEAS = [
+  // random creative ideas
+  "make the whole track a single note that detonates at the drop",
+  "turn a birdsong into the bassline",
+  "write a key change every sixteen bars until the roof lifts",
+  "build the kick from a metal gate slamming",
+  "make the snare sound like a train arriving",
+  "put the melody inside a broken clock",
+  "let a kettle whistle become the lead",
+  "use only three sounds but push them to the edge",
+  "give the intro the loudest kick and the drop none",
+  "have the bass speak in morse code",
+  "record the room and use it as a riser",
+  "make every eighth hat land one millisecond late",
+  "pitch the drum loop down an octave for the breakdown",
+  "build a second melody from the gaps in the first",
+  "turn a playground swing into an arpeggio",
+  "use the sound of a freezer motor as texture",
+  "let thunder open and close the arrangement",
+  "start the drop on an unexpected chord",
+  "put a different time signature in every section",
+  "make the main motif disappear for two bars",
+  "use a whisper of tape hiss as the glue",
+  "let the filter close while the crowd opens",
+  "balance a drum fill on the offbeat only",
+  "make a melody from a doorbell and a dog bark",
+  "put the whole groove in one hand clap",
+  "reverse the cymbal and feed it through a magnet",
+  "record the space between two cars at a red light",
+  "let a firework be the impact sample",
+  "build a track around a single held note and its harmonics",
+  "make the buildup from a hard drive clicking",
+  "use a vacuum cleaner as a pad",
+  "let a subway announcement be the hook",
+  "turn a church bell into a techno kick",
+  "make the drop hit where the listener least expects it",
+  "write a melody that only resolves in the very last bar",
+  "take a jazz riff and play it at 170 BPM",
+  "set the hats to triplets and the kick to straight",
+  "double the bass only after the first breakdown",
+  "make the crowd the melody in the intro",
+  "put a 5/4 bar in the middle of a four-on-the-floor track",
+  "let a slide whistle answer the drop",
+  "use a high-pitched alarm as a riser",
+  "replace the snare with a glass smash every 16 bars",
+  "make the bass and the lead fight for the same note",
+  "keep the low end silent until bar 64",
+  "let the melody dance in and out of tune",
+  "put a distant radio call inside the pad",
+  "make every bar end one note up from the last",
+  "use the sound of coins being counted as percussion",
+  "let a train whistle open the final breakdown",
+  "write a counter-melody that arrives a half beat early",
+  "make the intro feel like it is falling backwards",
+  "change the root note between every section",
+  "build the drop from a single long riser and a door slam",
+  "let a hand saw cut through the background noise",
+  "make the hi-hats sound like rain on metal",
+  "drive the track on a slowed-down vocal-free choir pad",
+  "write a melody that sounds antique but hits like a wrecking ball",
+  "make the last bar longer than it should be",
+  "put a siren in the same key as the lead",
+  "let the breakdown breathe with only one tone",
+  "use a tiny music box as the only melodic compass",
+  "send the kick into a broken tape delay",
+  "build a build that answers itself with a darker chord every time",
+  "make the percussion feel like a marching band in a corridor",
+  "turn a balloon pop into the impact of every drop",
+  "let the arrangement open with the final-fire idea",
+  "use a bowed metal sheet as an atmosphere",
+  "give the lead a bend every time the kick opens",
+  "make the second drop twice as wide as the first",
+  "stutter the bass note right before the change",
+  "put a faint vinyl crackle on the master only",
+  "let the record come in from a silent room"
+];
+
+
+const SPARK_TITLES = [
+  // random track titles
+  "Static Blossom",
+  "Chrome Bonsai",
+  "Neon Glacier",
+  "Satellite Heartbeat",
+  "Concrete Aurora",
+  "Last Train Through the Flood",
+  "Amber Overdrive",
+  "Velvet Antenna",
+  "Midnight Incognito",
+  "Glass Cathedral",
+  "Recoil Avenue",
+  "Tidal Static",
+  "Oxygen Under Pressure",
+  "Borrowed Thunder",
+  "Empire of Highways",
+  "Silver Cinder",
+  "Soft Machine Hymns",
+  "Redline Rhapsody",
+  "Chrome Petals",
+  "Nocturne in Gasoline",
+  "Parallel Rain",
+  "Solar Wreckage",
+  "Pulse of the Underpass",
+  "Antenna Dreams",
+  "Turbine Lullaby",
+  "Eighteen Kilometres of Light",
+  "Golden Circuit",
+  "Fog Over the Neon",
+  "Gravity of a Sigh",
+  "Powerline Waltz",
+  "Sleepwalking on a Landfill",
+  "Mirage Factory",
+  "Hardware Sunrise",
+  "Blanket of Static",
+  "Feral Bloom",
+  "Cassette Purgatory",
+  "Inexplicable Joy",
+  "Borrowed Horizon",
+  "Iron Lung Lullaby",
+  "Subway Cathedral",
+  "Sodium Glow",
+  "Ghost in the Relay",
+  "The Longest Shutdown",
+  "Northbound Wolves",
+  "Chrome Horizon",
+  "One More Pipeline",
+  "Afterimage Alley",
+  "Antenna in the Rain",
+  "Zero-G Valentine",
+  "Devil in the Details",
+  "Infinite Echo Chamber",
+  "Last Call for Tomorrow",
+  "Parade of Open Circuits",
+  "Skylight Anxiety",
+  "Magnetic North",
+  "Static Halo",
+  "Rooftop Transmission",
+  "Downhill Marathon",
+  "Electric Nostalgia",
+  "The Year of Falling Glass",
+  "Gravity in Stereo",
+  "Milk and Motorways",
+  "Signal for a Lost Ship",
+  "Neon Permafrost",
+  "Wait, There's More",
+  "Blanket of Rain",
+  "Floating On a Red Light",
+  "Silver Satellite",
+  "The Last Honest Machine",
+  "Almost Famous in the Dark",
+  "Bright Like A Contradiction",
+  "Never Empty",
+  "A Million Small Fires",
+  "Blue Hour Machinery",
+  "Paper Stars Falling"
+];
+
+
+const SPARK_MASHUPS = [
+  // random genre mashup sparks
+  "darkpsy + gamelan + industrial gabber",
+  "breakcore + mariachi brass + hyperpop",
+  "ambient dub + doombap + K-pop keys",
+  "psytrance + Appalachian fiddle + warehouse techno",
+  "French house + kora + distorted 303",
+  "jungle + flamenco guitar + film-score strings",
+  "riddim + opera soprano + broken cassettes",
+  "hardstyle + Celtic whistles + slow-building rave",
+  "deep house + Indian classical + analog tape",
+  "dubstep + sousaphone + a tiny transistor radio",
+  "lo-fi + punk rock + fm bell arps",
+  "hardgroove + jazz organ + demolition sounds",
+  "psy bass + gamelan bells + tape hiss",
+  "tech house + marimba + metal stamping",
+  "tribal techno + bagpipes + modular noise",
+  "trance + field recording + church organ",
+  "hip-hop + tuba + broken piano",
+  "breaks + Greek bouzouki + arctic wind",
+  "techno + Japanese woodblocks + string quartet",
+  "house + voice-free choir pads + analog drones",
+  "eurodance + sitar + warehouse echoes",
+  "electronica + tango + vinyl crackle",
+  "DnB + mariachi horns + acid lines",
+  "electro + steel drum + ocean waves",
+  "ambient + orchestral brass + hard techno",
+  "mashup of a ballroom waltz and a rave",
+  "gamelan + gabber + glass chimes",
+  "garage + accordion + airport announcements",
+  "minimalist? no — maximalist techno + circus brass + modular rabbits",
+  "melodic techno + didgeridoo + film score",
+  "dub reggae + techno stabs + a whistle solo",
+  "drum and bass + kalimba + broken neon signs",
+  "power pop + acid house + marching snare",
+  "disco + koto + industrial clanking",
+  "space rock + drum machine + cathedral reverb",
+  "soul + techno + an untuned piano",
+  "swing + lofi + circuit-bent toys",
+  "breakbeat + brass band + the sound of rain",
+  "progressive house + gamelan + smashing dishes",
+  "industrial + steel guitar + rave stabs",
+  "grime + cello + arcade soundtrack",
+  "vaporwave + marching band + gabber kicks",
+  "balearic + flamenco + radio static",
+  "techno + Portuguese fado + glass synthesizer",
+  "metal + disco + a broken music box",
+  "IDM + banjo + huge reverb",
+  "trance + African percussion + a single held note",
+  "old-school rave + klezmer + tape loops",
+  "house + gamelan + a rocket launch"
+];
+
+
+const SPARK_CONSTRAINTS = [
+  // random arrangement/production constraints
+  "no reverb on the kick, only on the last bar",
+  "BPM must end in eight",
+  "one melody note per bar until the breakdown",
+  "drop every eight bars, not sixteen",
+  "no hats above the kick",
+  "keep the bass silent during the second breakdown",
+  "only one drum sound can change between drops",
+  "every section starts on an offbeat",
+  "maximum two chords per section",
+  "the arrangement may not repeat a section exactly",
+  "every bar must contain one silence",
+  "the intro may not have a kick",
+  "use a major chord exactly once",
+  "no lead in the first two sections",
+  "the last section is the shortest",
+  "start every section with a drum fill",
+  "the root note can only change between drops",
+  "only one layer may be open at a time until the drop",
+  "the drop must arrive after a held silence",
+  "the melody may only move in leaps",
+  "use the same melodic phrase in every section but invert it",
+  "no crash cymbals before the halfway point",
+  "the bass must leave space after every phrase",
+  "every riser must be shorter than the last",
+  "the final song length must be under two minutes",
+  "write a counter-melody but never play it with the lead",
+  "every fourth bar is in half time",
+  "the kick may not hit on beat one of the intro",
+  "play the dominant chord where the tonic should be",
+  "at least one section is in a different key",
+  "no pad in the final drop",
+  "the track must open with the sound that closes it",
+  "put the main motif only on the offbeats of the second drop",
+  "no more than four different sounds total",
+  "the arrangement must use a 5/4 bar somewhere",
+  "keep the final build under four bars",
+  "each section gets exactly one new sound",
+  "never let the bass and kick play the same note",
+  "the lead enters after the second bar, not the first",
+  "every cymbal swell must come from the left",
+  "the drop must start on the five of the scale",
+  "make the mid section the loudest part",
+  "no snare on the backbeat in the breakdown",
+  "repeat the melody an octave higher at the halfway point",
+  "end the track before it peaks",
+  "the last chord must be unresolved",
+  "use one unexpected silence per section",
+  "the kick pattern must change every eight bars",
+  "no kick in the intro at all",
+  "every instrument enters at least a half bar late",
+  "the first drop must be softer than the last",
+  "the bass movement may only use three notes",
+  "write the hook around a rhythm rather than a pitch",
+  "the bridge may be the shortest section in the track",
+  "make one section feel like it is watching the others",
+  "every bar after bar 64 gets two extra hats",
+  "the final bars should sound like the beginning was a lie",
+  "the breakdown should contain no kick",
+  "the drop may only last four bars",
+  "the arrangement should open with the second drop idea"
+];
+
+
+const SPARK_TIPS = [
+  // random production tips and tricks
+  "Sidechain a white-noise crash with every kick for breath.",
+  "Duplicate the bass an octave up and low-pass it for width.",
+  "Put a short delay on the lead and pan it opposite the bass.",
+  "Use a slightly different kick sample for the final drop.",
+  "Save one melodic motif and bring it back at the very end.",
+  "Take the reverb off the snare in the breakdown for a dry contrast.",
+  "Automate the filter to close exactly as the riser peaks.",
+  "Cut the low end from every sound except the bass and kick.",
+  "Add a tape-saturated send to the whole drum bus.",
+  "Let a texture enter a half bar before the section changes.",
+  "Switch the sidechain pump curve in the last drop.",
+  "Make the second refrain twice as wide with a stereo enhancer.",
+  "Try a super short pre-delay on the pad in the intro.",
+  "Automate the master drive upward through the track.",
+  "Break the rhythm with one ghost snare per eight bars.",
+  "Use a long feedback delay on a single rising tone.",
+  "Turn the hats down when the melody is most active.",
+  "Add a tiny pitch bend to the sub note right before a change.",
+  "Let the crowd feel bigger in the last section.",
+  "Put the lead on a different reverb than the pad.",
+  "Use the drop as the place where everything converges.",
+  "Keep one sound from the intro alive through the whole track.",
+  "Pan the counter-melody opposite the main lead.",
+  "Layer a wooden block with the clap for a natural burst.",
+  "Automate a low-pass on the bass in the bridge.",
+  "Saturate the master slightly harder at the end.",
+  "Print every section separately to keep the arrangement flexible.",
+  "Sidechain the pad with the kick for a constant pulse.",
+  "Use a shaker with a short attack in the build.",
+  "Send the crash into a delay for a long tail.",
+  "Make the final note ring beyond the last bar.",
+  "Add a subtle choir-free pad for the breakdown.",
+  "Keep the low-mid clean where the bass and kick collide.",
+  "Try a ping-pong delay on the hats for extra movement.",
+  "Automate the stereo width only in the second half.",
+  "Roll off the top of the riser so the drop hits harder.",
+  "Use a short reverse decay on the clap before the drop.",
+  "Put the whole final drop through a gentle highpass first.",
+  "Add a mono low end and a wide mid to the master.",
+  "Print an alternate arrangement without the bridge.",
+  "Carve a gap around the lead with a narrow EQ.",
+  "Let the kick and bass share the same root for cohesion.",
+  "Bring the percussion forward for the last two sections.",
+  "Delay the kick one bar into the breakdown for a head-nod.",
+  "Keep a single note humming across the whole track.",
+  "Use a filter sweep as a transition between refrains.",
+  "Automate the distortion on the bass up as the track moves.",
+  "Add a soft tape stop to the riser before the drop.",
+  "Double-time the final refrain for a burst of energy.",
+  "Set the delay time to the same note value as the kick.",
+  "Add a reverse crash into the last breakdown.",
+  "Make the intro feel hollow so the drop can fill it.",
+  "Use a small amount of drum bus compression for glue.",
+  "Pan the crash opposite the main riser.",
+  "Automate the sub level to let the space breathe.",
+  "End the track on the same texture it started with.",
+  "Print a version with every layer soloed for reference."
+];
+
+
+const SPARK_VIBES = [
+  // random vibe/hook lines
+  "the last bus runs on thunder and neon rain",
+  "a robot learns to dance in a flooded subway",
+  "the city is asleep and the machines are awake",
+  "an old radio plays from the bottom of a pool",
+  "two glass towers talk to each other across the dark",
+  "a lighthouse is the only thing still recording",
+  "the moon is a strobe light above the motorway",
+  "an abandoned carnival starts playing by itself",
+  "the sky is green and the streets are quiet with motion",
+  "a satellite falls slowly in the key of the track",
+  "the whole room is a broken drum",
+  "a memory of summer plays through a broken speaker",
+  "neon rain falls on a terminal garden",
+  "a thousand clocks tick in the same second",
+  "the dance floor is a recovery room",
+  "the last power plant hums a lullaby",
+  "steel and light start a conversation",
+  "a parade marches through a closed station",
+  "the night is a drum roll waiting for morning",
+  "the signal comes from the next city over",
+  "sea glass glitters on a discarded road",
+  "every skipped beat is a heartbeat",
+  "a distant train answers every second kick",
+  "the roofs are silver and the sky is copper",
+  "the building remembers being a forest",
+  "a voice hears itself in the walls",
+  "the city breathes in sixteenths",
+  "an airport plays a loop for the last departing plane",
+  "the rain keeps time on a fire escape",
+  "a factory hums the melody of the track",
+  "the highway becomes a slow river",
+  "the sunrise arrives from the wrong direction",
+  "a broken traffic light keeps the whole groove",
+  "a key turns in a lock somewhere in the mix",
+  "the museum is closed and the treasures are dancing",
+  "a balloon floats above the kick drum",
+  "the track starts where the city ends",
+  "dark water carries a reflection of the drop",
+  "the crowd is a single enormous instrument",
+  "somewhere a generator is pumping in the key of the tune",
+  "the moon has a police light on top",
+  "a rollercoaster climbs in the background",
+  "the air is thick with the smell of circuits",
+  "a phone booth rings for exactly one bar",
+  "the last star on the grid goes out at the drop",
+  "a typewriter keeps time on the side",
+  "the buildings lean forward to hear the bass",
+  "the bridge glows with the memory of an anthem",
+  "birds land on the powerlines and become notes",
+  "a fountain rises only during the breakdown",
+  "the sky is full of moving particles",
+  "the night is a continuous flanger sweep"
+];
+
+
+const SPARK_PLACES = [
+  // random scene/place sparks
+  "a flooded subway platform",
+  "a rooftop greenhouse in a steel city",
+  "an abandoned cargo port",
+  "a lighthouse at the end of a tram line",
+  "a glass atrium after closing time",
+  "a hospital slot canyon",
+  "a desert gas station at 3am",
+  "a cathedral of empty server racks",
+  "a ferry crossing a dark channel",
+  "a toy factory before the lights come on",
+  "a karaoke booth on the moon",
+  "an observatory above the fog",
+  "a car park with a view of the storm",
+  "a bunker full of slot machines",
+  "a hydroelectric dam at midnight",
+  "a mall with the escalators still running",
+  "a radio station that never signed off",
+  "a parade route after the parade",
+  "a cooling tower turned into a church",
+  "a bridge being photographed by drones",
+  "a train that stops for no one",
+  "a field of decommissioned satellites",
+  "a station built for a city that never came",
+  "a library with a fire escape party",
+  "an aquarium after the public leaves",
+  "a power station by the sea",
+  "a music venue inside a bank vault",
+  "a runway covered in fireflies",
+  "a roller rink under the highway",
+  "a wind farm in the middle of the ocean",
+  "a clock tower with a broken bell",
+  "a rooftop helipad during a storm",
+  "an airport terminal at first light",
+  "a record press in an old bank",
+  "a pier with one working lamp",
+  "a plasma cutter in a museum",
+  "a canal between two empty factories",
+  "a monastery with a dance floor",
+  "a subway depot with one train running",
+  "a greenhouse full of radio antennas",
+  "a circus tent on a golf course",
+  "a submarine dock in a lake",
+  "a paper mill by the river",
+  "a parking garage in a thunderstorm",
+  "a crane that holds a single balloon",
+  "a school gymnasium after the dance",
+  "a windmill above a cargo yard",
+  "a silent harbor during a blue hour",
+  "a castle used as a power station",
+  "an emergency broadcast tower in the fog",
+  "a dance studio above a bakery",
+  "a parking lot full of school buses",
+  "a solar farm at dusk",
+  "a bread factory that smells like synth strings",
+  "a mountain road with a single neon sign",
+  "a sports arena on the day of the final",
+  "a bay with a sunken concert stage",
+  "a scrapyard at dawn",
+  "a library bus parked for the night",
+  "a glass elevator full of rain"
+];
+
+
+const SPARK_THINGS = [
+  // random objects/sample sparks
+  "a rusty generator",
+  "a music box lid",
+  "a neon repair sign",
+  "a steel handrail",
+  "a cracked vinyl record",
+  "a pocket full of coins",
+  "a broken traffic light",
+  "a fire escape ladder",
+  "a cassette return slot",
+  "an old telephone",
+  "a desk fan",
+  "a frozen fountain",
+  "a barrel of rain",
+  "a signal flare",
+  "a slow camera flash",
+  "a sewing machine",
+  "a window with a crack",
+  "a broken disco ball",
+  "a shopping cart in the wind",
+  "a damaged antenna",
+  "a rubber band",
+  "a keyboard with sticky keys",
+  "a metal cup on a table",
+  "a bubble machine",
+  "a toll booth light",
+  "a snow globe",
+  "a bank vault door",
+  "an old projector",
+  "a bicycle bell",
+  "a key in a lock",
+  "a chained gate",
+  "a tin bucket",
+  "a paper airplane",
+  "a drawer full of wires",
+  "a rooftop water tank",
+  "a factory whistle",
+  "a glass echo",
+  "a lift shaft",
+  "a hand sewn flag",
+  "a pocket watch",
+  "a stop sign bending in the wind",
+  "a cable car",
+  "a megaphone",
+  "a fire hydrant",
+  "a beach ball",
+  "a small refrigerator",
+  "a metal staircase",
+  "a typewriter",
+  "a claw machine",
+  "a gas canister",
+  "a neon tube",
+  "a washing machine on spin",
+  "a skateboard on tiles",
+  "a metal spoon",
+  "a wheel on a rail",
+  "a coat hanger",
+  "a traffic cone",
+  "a glass jar",
+  "a broken photocopier",
+  "a warning stripe",
+  "a railroad switch",
+  "a rope pulley",
+  "a bell tower",
+  "a fog horn",
+  "a hand-crank siren",
+  "a helium tank",
+  "a spring door",
+  "a light switch",
+  "a coin slot",
+  "a bubble wrap sheet"
+];
+
+
+const SPARK_TRANSFORMS = [
+  // random concept transformations
+  "the building becomes a metronome",
+  "the astronaut starts dancing",
+  "the river starts running uphill",
+  "the machines begin to breathe",
+  "the moon turns into a strobe",
+  "the crowd becomes a single body",
+  "the tower starts to chime back",
+  "the lights learn the melody",
+  "the rain changes key",
+  "the city stops remembering",
+  "the tunnel opens onto the ocean",
+  "the power comes back on",
+  "the blackout turns into a party",
+  "the antenna catches a heartbeat",
+  "the ice starts to move",
+  "the doors of the vault swing open",
+  "the satellites all sigh together",
+  "the last bus becomes a dance floor",
+  "the sky clears after the drop",
+  "the echo becomes the main instrument",
+  "the signal finally arrives",
+  "the fog lifts into a field of light",
+  "the clock loses all its hands",
+  "the road begins to glow",
+  "the sound comes from the walls",
+  "the rain stops for exactly four bars",
+  "the vending machine plays the hook",
+  "the compass points to the kick",
+  "the aircraft carrier wakes up",
+  "the museum pieces begin to sway",
+  "the negative space starts to hum",
+  "the wire fence becomes a harp",
+  "the searchlight starts answering",
+  "the vending machines join the crowd",
+  "the crane raises the final beat",
+  "the storm rolls the bass",
+  "the boats share one horn",
+  "the bridge starts bouncing in time",
+  "the entire grid goes one BPM faster",
+  "the wallpaper starts repeating a phrase"
+];
+
+
+const SPARK_CHALLENGES = [
+  // random composition challenges
+  "make a track with one sound and one key",
+  "write a drop with no bass",
+  "make a breakbeat that feels like a heartbeat",
+  "rebuild a jazz standard as hard techno",
+  "use a single chord the whole way",
+  "make a melody from three notes and a lot of space",
+  "turn a phone recording into a hook",
+  "write a second drop that is barely louder",
+  "make the arrangement feel like a film",
+  "use a crowd silence as percussion",
+  "compose a build with no risers",
+  "make the hats carry the melody",
+  "write a section with no melody",
+  "keep the track in one key but change the mode",
+  "make the intro a complete song by itself",
+  "use only one reverb in the whole mix",
+  "write a final section that is the fastest yet",
+  "make an instrumental that implies a story",
+  "create a groove from a broken rhythm",
+  "end on a sound that started the track",
+  "write a counter-melody that never resolves",
+  "use a sample from a weather report",
+  "make a track that works at 90 and 180 BPM",
+  "compose a section that sounds like rain and glass",
+  "create a drop that lands on the offbeat",
+  "use a piano but no other melodic sound",
+  "make the pad do the storytelling",
+  "keep the same bassline but change the kick",
+  "write a melody that sounds like morse code",
+  "close the track on an unresolved note",
+  "make the breakdown the loudest part",
+  "use a guitar as a synth",
+  "write a section that feels like waiting",
+  "build the drop from the reverse of its intro",
+  "compose a track where the kick is the only low end",
+  "make a transition that lasts exactly one beat",
+  "put a melody in the hats",
+  "write a refrain that changes key every time",
+  "use a clock as the metronome",
+  "make the rhythm feel like it is breathing",
+  "write a track that never repeats the same bar exactly",
+  "create a spooky sound with only a sine wave",
+  "make the last section the most open",
+  "use silence as the main hook",
+  "write a build from a single repeating note",
+  "make a bassline that walks like a bear",
+  "create a pad from an organ drone",
+  "write a melody with no repeated notes",
+  "make the final two bars sound like a question",
+  "use a car engine as the foundation",
+  "compose a track for a hotel elevator"
+];
+
+
+const SPARK_MEGA_LINES = [
+  // random mega chaos status lines
+  "Everything just changed — check the outputs and audition.",
+  "Ruined it? Undo is your friend. Loved it? Copy it fast.",
+  "Mega chaos roll complete. The prompt is probably bigger now.",
+  "Random powers activated. The wildcard lab has spoken.",
+  "New seed, new world. Listen to the difference.",
+  "A lot of atoms just moved. Scroll to the score to see what landed.",
+  "Chaos is only creative if you keep the best parts.",
+  "Try another Mega Chaos Roll until one makes you smile.",
+  "One click, hundreds of tiny possibilities. That is the point.",
+  "Now open the outputs and let the prompt surprise you.",
+  "Everything is still instrumental-safe. Probably.",
+  "Lock the pieces you love before the next chaos roll.",
+  "Mad scientist mode: on.",
+  "Somewhere in that noise is a hook. Find it.",
+  "The lab rerolled the rhythm, the harmony, the texture and the concept.",
+  "Forty or fifty random atoms just voted on the next track.",
+  "Make it loud, make it weird, make it yours.",
+  "Fresh seed locked in. The URL will replay this exact chaos.",
+  "The concept, the bass, the drums and the arrangement all changed.",
+  "Challenge mode: make a second arrangement from this same chaos."
+];
+
+
+FEELINGS.push(
+  "cobalt-bright",
+  "glowingly defiant",
+  "riot-hearted",
+  "fever-clear",
+  "glass-rocked",
+  "sun-bent",
+  "flow-forward",
+  "sharpened joy",
+  "lunar-alive",
+  "comet-spirited",
+  "furious daylight",
+  "silver-lit",
+  "open-throttle",
+  "sky-tumbling"
+);
+
+
+FLAVORS.push(
+  "scorched and gleaming",
+  "weightless and wild",
+  "bright and dangerous",
+  "huge and gleaming",
+  "polished and ferocious",
+  "still and sizzling",
+  "clean and colossal",
+  "raw and monumental",
+  "wide and reckless",
+  "neon and enormous",
+  "gold and violent",
+  "electric and tender",
+  "winged and grounded",
+  "white-hot and solid"
+);
+
+
+DIRECTIONS.push(
+  "rising melody that changes weather",
+  "lead that lights the streetlamps one by one",
+  "hook that drags the whole room forward",
+  "melody that climbs the fire escape of the mix",
+  "anthem that starts as a question",
+  "riff that answers every bar with another question",
+  "line that glows before the drop",
+  "phrase that bends around the kick",
+  "motif that sounds like a distant horn",
+  "call that the bass answers an octave low",
+  "counter-melody that flirts with the lead",
+  "lead that parks in the dark then accelerates",
+  "melody that finds a door in every wall",
+  "anthem that grows a second floor"
+);
+
+
+LEADS.push(
+  "neon rain super-saw lead",
+  "midnight station pluck lead",
+  "engine-room string lead",
+  "sunrise FM window lead",
+  "wareproof mono bell lead",
+  "metal-lattice pluck lead",
+  "aquarium glass lead",
+  "circuit-mall analog lead",
+  "brushstroke pad lead",
+  "solar panel wavetable lead",
+  "distant hovercraft lead",
+  "cooling tower pipe lead",
+  "warm porcelain hammer lead",
+  "shrine-bell FM lead",
+  "carbon fiber synth lead",
+  "hurricane siren lead",
+  "repair-shop lead",
+  "bottle rocket arpeggio lead"
+);
+
+
+PERFS.push(
+  "with the touch of a falling leaf",
+  "with clipped, economical attacks",
+  "with a sway like a metronome at sea",
+  "with long lines that greet the echo",
+  "with a breath before every note",
+  "with micro-drags that make it human",
+  "with a hammer and a feather",
+  "with a rolling tide of phrasing",
+  "with a slow cigarette after each phrase",
+  "with fingers that echo the rain",
+  "with the patience of a clock",
+  "with sudden lightspeed confidence"
+);
+
+
+HARMONIES.push(
+  "titanic sunlit chords",
+  "golden minor-cloud chords",
+  "storm-door suspended chords",
+  "distant factory harmonies",
+  "glass canyon resolve",
+  "war-gate power harmony",
+  "electric cathedral harmony",
+  "undercurrent modal sway",
+  "fanfare of low brass warmth",
+  "wet keyboard stack shimmer",
+  "magnetic shift harmony",
+  "anthemic open-void harmony"
+);
+
+
+ARPS.push(
+  "vaulted octave cascade",
+  "piston-bound arpeggio",
+  "surgical pearl arpeggio",
+  "glass staircase arpeggio",
+  "rolling hills arpeggio",
+  "sky-link arpeggio",
+  "bugle-fast arpeggio",
+  "shoreline 16th cascade",
+  "wireframe climb arpeggio",
+  "double-time mirror arpeggio",
+  "weather front cascade",
+  "circus ladder arpeggio"
+);
+
+
+CONTOURS.push(
+  "rises then falls behind the clouds",
+  "heads downhill into a brighter valley",
+  "walks into a storm and never looks back",
+  "opens like a wave and closes like a door",
+  "loops one long question",
+  "pivots on a single high note",
+  "drags then leaps",
+  "folds back over its own beginning",
+  "draws a long arc over the whole mix",
+  "drops a stone and follows the ripples",
+  "runs up a spiral staircase",
+  "flickers between two notes"
+);
+
+
+RHYTHMS.push(
+  "spinning 32nd murmur",
+  "long-breathed dotted rhythm",
+  "double-pulse handshake",
+  "crossing clock rhythm",
+  "waterfall sixteenths",
+  "late-foot shuffle",
+  "ragged two-step",
+  "steel-tongue syncopation",
+  "rippling triplet drift",
+  "anthemic bounce",
+  "glacier-half-time",
+  "firework dotted eighths"
+);
+
+
+BASS_VOICES.push(
+  "subwoofer glacier bass",
+  "rolling harbor bass",
+  "underground train bass",
+  "coiled steel bass",
+  "lighthouse pulse bass",
+  "battery core bass",
+  "deep forest pressure bass",
+  "rumbling stone bass",
+  "tin-roof sub bass",
+  "low brass war horn",
+  "worm-thick analog bass",
+  "ocean floor growl",
+  "diesel heartbeat bass",
+  "power-line hum bass",
+  "pearl-dive sub bass",
+  "turbine hall bass",
+  "cathedral of low notes",
+  "chain-link boogie bass"
+);
+
+
+BASS_MOVES.push(
+  "rolling elevator steps",
+  "slow-motion wave leaps",
+  "piston jog",
+  "double-step pressure",
+  "vibrating worm groove",
+  "long loopy bends",
+  "skipping stone slides",
+  "lockstep clatter",
+  "delayed echo hops",
+  "low-end staircase climb",
+  "velvet dive",
+  "seismic clock tick"
+);
+
+
+BASS_RELS.push(
+  "dances around the lead",
+  "mirrors the kick an octave lower",
+  "argues with the percussion",
+  "stays low and lets the lead fly",
+  "pulls the track forward",
+  "carries the melody underneath",
+  "answers every kick",
+  "opens a door under the drop",
+  "keeps the ground steady"
+);
+
+
+KICKS.push(
+  "deep warehouse door kick",
+  "spring-loaded bass-drum kick",
+  "hammer-over-sub kick",
+  "rolling thunder kick",
+  "magnetic pulse kick",
+  "cardboard rocket kick",
+  "tractor launch kick",
+  "steel piston kick",
+  "dark water slap kick",
+  "slow boat bass kick",
+  "lightning strike kick",
+  "kick that sounds like a gate closing",
+  "arcade charge kick",
+  "submarine door kick"
+);
+
+
+HATS.push(
+  "electric rain hats",
+  "hot skillet hats",
+  "glass-console hats",
+  "small metal garden hats",
+  "digital wind hat",
+  "car-door tap hats",
+  "spring hinge hats",
+  "spinning coin hats",
+  "cricket pulse hats",
+  "floating elevator hats",
+  "shotgun shell hats",
+  "paper clip hats"
+);
+
+
+SNARES.push(
+  "steel sheet snare",
+  "marble floor snare",
+  "metal toolbox snare",
+  "dry paint-can snare",
+  "telephone pole snare",
+  "tin roof bomb snare",
+  "police march snare",
+  "iron lung clap",
+  "cardboard army clap",
+  "glass theater snare",
+  "oil drum rimshot",
+  "turnstile clap"
+);
+
+
+PERCS.push(
+  "bottle-shop percussion",
+  "pebble trickle",
+  "hanging chain pulse",
+  "wood-block monsoon",
+  "scraped ruler",
+  "toy radar blip",
+  "industrial tick",
+  "crowd of wooden spoons",
+  "rain gutter shaker",
+  "metal cup scatter",
+  "bell jar ripple",
+  "typewriter rimshot"
+);
+
+
+TOMS.push(
+  "beach ball toms",
+  "crate move toms",
+  "stairs-rolling toms",
+  "drainpipe toms",
+  "soft rocket toms",
+  "padded hammer toms",
+  "ocean buoy toms",
+  "speaker box toms",
+  "library stair toms",
+  "kayak paddle toms",
+  "barrel-run toms",
+  "windmill toms"
+);
+
+
+GROOVES.push(
+  "all-lights-green groove",
+  "slow-burn ocean groove",
+  "conveyor-belt groove",
+  "firefly two-step",
+  "vault-door half-time",
+  "neon tide groove",
+  "parallel-lane groove",
+  "assembly line bounce",
+  "midnight cable groove",
+  "storm drain shuffle",
+  "electric fence two-step",
+  "landing gear groove",
+  "rocking chair sync",
+  "tram track groove"
+);
+
+
+SWINGS.push(
+  "lazy river swing",
+  "steam-train shuffle",
+  "sidewalk bounce",
+  "springy tarantella swing",
+  "railroad rock",
+  "slow escalator swing",
+  "double-helix bounce",
+  "ocean ferry swing",
+  "dancing postman shuffle",
+  "streetlamp stagger",
+  "magnet pull swing",
+  "tractor idling sway"
+);
+
+
+SYNCS.push(
+  "crossed-wire shuffle",
+  "stuttering gate sync",
+  "car-bumper anticipation",
+  "late-lift sync",
+  "railway telegraph sync",
+  "ragged handshake sync",
+  "traffic-light bounce",
+  "elevator chime sync",
+  "parallel jump sync",
+  "sewing machine sync",
+  "silver ripple sync",
+  "marching clock sync"
+);
+
+
+INTENSITIES.push(
+  "peak-room noise",
+  "stadium-alive",
+  "molten mid",
+  "engine-red",
+  "solar flare",
+  "wall-shaking",
+  "magnetic floor",
+  "sky-splitting",
+  "crowd-pressure",
+  "fire-in-the-machine",
+  "full-throttle sunrise",
+  "heartbeat-max"
+);
+
+
+ARRANGEMENTS.push(
+  "Intro · Build · Drop · Bridge · Repeat Drop · Final Rush · Outro",
+  "Warmup · Peak · Valley · Double Peak · Relief · Final Rise · Release",
+  "Call · Response · Charge · Break · Storm · Aftermath",
+  "Door · Corridor · Staircase · Balcony · Bridge · Rooftop · Landing",
+  "Static · Pulse · Pressure · Vacuum · Impact · Echo · Horizon",
+  "Sign · Answer · Climb · Hover · Thunder · Afterglow",
+  "Alone · Together · Louder · Together · Edge · Home",
+  "Anticipation · Fireworks · Smoke · Fireworks · Rain · Dawn",
+  "Low Sun · High Windows · Open Floor · Rising Tide · Last Boat",
+  "Spark · Engine · Full Burn · Coast · Ignition · Far Field"
+);
+
+
 const LAYERS = [
   {id:"texture",label:"Texture",phrase:"layered analog texture"},
   {id:"fx",label:"FX",phrase:"cinematic FX swells and risers"},
@@ -8070,6 +9136,76 @@ function renderAB(){
   el.textContent = s ? ((s.concept&&s.concept.title)||"Untitled") + " · " + s.primaryStyle + " · " + s.bpm + " BPM" : "Slot B unreadable.";
 }
 
+
+
+/* ---------------------------- IDEA ENGINE / SPARKS ---------------------------- */
+let lastSpark = "", lastSparkKind = "", lastSparkKindLabel = "";
+function sparkPick(a){ return a[Math.floor(Math.random()*a.length)] || ""; }
+function setSpark(text, kind, meta){
+  lastSpark = text; lastSparkKind = kind; lastSparkKindLabel = meta;
+  const el = $("v-spark"); if(el) el.textContent = text;
+  const m = $("sparkMeta"); if(m) m.textContent = meta || "";
+}
+function sparkKinds(){
+  return [
+    ["💡 Random Idea", SPARK_IDEAS, "Idea"],
+    ["🏷 Random Title", SPARK_TITLES, "Title"],
+    ["🧬 Random Mash-up", SPARK_MASHUPS, "Mash-up"],
+    ["⛓ Random Constraint", SPARK_CONSTRAINTS, "Constraint"],
+    ["🛠 Random Production Tip", SPARK_TIPS, "Production tip"],
+    ["🌊 Random Vibe Line", SPARK_VIBES, "Vibe"],
+    ["🗺 Random Scene", SPARK_PLACES, "Scene"],
+    ["🔩 Random Object", SPARK_THINGS, "Object"],
+    ["🪄 Random Transform", SPARK_TRANSFORMS, "Transform"],
+    ["🎯 Random Challenge", SPARK_CHALLENGES, "Challenge"]
+  ];
+}
+function updateSparkCount(){
+  const el = $("sparkCount"); if(!el) return;
+  const n = [SPARK_IDEAS,SPARK_TITLES,SPARK_MASHUPS,SPARK_CONSTRAINTS,SPARK_TIPS,SPARK_VIBES,SPARK_PLACES,SPARK_THINGS,SPARK_TRANSFORMS,SPARK_CHALLENGES].reduce((a,x)=>a+x.length,0) + SPARK_MEGA_LINES.length;
+  el.textContent = n + " sparks loaded";
+}
+function sparkShow(kind){
+  const meta = sparkKinds().find(x=>x[2]===kind) || ["Random Spark", SPARK_IDEAS, "Idea"];
+  const pool = meta[1]; const text = sparkPick(pool);
+  const count = pool.length;
+  setSpark(text, kind, meta[0] + " · " + count + " options in pool · " + (state.bpm||140) + " BPM · " + keyName(state));
+  return text;
+}
+function sparkRandom(){ return sparkShow("Idea"); }
+function sparkApplyTitle(){
+  if(!lastSparkKind || lastSparkKind !== "Title"){ toast("Roll a title first"); return; }
+  commit(); state.concept.title = lastSpark; afterChange(); toast("🏷 Title applied: " + lastSpark);
+}
+function sparkApplyMash(){
+  if(!lastSparkKind || lastSparkKind !== "Mash-up"){ toast("Roll a mash-up first"); return; }
+  commit(); state.primaryStyle = lastSpark; state.secondaryStyle = ""; state.primaryGenre = ""; state.secondaryGenre = ""; afterChange(); toast("🧬 Mash-up applied: " + lastSpark);
+}
+function sparkApplyTransform(){
+  if(!lastSparkKind || lastSparkKind !== "Transform"){ toast("Roll a transform first"); return; }
+  commit(); state.concept.transform = lastSpark; afterChange(); toast("🪄 Transform applied: " + lastSpark);
+}
+function sparkCopy(){
+  if(!lastSpark){ toast("Nothing to copy — roll a spark first"); return; }
+  const header = "🎲 " + (lastSparkKind || "Spark") + "\n" + lastSpark + "\n";
+  copyText(header + "\nNEON FORGE · " + state.primaryStyle + " · " + state.bpm + " BPM · " + keyName(state), "Spark");
+}
+function sparkMega(){
+  commit(); beginRoll();
+  const keys = ["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","bassVoice","bassMovement","bassRel","kick","hats","snare","perc","toms","groove","swing","sync","intensity","arrangement","concept","melodyConcept","technoLab","soundDesign","mixMaster","spatialMod","grooveMelodic","textureFx","chord","rhythmPattern","key"];
+  keys.forEach(k=>{ const ks = GROUPS[k] ? GROUPS[k] : [k]; ks.forEach(x=>{ if(!state.locks[x]) ROLL_FN[x](state); }); });
+  state.duration = "extended"; state.influence = "strong"; state.melodicForce = "dominant";
+  state.driveAmt = 100; state.acidAmt = 100;
+  ["texture","fx","mix","experimental","acid","modulation","space","reverb","delay","glitch"].forEach(id=>state.layers[id]=true);
+  if(!state.locks["concept-transform"]) state.concept.transform = sparkPick(SPARK_TRANSFORMS);
+  if(!state.locks["concept-title"]) state.concept.title = sparkPick(SPARK_TITLES);
+  afterChange();
+  const line = sparkPick(SPARK_MEGA_LINES);
+  setSpark("🔥 " + line, "Mega", "Mega Chaos Roll · " + keys.length + " atom groups rerolled · score " + scorePrompt().total + "/100");
+  toast("🔥 Mega Chaos Roll: " + line);
+}
+
+
 /* ==================================================================
    COMMAND PALETTE + SHORTCUTS
    Every action in the app reachable from the keyboard in two keystrokes.
@@ -8136,6 +9272,17 @@ const COMMANDS = [
   {icon:"🏆", name:"Max Concept (keep styles)", key:"", run:()=>doMaxScoreRollSection(["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"],25,"Concept")},
   {icon:"🏆", name:"Max Arrangement (keep styles)", key:"", run:()=>doMaxScoreRollSection(["arrangement"],25,"Arrangement")},
 
+  {icon:"💡", name:"Random spark idea", key:"", run:()=>sparkShow("Idea")},
+  {icon:"🏷", name:"Random spark title", key:"", run:()=>sparkShow("Title")},
+  {icon:"🧬", name:"Random genre mash-up", key:"", run:()=>sparkShow("Mash-up")},
+  {icon:"⛓", name:"Random constraint", key:"", run:()=>sparkShow("Constraint")},
+  {icon:"🛠", name:"Random production tip", key:"", run:()=>sparkShow("Tip")},
+  {icon:"🌊", name:"Random vibe line", key:"", run:()=>sparkShow("Vibe")},
+  {icon:"🗺", name:"Random scene", key:"", run:()=>sparkShow("Scene")},
+  {icon:"🔩", name:"Random object spark", key:"", run:()=>sparkShow("Object")},
+  {icon:"🪄", name:"Random transform", key:"", run:()=>sparkShow("Transform")},
+  {icon:"🎯", name:"Random challenge", key:"", run:()=>sparkShow("Challenge")},
+  {icon:"🔥", name:"Mega Chaos Roll", key:"", run:()=>sparkMega()},
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
 let cmdSel = 0, cmdFiltered = COMMANDS.slice();
@@ -8376,6 +9523,22 @@ document.addEventListener("click", e=>{
 });
 
 
+/* IDEA ENGINE listeners */
+if($("sparkIdeaBtn")) $("sparkIdeaBtn").addEventListener("click", ()=>sparkShow("Idea"));
+if($("sparkTitleBtn")) $("sparkTitleBtn").addEventListener("click", ()=>sparkShow("Title"));
+if($("sparkMashBtn")) $("sparkMashBtn").addEventListener("click", ()=>sparkShow("Mash-up"));
+if($("sparkConstraintBtn")) $("sparkConstraintBtn").addEventListener("click", ()=>sparkShow("Constraint"));
+if($("sparkTipBtn")) $("sparkTipBtn").addEventListener("click", ()=>sparkShow("Tip"));
+if($("sparkVibeBtn")) $("sparkVibeBtn").addEventListener("click", ()=>sparkShow("Vibe"));
+if($("sparkSceneBtn")) $("sparkSceneBtn").addEventListener("click", ()=>sparkShow("Scene"));
+if($("sparkObjectBtn")) $("sparkObjectBtn").addEventListener("click", ()=>sparkShow("Object"));
+if($("sparkTransformBtn")) $("sparkTransformBtn").addEventListener("click", ()=>sparkShow("Transform"));
+if($("sparkChallengeBtn")) $("sparkChallengeBtn").addEventListener("click", ()=>sparkShow("Challenge"));
+if($("sparkMegaBtn")) $("sparkMegaBtn").addEventListener("click", sparkMega);
+if($("sparkTitleApplyBtn")) $("sparkTitleApplyBtn").addEventListener("click", sparkApplyTitle);
+if($("sparkMashApplyBtn")) $("sparkMashApplyBtn").addEventListener("click", sparkApplyMash);
+if($("sparkTransformApplyBtn")) $("sparkTransformApplyBtn").addEventListener("click", sparkApplyTransform);
+if($("sparkCopyBtn")) $("sparkCopyBtn").addEventListener("click", sparkCopy);
 $("undoBtn").addEventListener("click", undo);
 $("redoBtn").addEventListener("click", redo);
 $("shareBtn").addEventListener("click", shareURL);
@@ -8558,6 +9721,8 @@ window.NF = {
   SECTION_DENSITY_TYPES, ENERGY_CURVE_TYPES, BUILD_TYPES, DROP_TYPES, CHOP_TYPES,
   FILTER_CUTOFF_TYPES, FILTER_RESONANCE_TYPES, REVERB_SIZE_TYPES, REVERB_DECAY_TYPES, DELAY_TIME_TYPES, DELAY_FEEDBACK_TYPES,
   SATURATION_TYPES, COMPRESSION_TYPES, EQ_TYPES, SIDECHAIN_CURVE_TYPES, STEREO_ENHANCE_TYPES,
+  SPARK_IDEAS, SPARK_TITLES, SPARK_MASHUPS, SPARK_CONSTRAINTS, SPARK_TIPS, SPARK_VIBES, SPARK_PLACES,
+  SPARK_THINGS, SPARK_TRANSFORMS, SPARK_CHALLENGES, SPARK_MEGA_LINES, sparkShow, sparkMega, sparkCopy,
   NOTE_NAMES, PICKER_POOLS,
   tempoForGenre, genreOfStyle,
   melodyConceptLine,
@@ -8671,6 +9836,7 @@ function init(){
   rng = mulberry32(state.seed);
   try{ slotB = localStorage.getItem("tetech_slotb") || null; }catch(e){ slotB = null; }
   renderKeyTable();
+  updateSparkCount();
   render();
   renderHistory();
   updateURL();

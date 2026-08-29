@@ -275,5 +275,37 @@ t("genre roll matches BPM to genre + avoids same genre", ()=>{
   return (same===0 && outOfRange===0 && dnb>=140 && dnb<=190 && ska>=60 && ska<=110) ||
     ("same="+same+" oob="+outOfRange+" dnb="+dnb+" ska="+ska);});
 
+console.log("\n== IDEA ENGINE / WILDCARD LAB ==\n");
+t("spark pools are huge", ()=>{
+  const pools=[w.NF.SPARK_IDEAS,w.NF.SPARK_TITLES,w.NF.SPARK_MASHUPS,w.NF.SPARK_CONSTRAINTS,w.NF.SPARK_TIPS,w.NF.SPARK_VIBES,w.NF.SPARK_PLACES,w.NF.SPARK_THINGS,w.NF.SPARK_TRANSFORMS,w.NF.SPARK_CHALLENGES,w.NF.SPARK_MEGA_LINES];
+  const n=pools.reduce((a,p)=>a+p.length,0);
+  return n>=550 || ("only "+n+" sparks");
+});
+t("expanded pools are noticeably bigger", ()=>{
+  const ok = w.NF.FEELINGS.length>=160 && w.NF.LEADS.length>=150 && w.NF.BASS_VOICES.length>=140 && w.NF.KICKS.length>=60 && w.NF.GROOVES.length>=50;
+  return ok || (w.NF.FEELINGS.length+" "+w.NF.LEADS.length+" "+w.NF.BASS_VOICES.length+" "+w.NF.KICKS.length+" "+w.NF.GROOVES.length);
+});
+t("every spark kind rolls into the visible card", ()=>{
+  const kinds=["Idea","Title","Mash-up","Constraint","Tip","Vibe","Scene","Object","Transform","Challenge"];
+  for(const k of kinds){
+    const text=w.NF.sparkShow(k);
+    const shown=d.getElementById("v-spark").textContent;
+    if(!text || !shown || shown!==text) return k+" :: "+text+" vs "+shown;
+  }
+  return true;
+});
+t("mega chaos roll executes and respects locked styles", ()=>{
+  S().locks.primary=true; S().locks.secondary=true;
+  const before=S().primaryStyle+"|"+S().secondaryStyle;
+  w.NF.sparkMega();
+  const after=S().primaryStyle+"|"+S().secondaryStyle;
+  S().locks.primary=false; S().locks.secondary=false;
+  return after===before || "styles changed";
+});
+t("spark commands registered", ()=>{
+  const names = w.NF.COMMANDS.map(c=>c.name);
+  return names.some(n=>/Mega Chaos Roll/.test(n)) && names.some(n=>/Random spark idea/.test(n)) || "missing spark commands";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);
