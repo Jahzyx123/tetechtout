@@ -928,7 +928,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini" data-max-atom="rhythmPattern">Max RhythmPat</button>
             <button class="mini" data-max-atom="fxChain">Max FX Chain</button>
           </div>
-          <div class="row"><span class="readout" id="maxRollStatus">Idle — click any max button. Scores 0-100.</span></div>
+          <div class="row"><span class="readout" id="maxRollStatus">Idle — click any max button. Scores 0-100.</span><button class="sm ghost" id="resetMaxBtn" title="Force reset if stuck">🔓 Reset Max</button></div>
         </div>
       </div>
 
@@ -3923,6 +3923,10 @@ async function doMaxScoreRoll(attempts){
     }
     if(i%5===0) setMaxStatus("Progress "+(i+1)+"/"+attempts+" best "+bestScore);
   }
+  // preserve user locks/hidden/layers
+  try{ best.locks = JSON.parse(JSON.stringify(bestStart.locks)); }catch(e){ best.locks = bestStart.locks; }
+  try{ best.hidden = JSON.parse(JSON.stringify(bestStart.hidden)); }catch(e){ best.hidden = bestStart.hidden; }
+  try{ best.layers = JSON.parse(JSON.stringify(bestStart.layers)); }catch(e){ best.layers = bestStart.layers; }
   state = best;
   rng = mulberry32(state.seed);
   afterChange();
@@ -3967,6 +3971,9 @@ async function doMaxScoreRollSection(sectionKeys, attempts, label){
       setMaxStatus(label+" best "+bestScore+" ("+(i+1)+"/"+attempts+")");
     }
   }
+  try{ best.locks = JSON.parse(JSON.stringify(bestStart.locks)); }catch(e){ best.locks = bestStart.locks; }
+  try{ best.hidden = JSON.parse(JSON.stringify(bestStart.hidden)); }catch(e){ best.hidden = bestStart.hidden; }
+  try{ best.layers = JSON.parse(JSON.stringify(bestStart.layers)); }catch(e){ best.layers = bestStart.layers; }
   state = best;
   rng = mulberry32(state.seed);
   afterChange();
@@ -3978,6 +3985,9 @@ async function doMaxScoreRollSection(sectionKeys, attempts, label){
   else if(l.includes("concept")) flash($("conceptCard"));
   else if(l.includes("arrange")) flash($("arrangementCard"));
   else if(l.includes("drum")) flash($("drumsCard"));
+  else if(l.includes("rhythm")) flash($("rhythmLabCard"));
+  else if(l.includes("harmony")||l.includes("chord")) flash($("harmonyLabCard"));
+  else if(l.includes("sound")) flash($("soundDesignCard"));
   else flash($("scoreCard"));
   btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||("🏆 Max "+label); });
   setMaxStatus("Best "+label+" → "+bestScore+"/100 after "+attempts+" tries");
@@ -3992,7 +4002,9 @@ async function doMaxTurbo(attempts){
 }
 async function doMaxStack(){
   if(maxRollRunning){ toast("⏳ Already running"); return; }
+  maxRollRunning=true;
   toast("🧱 Stack Max: sequential optimization…");
+  try{
   const sections = [
     {keys:["bpm","key","rootPc","scaleId"], label:"Tempo", attempts:12},
     {keys:["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"], label:"Melody", attempts:12},
@@ -4006,20 +4018,22 @@ async function doMaxStack(){
     await doMaxScoreRollSection(sec.keys, sec.attempts, sec.label);
     await yieldUI();
   }
-  const finalScore = scoreFor(state).total;
-  setMaxStatus("Stack finished → "+finalScore+"/100");
-  toast("🧱 Stack Max finished → "+finalScore+" /100");
-  return finalScore;
+    const finalScore = scoreFor(state).total;
+    setMaxStatus("Stack finished → "+finalScore+"/100");
+    toast("🧱 Stack Max finished → "+finalScore+" /100");
+    return finalScore;
+  }catch(e){ toast("Stack error: "+e.message); }finally{ maxRollRunning=false; }
 }
 async function doMaxEnergy(attempts){
   attempts = attempts||25;
-  // energy density is driven by groove, intensity, kick, etc.
   const keys = ["groove","intensity","kick","hats","snare","perc","toms","swing","sync","technoDrive","technoRave","technoIndustrial","bassMovement","contour","rhythm"];
-  // we score by energyWords count + total
   if(maxRollRunning){ toast("⏳ Already running"); return; }
   maxRollRunning = true;
   commit();
   let best = snapshot();
+  const originalLocksEnergy = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHiddenEnergy = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayersEnergy = JSON.parse(JSON.stringify(best.layers||{}));
   let bestScore = 0;
   let bestTotal = scoreFor(best).total;
   const calcEnergy = (s)=>{
@@ -4045,6 +4059,11 @@ async function doMaxEnergy(attempts){
       setMaxStatus("Energy best "+bestScore+" cues / score "+bestTotal+" ("+(i+1)+"/"+attempts+")");
     }
   }
+  try{ best.locks = JSON.parse(JSON.stringify(snapshot())); }catch(e){}
+  // actually restore from original bestStart? we have bestStart not defined here, use snapshot of current state's locks before? We'll use bestStart variable we need to create
+  // For energy, best was snapshot at start, so its locks are original. We already have best from snapshot, but v had modified locks. So best.locks should be original best's locks if best was original, but if best was replaced by v, its locks are modified. So we need to save original locks.
+  // We'll restore from a saved originalLocks variable.
+  if(typeof originalLocksEnergy!=="undefined" && best){ try{ best.locks = JSON.parse(JSON.stringify(originalLocksEnergy)); best.hidden = JSON.parse(JSON.stringify(originalHiddenEnergy)); best.layers = JSON.parse(JSON.stringify(originalLayersEnergy)); }catch(e){} }
   state=best; rng=mulberry32(state.seed); afterChange(); flash($("drumsCard")); flash($("technoLabCard"));
   setMaxStatus("Max Energy → "+bestScore+" energy cues / "+bestTotal+"/100");
   toast("🔥 Max Energy → "+bestScore+" energy cues / score "+bestTotal);
@@ -4084,6 +4103,9 @@ async function doMaxAuto(target){
   maxRollRunning=true;
   commit();
   let best=snapshot(); let bestScore=scoreFor(best).total;
+  const originalLocksAuto = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHiddenAuto = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayersAuto = JSON.parse(JSON.stringify(best.layers||{}));
   let tries=0;
   setMaxStatus("Auto Max targeting "+target+"+ — starting "+bestScore);
   toast("🤖 Auto Max targeting "+target+"+ — starting "+bestScore);
@@ -4098,6 +4120,9 @@ async function doMaxAuto(target){
     tries++;
     if(tries%20===0) toast("🤖 Auto "+tries+" tries → best "+bestScore+" / target "+target);
   }
+  try{ best.locks = JSON.parse(JSON.stringify(snapshot().locks)); }catch(e){}
+  // preserve original locks from first snapshot
+  if(typeof originalLocksAuto!=="undefined"){ try{ best.locks = JSON.parse(JSON.stringify(originalLocksAuto)); best.hidden = JSON.parse(JSON.stringify(originalHiddenAuto)); best.layers = JSON.parse(JSON.stringify(originalLayersAuto)); }catch(e){} }
   state=best; rng=mulberry32(state.seed); afterChange();
   setMaxStatus("Auto Max → "+bestScore+"/100 after "+tries+" tries (target "+target+")");
   toast("🤖 Auto Max → "+bestScore+" /100 after "+tries+" tries");
@@ -4111,6 +4136,9 @@ async function doMaxAtom(atomKey, attempts){
   maxRollRunning=true;
   commit();
   let best=snapshot(); let bestScore=scoreFor(best).total;
+  const originalLocksAtom = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHiddenAtom = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayersAtom = JSON.parse(JSON.stringify(best.layers||{}));
   setMaxStatus("Max "+atomKey+": "+attempts+" tries…");
   for(let i=0;i<attempts;i++){
     await yieldUI();
@@ -4191,6 +4219,10 @@ function doEvolve(steps){
     if(maxRollRunning){ toast("Already running"); return; }
     maxRollRunning=true; commit();
     let best=snapshot(); let bestScore=scoreFor(best).total;
+    const originalLocksEvolve = JSON.parse(JSON.stringify(best.locks||{}));
+    const originalHiddenEvolve = JSON.parse(JSON.stringify(best.hidden||{}));
+    const originalLayersEvolve = JSON.parse(JSON.stringify(best.layers||{}));
+    try{
     setMaxStatus("Evolving "+steps+" gens from "+bestScore);
     for(let i=0;i<steps;i++){
       await yieldUI();
@@ -4200,8 +4232,10 @@ function doEvolve(steps){
       const sc=scoreFor(child).total;
       if(sc>bestScore){ best=child; bestScore=sc; setMaxStatus("Evolve gen "+(i+1)+"/"+steps+" best "+bestScore); }
     }
-    state=best; rng=mulberry32(state.seed); afterChange();
-    setMaxStatus("Evolved → "+bestScore+"/100 after "+steps+" gens"); toast("🧬 Evolved → "+bestScore+" /100"); maxRollRunning=false; return bestScore;
+      try{ best.locks = JSON.parse(JSON.stringify(originalLocksEvolve)); best.hidden = JSON.parse(JSON.stringify(originalHiddenEvolve)); best.layers = JSON.parse(JSON.stringify(originalLayersEvolve)); }catch(e){}
+      state=best; rng=mulberry32(state.seed); afterChange();
+      setMaxStatus("Evolved → "+bestScore+"/100 after "+steps+" gens"); toast("🧬 Evolved → "+bestScore+" /100"); return bestScore;
+    }catch(e){ toast("Evolve error: "+e.message); }finally{ maxRollRunning=false; }
   })();
 }
 async function doSmartMax(attempts){
@@ -4209,6 +4243,10 @@ async function doSmartMax(attempts){
   if(maxRollRunning){ toast("Running"); return; }
   maxRollRunning=true; commit();
   let best=snapshot(); let bestScore=scoreFor(best).total;
+  const originalLocksSmart = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHiddenSmart = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayersSmart = JSON.parse(JSON.stringify(best.layers||{}));
+  try{
   let weakest = scoreFor(best).items.slice().sort((a,b)=>a.score-b.score)[0];
   const weakMap={"Prompt length":["arrangement","concept"],"Melodic clarity":["leadVoice","leadPerf","contour","rhythm","melodyConcept"],"Instrumentation coverage":["bassVoice","kick","groove","technoDrive"],"Style focus":["primary","secondary"],"Energy density":["groove","intensity","kick","technoRave"],"Harmonic definition":["key","chordColor","chordProg"]};
   let targetKeys = weakMap[weakest.label]||["feeling","groove","kick"];
@@ -4219,11 +4257,17 @@ async function doSmartMax(attempts){
     v.locks.primary=true; v.locks.secondary=true; v.seed=newSeed(); rng=mulberry32(v.seed); rollAllInto(v);
     const sc=scoreFor(v).total; if(sc>bestScore){ best=v; bestScore=sc; setMaxStatus("Smart best "+bestScore+" ("+(i+1)+"/"+attempts+")"); }
   }
-  state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Smart Max → "+bestScore+"/100 (target "+weakest.label+")"); toast("🧠 Smart Max → "+bestScore); maxRollRunning=false; return bestScore;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksSmart)); best.hidden = JSON.parse(JSON.stringify(originalHiddenSmart)); best.layers = JSON.parse(JSON.stringify(originalLayersSmart)); }catch(e){}
+    state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Smart Max → "+bestScore+"/100 (target "+weakest.label+")"); toast("🧠 Smart Max → "+bestScore); return bestScore;
+  }catch(e){ toast("Smart Max error: "+e.message); }finally{ maxRollRunning=false; }
 }
 async function doQuantumMax(attempts){
   attempts=attempts||200; if(maxRollRunning){ toast("Running"); return; }
   maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total;
+  const originalLocksQuantum = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHiddenQuantum = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayersQuantum = JSON.parse(JSON.stringify(best.layers||{}));
+  try{
   setMaxStatus("Quantum Max "+attempts+" tries from "+bestScore);
   for(let i=0;i<attempts;i++){
     await yieldUI(); const v=snapshot(); v.locks.primary=true; v.locks.secondary=true;
@@ -4231,13 +4275,19 @@ async function doQuantumMax(attempts){
     v.seed=newSeed(); rng=mulberry32(v.seed); rollAllInto(v); v.variations=[];
     const sc=scoreFor(v).total; if(sc>bestScore){ best=v; bestScore=sc; if(i%10===0) setMaxStatus("Quantum best "+bestScore+" at "+(i+1)+"/"+attempts); }
   }
-  state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Quantum → "+bestScore+"/100 after "+attempts); toast("⚛️ Quantum Max → "+bestScore); maxRollRunning=false; return bestScore;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksQuantum)); best.hidden = JSON.parse(JSON.stringify(originalHiddenQuantum)); best.layers = JSON.parse(JSON.stringify(originalLayersQuantum)); }catch(e){}
+    state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Quantum → "+bestScore+"/100 after "+attempts); toast("⚛️ Quantum Max → "+bestScore); return bestScore;
+  }catch(e){ toast("Quantum error: "+e.message); }finally{ maxRollRunning=false; }
 }
 let infiniteStop=false;
 async function doInfiniteMax(){
   if(maxRollRunning){ toast("Already running"); return; }
   maxRollRunning=true; infiniteStop=false; commit();
   let best=snapshot(); let bestScore=scoreFor(best).total; let tries=0;
+  const originalLocksInfinite = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHiddenInfinite = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayersInfinite = JSON.parse(JSON.stringify(best.layers||{}));
+  try{
   setMaxStatus("Infinite Max from "+bestScore+" — press Stop to end"); toast("♾️ Infinite Max started from "+bestScore);
   while(!infiniteStop && bestScore<99 && tries<10000){
     await yieldUI(); const v=snapshot(); v.locks.primary=true; v.locks.secondary=true;
@@ -4246,9 +4296,12 @@ async function doInfiniteMax(){
     const sc=scoreFor(v).total; if(sc>bestScore){ best=v; bestScore=sc; state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Infinite best "+bestScore+" at "+tries); }
     tries++; if(tries%50===0) toast("♾️ Infinite "+tries+" tries → best "+bestScore);
   }
-  state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Infinite stopped → "+bestScore+"/100 after "+tries+" tries"); toast("♾️ Infinite stopped → "+bestScore+" /100 after "+tries); maxRollRunning=false;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksInfinite)); best.hidden = JSON.parse(JSON.stringify(originalHiddenInfinite)); best.layers = JSON.parse(JSON.stringify(originalLayersInfinite)); }catch(e){}
+    state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Infinite stopped → "+bestScore+"/100 after "+tries+" tries"); toast("♾️ Infinite stopped → "+bestScore+" /100 after "+tries);
+  }catch(e){ toast("Infinite error: "+e.message); }finally{ maxRollRunning=false; }
 }
-function stopInfiniteMax(){ infiniteStop=true; state.infiniteRunning=false; toast("⏹ Stopping infinite…"); }
+function stopInfiniteMax(){ infiniteStop=true; state.infiniteRunning=false; maxRollRunning=false; toast("⏹ Stopping infinite…"); }
+function resetMaxState(){ maxRollRunning=false; infiniteStop=true; const btns=document.querySelectorAll('#maxRollLabCard button, #geneticLabCard button, #rhythmLabCard button, #harmonyLabCard button, #soundDesignCard button, #batchLabCard button'); btns.forEach(b=>b.disabled=false); setMaxStatus("Reset — all max locks cleared"); toast("🔓 Max state reset — you can roll again"); }
 function renderRhythmGrid(){
   if(typeof navigator!=="undefined" && /jsdom/.test(navigator.userAgent)) return;
   const grid=$("rhythmGrid"); if(!grid) return;
@@ -4272,9 +4325,12 @@ function doRhythmRandomize(){ commit(); state.rhythmGrid=Array.from({length:16},
 function doRhythmClear(){ commit(); state.rhythmGrid=Array.from({length:16},()=>false); afterChange(); toast("✕ Rhythm cleared"); }
 async function doRhythmMax(attempts){
   attempts=attempts||20; if(maxRollRunning){ toast("Running"); return; }
-  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; setMaxStatus("Max Rhythm "+attempts+" tries");
+  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; const originalLocksRhythm = JSON.parse(JSON.stringify(best.locks||{})); const originalHiddenRhythm = JSON.parse(JSON.stringify(best.hidden||{})); const originalLayersRhythm = JSON.parse(JSON.stringify(best.layers||{})); setMaxStatus("Max Rhythm "+attempts+" tries");
+  try{
   for(let i=0;i<attempts;i++){ await yieldUI(); const v=snapshot(); for(const k in ROLL_FN) v.locks[k]=true; ["rhythm","rhythmPattern","groove","hats","kick","perc"].forEach(k=>{ if(k in v.locks) v.locks[k]=false; }); v.locks.primary=true; v.locks.secondary=true; v.seed=newSeed(); rng=mulberry32(v.seed); rollAllInto(v); v.rhythmGrid=Array.from({length:16},()=>rng()>0.45); const sc=scoreFor(v).total; if(sc>bestScore){ best=v; bestScore=sc; setMaxStatus("Rhythm best "+bestScore+" ("+(i+1)+"/"+attempts+")"); } }
-  state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Max Rhythm → "+bestScore); toast("🏆 Max Rhythm → "+bestScore); maxRollRunning=false; return bestScore;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksRhythm)); best.hidden = JSON.parse(JSON.stringify(originalHiddenRhythm)); best.layers = JSON.parse(JSON.stringify(originalLayersRhythm)); }catch(e){}
+    state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Max Rhythm → "+bestScore); toast("🏆 Max Rhythm → "+bestScore); return bestScore;
+  }catch(e){ toast("Rhythm Max error: "+e.message); }finally{ maxRollRunning=false; }
 }
 function exportRhythmMidi(){ const grid=state.rhythmGrid||[]; const txt="Rhythm Grid 16-step: "+grid.map((on,i)=>on? (i+1) : "-").join(" ")+" | Pattern: "+(state.rhythmPattern||"custom")+" | BPM: "+state.bpm; copyText(txt,"Rhythm MIDI"); }
 function renderHarmonyCanvas(){
@@ -4287,9 +4343,12 @@ function renderHarmonyCanvas(){
 }
 async function doHarmonyMax(attempts){
   attempts=attempts||20; if(maxRollRunning){ toast("Running"); return; }
-  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; setMaxStatus("Max Harmony "+attempts+" tries");
+  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; const originalLocksHarmony = JSON.parse(JSON.stringify(best.locks||{})); const originalHiddenHarmony = JSON.parse(JSON.stringify(best.hidden||{})); const originalLayersHarmony = JSON.parse(JSON.stringify(best.layers||{})); setMaxStatus("Max Harmony "+attempts+" tries");
+  try{
   for(let i=0;i<attempts;i++){ await yieldUI(); const v=snapshot(); for(const k in ROLL_FN) v.locks[k]=true; ["harmony","chordColor","chordProg","scaleId","rootPc","key","leadVoice","arpeggio"].forEach(k=>{ if(k in v.locks) v.locks[k]=false; }); v.locks.primary=true; v.locks.secondary=true; v.seed=newSeed(); rng=mulberry32(v.seed); rollAllInto(v); const sc=scoreFor(v).total; if(sc>bestScore){ best=v; bestScore=sc; setMaxStatus("Harmony best "+bestScore+" ("+(i+1)+"/"+attempts+")"); } }
-  state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Max Harmony → "+bestScore); toast("🏆 Max Harmony → "+bestScore); maxRollRunning=false; return bestScore;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksHarmony)); best.hidden = JSON.parse(JSON.stringify(originalHiddenHarmony)); best.layers = JSON.parse(JSON.stringify(originalLayersHarmony)); }catch(e){}
+    state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Max Harmony → "+bestScore); toast("🏆 Max Harmony → "+bestScore); return bestScore;
+  }catch(e){ toast("Harmony Max error: "+e.message); }finally{ maxRollRunning=false; }
 }
 function renderSoundMatrix(){
   if(typeof navigator!=="undefined" && /jsdom/.test(navigator.userAgent)) return;
@@ -4300,9 +4359,12 @@ function renderSoundMatrix(){
 }
 async function doSoundDesignMax(attempts){
   attempts=attempts||20; if(maxRollRunning){ toast("Running"); return; }
-  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; setMaxStatus("Max Sound Design "+attempts+" tries");
+  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; const originalLocksSD = JSON.parse(JSON.stringify(best.locks||{})); const originalHiddenSD = JSON.parse(JSON.stringify(best.hidden||{})); const originalLayersSD = JSON.parse(JSON.stringify(best.layers||{})); setMaxStatus("Max Sound Design "+attempts+" tries");
+  try{
   for(let i=0;i<attempts;i++){ await yieldUI(); const v=snapshot(); for(const k in ROLL_FN) v.locks[k]=true; ["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity","technoDrive","technoAcid"].forEach(k=>{ if(k in v.locks) v.locks[k]=false; }); v.locks.primary=true; v.locks.secondary=true; v.seed=newSeed(); rng=mulberry32(v.seed); rollAllInto(v); const sc=scoreFor(v).total; if(sc>bestScore){ best=v; bestScore=sc; setMaxStatus("Sound Design best "+bestScore+" ("+(i+1)+"/"+attempts+")"); } }
-  state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Max Sound Design → "+bestScore); toast("🏆 Max Sound Design → "+bestScore); maxRollRunning=false; return bestScore;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksSD)); best.hidden = JSON.parse(JSON.stringify(originalHiddenSD)); best.layers = JSON.parse(JSON.stringify(originalLayersSD)); }catch(e){}
+    state=best; rng=mulberry32(state.seed); afterChange(); setMaxStatus("Max Sound Design → "+bestScore); toast("🏆 Max Sound Design → "+bestScore); return bestScore;
+  }catch(e){ toast("Sound Design Max error: "+e.message); }finally{ maxRollRunning=false; }
 }
 function renderDnaRadar(){
   if(typeof navigator!=="undefined" && /jsdom/.test(navigator.userAgent)) return;
@@ -4334,9 +4396,12 @@ function renderBatchList(){
 }
 async function doBatchMax(){
   const n=parseInt(($("batchSizeInput")&&$("batchSizeInput").value)||10)||10; if(maxRollRunning){ toast("Running"); return; }
-  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; const batch=[]; setMaxStatus("Batch Max "+n+"×20 tries");
+  maxRollRunning=true; commit(); let best=snapshot(); let bestScore=scoreFor(best).total; const batch=[]; const originalLocksBatch = JSON.parse(JSON.stringify(best.locks||{})); const originalHiddenBatch = JSON.parse(JSON.stringify(best.hidden||{})); const originalLayersBatch = JSON.parse(JSON.stringify(best.layers||{})); setMaxStatus("Batch Max "+n+"×20 tries");
+  try{
   for(let i=0;i<n;i++){ let localBest=snapshot(); let localBestScore=scoreFor(localBest).total; for(let j=0;j<20;j++){ await yieldUI(); const v=snapshot(); v.locks.primary=true; v.locks.secondary=true; for(const k in ROLL_FN){ if(k!=="primary"&&k!=="secondary") v.locks[k]=false; } v.seed=newSeed(); rng=mulberry32(v.seed); rollAllInto(v); const sc=scoreFor(v).total; if(sc>localBestScore){ localBest=v; localBestScore=sc; } } batch.push({state:localBest, score:localBestScore, prompt:buildStylePromptFor(localBest), title:(localBest.concept.title||"Untitled")+" #"+(i+1)}); if(localBestScore>bestScore){ best=localBest; bestScore=localBestScore; } setMaxStatus("Batch Max "+(i+1)+"/"+n+" best "+bestScore); }
-  state=best; state.batchPool=batch; rng=mulberry32(state.seed); afterChange(); renderBatchList(); setMaxStatus("Batch Max finished best "+bestScore+" avg "+Math.round(batch.reduce((a,x)=>a+x.score,0)/batch.length)); toast("🏆 Batch Max finished best "+bestScore); maxRollRunning=false; return bestScore;
+    try{ best.locks = JSON.parse(JSON.stringify(originalLocksBatch)); best.hidden = JSON.parse(JSON.stringify(originalHiddenBatch)); best.layers = JSON.parse(JSON.stringify(originalLayersBatch)); }catch(e){}
+    state=best; state.batchPool=batch; rng=mulberry32(state.seed); afterChange(); renderBatchList(); setMaxStatus("Batch Max finished best "+bestScore+" avg "+Math.round(batch.reduce((a,x)=>a+x.score,0)/batch.length)); toast("🏆 Batch Max finished best "+bestScore); return bestScore;
+  }catch(e){ toast("Batch Max error: "+e.message); }finally{ maxRollRunning=false; }
 }
 function exportBatchCsv(){
   const batch=state.batchPool||[]; if(!batch.length){ toast("No batch to export"); return; }
@@ -6322,6 +6387,7 @@ if($("smartMaxBtn2")) $("smartMaxBtn2").addEventListener("click", ()=>doSmartMax
 if($("quantumMaxBtn2")) $("quantumMaxBtn2").addEventListener("click", ()=>doQuantumMax(200));
 if($("infiniteMaxBtn2")) $("infiniteMaxBtn2").addEventListener("click", doInfiniteMax);
 if($("stopInfiniteBtn2")) $("stopInfiniteBtn2").addEventListener("click", stopInfiniteMax);
+if($("resetMaxBtn")) $("resetMaxBtn").addEventListener("click", resetMaxState);
 if($("batchMaxBtn2")) $("batchMaxBtn2").addEventListener("click", doBatchMax);
 if($("promptEnhanceBtn2")) $("promptEnhanceBtn2").addEventListener("click", doPromptEnhance);
 if($("promptDnaBtn2")) $("promptDnaBtn2").addEventListener("click", doPromptDNA);
