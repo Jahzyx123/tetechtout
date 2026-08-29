@@ -470,6 +470,9 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini listbtn" data-pick="bpm">📜 List</button>
             <button class="mini listbtn" data-pick="key">📜 Key List</button>
           </div>
+          <div class="cluster" style="margin-top:6px">
+            <button class="sm power" id="maxTempoBtn" title="Try 25 BPM/Key combos and keep best score (keeps styles)">🏆 Max Tempo (BPM+Key)</button>
+          </div>
           <div class="row" id="keyRow"><span class="lbl">Key</span>
             <select id="rootSel" title="Root note"></select>
             <select id="scaleSel" title="Scale"></select>
@@ -540,6 +543,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="push" data-roll="feel-melody">🎭 Roll feeling → melody</button>
             <button class="push" data-roll="melody">🎼 Roll melody</button>
             <button class="push" data-roll="concept-melody">🌌 Roll melody concept</button>
+            <button class="sm power" id="maxMelodyBtn" title="Try 25 melody combos and keep the highest Prompt Score (keeps styles)">🏆 Max Melody</button>
           </div>
         </div>
       </div>
@@ -569,7 +573,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <select id="microBassSel"></select>
             <span class="readout" id="microBassRead"></span>
           </div>
-          <div class="cluster"><button class="push" data-roll="bass">🔊 Roll bass</button></div>
+          <div class="cluster"><button class="push" data-roll="bass">🔊 Roll bass</button><button class="sm power" id="maxBassBtn" title="Try 25 bass combos and keep the highest score">🏆 Max Bass</button></div>
         </div>
       </div>
 
@@ -578,7 +582,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
         <h2><span class="dot"></span>Drums &amp; Groove<span class="spacer"></span><button class="hidebtn" data-hide="drumsCard">👁</button></h2>
         <div class="cardbody">
           <div id="drumsRows"></div>
-          <div class="cluster"><button class="push" data-roll="drums">🥁 Roll drums</button></div>
+          <div class="cluster"><button class="push" data-roll="drums">🥁 Roll drums</button><button class="sm power" id="maxDrumsBtn" title="Try 25 drum combos and keep best score">🏆 Max Drums</button></div>
         </div>
       </div>
 
@@ -596,6 +600,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm ghost" data-pick="technoAcid">📜 Acid list</button>
             <button class="sm ghost" data-pick="technoTexture">📜 Texture list</button>
             <button class="sm ghost" data-pick="technoRave">📜 Rave list</button>
+            <button class="sm power" id="maxTechnoLabBtn" title="Try 25 Techno Lab combos and keep best score">🏆 Max Techno Lab</button>
           </div>
           <div class="arc" id="technoDnaBox" style="margin-top:12px;min-height:72px"></div>
           <div class="row"><span class="readout" id="technoDnaRead">Techno DNA — drive / acid / texture / rave / industrial</span></div>
@@ -612,6 +617,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini miniroll" data-roll="concept">💡</button>
             <button class="mini listbtn" data-pick="concept-title">📜 List</button>
             <button class="mini listbtn" data-pick="concept">📜 All Concepts</button>
+            <button class="sm power" id="maxConceptBtn" title="Try 25 concept combos and keep best score">🏆 Max Concept</button>
           </div>
           <div class="concept-grid" id="conceptGrid">
             <div class="citem"><div class="clbl">World</div><div class="cval" id="v-cworld">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-world">🎲</button><button class="mini listbtn" data-pick="concept-world">📜</button></div></div>
@@ -646,6 +652,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini listbtn" data-pick="arrangement">📜 List</button>
             <button class="lock" data-lock="arrangement">🔓 Lock</button>
             <button class="sm ghost" id="copyArcBtn">📋 Copy section tags</button>
+            <button class="sm power" id="maxArrangementBtn" title="Try 25 arrangement combos and keep best score">🏆 Max Arrangement</button>
           </div>
         </div>
       </div>
@@ -3499,49 +3506,97 @@ function scoreFor(s){
   state = saved;
   return out;
 }
-function doMaxScoreRoll(attempts){
-  attempts = attempts || 50;
+let maxRollRunning = false;
+async function doMaxScoreRoll(attempts){
+  if(maxRollRunning){ toast("⏳ Max roll already running…"); return; }
+  attempts = attempts || 30;
+  maxRollRunning = true;
   commit();
-  // keep primary/secondary exactly as they are — lock them for this search
   const bestStart = snapshot();
   let best = bestStart;
   let bestScore = scoreFor(bestStart).total;
   let bestPrompt = "";
   try{ bestPrompt = buildStylePromptFor(bestStart); }catch(e){ bestPrompt = ""; }
-  let tries = 0;
+  const btns = ["maxScoreBtn","maxScoreHeaderBtn"].map(id=>$(id)).filter(Boolean);
+  btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
+  toast("🏆 Searching "+attempts+" combos… kept "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary"));
   for(let i=0;i<attempts;i++){
+    if(i%5===0){ await new Promise(r=>setTimeout(r, 0)); }
     const v = snapshot();
-    // force primary/secondary to stay — lock them
     if(!v.locks) v.locks = defaultLocks();
     v.locks.primary = true;
     v.locks.secondary = true;
-    // for max score we want to reroll everything else regardless of user locks,
-    // except we keep primary/secondary. So unlock all other ROLL_FN keys.
-    for(const k in ROLL_FN){
-      if(k==="primary"||k==="secondary") continue;
-      v.locks[k]=false;
-    }
-    // new seed for each try so rng is different
+    for(const k in ROLL_FN){ if(k==="primary"||k==="secondary") continue; v.locks[k]=false; }
     v.seed = newSeed();
     rng = mulberry32(v.seed);
     rollAllInto(v);
     v.variations = [];
     const sc = scoreFor(v);
-    if(sc.total > bestScore || (sc.total===bestScore && (buildStylePromptFor(v).length > bestPrompt.length))){
+    let curLen = 0; try{ curLen = buildStylePromptFor(v).length; }catch(e){}
+    if(sc.total > bestScore || (sc.total===bestScore && curLen > bestPrompt.length)){
       best = v;
       bestScore = sc.total;
-      try{ bestPrompt = buildStylePromptFor(v); }catch(e){}
+      bestPrompt = buildStylePromptFor(v);
+      btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore; });
     }
-    tries++;
+    if(i%10===0) toast("🏆 "+(i+1)+"/"+attempts+" → best "+bestScore);
   }
-  // apply best
   state = best;
   rng = mulberry32(state.seed);
   afterChange();
   flash($("scoreCard"));
-  toast("🏆 Best score "+bestScore+" /100 kept "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+tries+" tries");
+  btns.forEach(b=>{ if(b){ b.disabled=false; b.textContent=b.id==="maxScoreHeaderBtn"?"🏆 Max Score":"🏆 Max Score (keep styles)"; }});
+  toast("🏆 Best score "+bestScore+" /100 kept "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+attempts+" tries");
+  maxRollRunning = false;
   return bestScore;
 }
+async function doMaxScoreRollSection(sectionKeys, attempts, label){
+  if(maxRollRunning){ toast("⏳ Max roll already running…"); return; }
+  maxRollRunning = true;
+  attempts = attempts || 25;
+  commit();
+  const keepPrimary = !sectionKeys.includes("primary") && !sectionKeys.includes("secondary");
+  const bestStart = snapshot();
+  let best = bestStart;
+  let bestScore = scoreFor(bestStart).total;
+  const btnId = "max"+label.replace(/\s+/g,"")+"Btn";
+  const btn = $(btnId);
+  if(btn){ btn.disabled=true; const orig=btn.textContent; btn.dataset.orig=orig; btn.textContent="⏳ "+bestScore; }
+  toast("🏆 Max "+label+": searching "+attempts+" combos…");
+  for(let i=0;i<attempts;i++){
+    if(i%4===0){ await new Promise(r=>setTimeout(r, 0)); }
+    const v = snapshot();
+    if(!v.locks) v.locks = defaultLocks();
+    for(const k in ROLL_FN){ v.locks[k]=true; }
+    sectionKeys.forEach(k=>{ if(k in v.locks) v.locks[k]=false; });
+    if(keepPrimary){ v.locks.primary=true; v.locks.secondary=true; }
+    v.seed = newSeed();
+    rng = mulberry32(v.seed);
+    rollAllInto(v);
+    v.variations = [];
+    const sc = scoreFor(v);
+    if(sc.total > bestScore){
+      best = v;
+      bestScore = sc.total;
+      if(btn) btn.textContent="⏳ "+bestScore;
+    }
+  }
+  state = best;
+  rng = mulberry32(state.seed);
+  afterChange();
+  if(label.toLowerCase().includes("melody")) flash($("feelCard"));
+  else if(label.toLowerCase().includes("bass")) flash($("bassCard"));
+  else if(label.toLowerCase().includes("tempo")) flash($("styleCard"));
+  else if(label.toLowerCase().includes("techno")) flash($("technoLabCard"));
+  else if(label.toLowerCase().includes("concept")) flash($("conceptCard"));
+  else if(label.toLowerCase().includes("arrange")) flash($("arrangementCard"));
+  else flash($("scoreCard"));
+  if(btn){ btn.disabled=false; btn.textContent=btn.dataset.orig||("🏆 Max "+label); }
+  toast("🏆 Best "+label+" → score "+bestScore+" /100 after "+attempts+" tries");
+  maxRollRunning = false;
+  return bestScore;
+}
+
 
 /* ---------------------------- PROMPT ASSEMBLY ---------------------------- */
 function styleLine(){
@@ -5219,7 +5274,14 @@ const COMMANDS = [
   {icon:"📌", name:"Stash current idea to slot B",  key:"",      run:()=>stashB()},
   {icon:"🔄", name:"Swap A ⇄ B",                   key:"",      run:()=>swapAB()},
   {icon:"🏷", name:"Copy arrangement section tags", key:"",      run:()=>copyText(arcTags(),"Section tags")},
-  {icon:"🏆", name:"Max score roll (keep primary/secondary)", key:"M", run:()=>doMaxScoreRoll(50)},
+  {icon:"🏆", name:"Max score roll (keep primary/secondary)", key:"M", run:()=>doMaxScoreRoll(30)},
+  {icon:"🏆", name:"Max Melody (keep styles)", key:"", run:()=>doMaxScoreRollSection(["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"],25,"Melody")},
+  {icon:"🏆", name:"Max Bass (keep styles)", key:"", run:()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"],25,"Bass")},
+  {icon:"🏆", name:"Max Drums (keep styles)", key:"", run:()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"],25,"Drums")},
+  {icon:"🏆", name:"Max Tempo Lab (BPM+Key+TechnoLab)", key:"", run:()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId","technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"],25,"TempoLab")},
+  {icon:"🏆", name:"Max Concept (keep styles)", key:"", run:()=>doMaxScoreRollSection(["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"],25,"Concept")},
+  {icon:"🏆", name:"Max Arrangement (keep styles)", key:"", run:()=>doMaxScoreRollSection(["arrangement"],25,"Arrangement")},
+
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
 let cmdSel = 0, cmdFiltered = COMMANDS.slice();
@@ -5358,8 +5420,16 @@ document.addEventListener("click", e=>{
 });
 
 $("powerRollBtn").addEventListener("click", ()=>doRoll("power"));
-$("maxScoreBtn").addEventListener("click", ()=>doMaxScoreRoll(50));
-$("maxScoreHeaderBtn").addEventListener("click", ()=>doMaxScoreRoll(50));
+$("maxScoreBtn").addEventListener("click", ()=>doMaxScoreRoll(30));
+$("maxScoreHeaderBtn").addEventListener("click", ()=>doMaxScoreRoll(30));
+if($("maxMelodyBtn")) $("maxMelodyBtn").addEventListener("click", ()=>doMaxScoreRollSection(["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"], 25, "Melody"));
+if($("maxBassBtn")) $("maxBassBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"], 25, "Bass"));
+if($("maxTempoBtn")) $("maxTempoBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId"], 25, "Tempo"));
+if($("maxTechnoLabBtn")) $("maxTechnoLabBtn").addEventListener("click", ()=>doMaxScoreRollSection(["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"], 25, "TechnoLab"));
+if($("maxConceptBtn")) $("maxConceptBtn").addEventListener("click", ()=>doMaxScoreRollSection(["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"], 25, "Concept"));
+if($("maxArrangementBtn")) $("maxArrangementBtn").addEventListener("click", ()=>doMaxScoreRollSection(["arrangement"], 25, "Arrangement"));
+if($("maxDrumsBtn")) $("maxDrumsBtn").addEventListener("click", ()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"], 25, "Drums"));
+
 $("undoBtn").addEventListener("click", undo);
 $("redoBtn").addEventListener("click", redo);
 $("shareBtn").addEventListener("click", shareURL);
@@ -5540,7 +5610,7 @@ window.NF = {
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
   encodeState, decodeState, defaultState, doRoll, undo, redo, render, renderOutput,
   engineerLines, djLines, Audition, openCmd, closeCmd, renderCmd, runCmd,
-  energyArc, arcLine, arcTags, scorePrompt, stashB, swapAB, exportSession, doMaxScoreRoll, scoreFor,
+  energyArc, arcLine, arcTags, scorePrompt, stashB, swapAB, exportSession, doMaxScoreRoll, doMaxScoreRollSection, scoreFor,
   sanitize, isDirty, conceptLine, styleLine,
   get slotB(){ return slotB; },
   get cmdFiltered(){ return cmdFiltered; }
