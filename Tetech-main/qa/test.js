@@ -307,5 +307,36 @@ t("spark commands registered", ()=>{
   return names.some(n=>/Mega Chaos Roll/.test(n)) && names.some(n=>/Random spark idea/.test(n)) || "missing spark commands";
 });
 
+console.log("\n== ANTHEM CATEGORY MAX ==\n");
+t("emotion / dominant / harmony anthem buttons exist", ()=>{
+  const ids=["maxEmotionMelodyBtn","maxAnthemMelodyBtn","maxHarmonyAnthemBtn","maxEmotionMelodyBtn2","maxAnthemMelodyBtn2","maxHarmonyAnthemBtn2"];
+  const missing=ids.filter(id=>!d.getElementById(id) && id!=="maxEmotionMelodyBtn2" && id!=="maxAnthemMelodyBtn2" && id!=="maxHarmonyAnthemBtn2");
+  // jsdom init renders rows; both copies are in static DOM
+  return ids.every(id=>d.getElementById(id)) || "missing:"+missing.join(",");
+});
+t("anthem pools are loaded", ()=>{
+  return w.NF.EMOTION_ANTHEMS.length>=20 && w.NF.MELODY_DOMINANT_ANTHEMS.length>=20 && w.NF.HARMONY_ANTHEMS.length>=20;
+});
+t("emotion/melody/harmony pools expanded a lot", ()=>{
+  const ok = w.NF.FEELINGS.length>=200 && w.NF.LEADS.length>=220 && w.NF.HARMONIES.length>=110 && w.NF.DIRECTIONS.length>=110;
+  return ok || ("f="+w.NF.FEELINGS.length+" l="+w.NF.LEADS.length+" h="+w.NF.HARMONIES.length+" d="+w.NF.DIRECTIONS.length);
+});
+t("max melody/harmony function hooks exist", ()=>{
+  const has = typeof w.NF.doMaxEmotionMelody==="function" && typeof w.NF.doMaxMelodyDominant==="function" && typeof w.NF.doMaxHarmonyAnthem==="function";
+  const hasKeys = w.NF.EMOTION_MELODY_KEYS && w.NF.EMOTION_MELODY_KEYS.includes("feeling") && w.NF.DOMINANT_MELODY_KEYS && w.NF.DOMINANT_MELODY_KEYS.includes("leadVoice") && w.NF.HARMONY_ANTHEM_KEYS && w.NF.HARMONY_ANTHEM_KEYS.includes("harmony");
+  return (has && hasKeys) || "has="+has+" keys="+hasKeys;
+});
+t("anthem max targets cover emotion/melody/harmony atoms", ()=>{
+  const emo=["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","counter-melody"];
+  const harm=["harmony","chordColor","chordProg","scaleId","rootPc","key","leadVoice","arpeggio","voicingType","inversionType","tensionType","resolutionType"];
+  const badE=emo.filter(k=>!w.NF.EMOTION_MELODY_KEYS.includes(k));
+  const badH=harm.filter(k=>!w.NF.HARMONY_ANTHEM_KEYS.includes(k));
+  return badE.length===0 && badH.length===0 || ("E:"+badE.join(",")+" H:"+badH.join(","));
+});
+t("anthem commands registered", ()=>{
+  const names=w.NF.COMMANDS.map(c=>c.name);
+  return names.some(n=>/Max Emotion-Led Melody/.test(n)) && names.some(n=>/Max Melody-Dominant Anthem/.test(n)) && names.some(n=>/Max Harmony Anthem/.test(n)) || "missing anthem commands";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

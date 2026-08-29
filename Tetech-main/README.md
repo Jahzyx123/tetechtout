@@ -97,6 +97,13 @@ python3 -m http.server 8080
 - **Keyboard/command access** — every spark action appears in the ⌘ command
   palette, so you can fire one from anywhere.
 
+### 🎼 Anthem-category max buttons + massive roll pool expansion
+- **❤️🔥 Max Emotion-Led Melody** — hunts the best emotion-led melody recipe, then locks **Melodic Force → Dominant** so the style prompt becomes a *Melody-dominant anthem*.
+- **🎤 Max Melody-Dominant Anthem** — same idea but also optimises the concept/title/transform so the whole brief becomes one huge anthemic idea.
+- **🎤🎼 Max Harmony Anthem** — optimises harmony, chord progression, scale, voicing, tension/resolution, lead and arp, then locks Melody-Dominant.
+- All three appear in the Feeling & Melody card, the Harmony Lab, the 🏆 Max Roll Lab (second copies) and the ⌘ command palette.
+- **More rolls everywhere**: the Feeling/Melody/Harmony families now carry 238 feelings, 172 flavors, 127 directions, 262 lead voices, 97 performances, 131 harmonies, 94 arps, 72 contours, 75 rhythms and much more, plus new dedicated anthem pool entries (Emotion Anthems, Melody-Dominant Anthems, Harmony Anthems).
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed

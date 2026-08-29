@@ -601,6 +601,8 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="push" data-roll="melody">🎼 Roll melody</button>
             <button class="push" data-roll="concept-melody">🌌 Roll melody concept</button>
             <button class="sm power" id="maxMelodyBtn" title="Try 25 melody combos and keep the highest Prompt Score (keeps styles)">🏆 Max Melody</button>
+            <button class="sm power" id="maxEmotionMelodyBtn" title="Max the emotion-led melody + lock it to Melody-Dominant Anthem (keeps styles)">❤️🔥 Max Emotion-Led Melody</button>
+            <button class="sm power" id="maxAnthemMelodyBtn" title="Max the Melody-Dominant Anthem (melody + counter + concept, keeps styles)">🎤 Max Melody-Dominant Anthem</button>
           </div>
         </div>
       </div>
@@ -716,6 +718,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
           <div class="cluster">
             <button class="push" data-roll="harmony">🎼 Roll Harmony</button>
             <button class="sm power" id="maxHarmonyBtn">🏆 Max Harmony</button>
+            <button class="sm power" id="maxHarmonyAnthemBtn" title="Max harmony + chord + arp + voicing and lock to Melody-Dominant Anthem (keeps styles)">🎤🎼 Max Harmony Anthem</button>
             <button class="sm ghost" id="harmonyPlayBtn">▶ Preview Chords</button>
           </div>
         </div>
@@ -984,8 +987,11 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm power" id="maxTechnoLabBtn2" title="Max Techno Lab">🧪 Max Techno Lab</button>
             <button class="sm power" id="maxConceptBtn2" title="Max Concept">💡 Max Concept</button>
             <button class="sm power" id="maxArrangementBtn2" title="Max Arrangement">🎛 Max Arrangement</button>
+            <button class="sm power" id="maxEmotionMelodyBtn2" title="Max Emotion-Led Melody + Melody-Dominant Anthem">🎭 Max Emotion-Melody</button>
+            <button class="sm power" id="maxAnthemMelodyBtn2" title="Max Melody-Dominant Anthem">🎤 Max Dominant Anthem</button>
             <button class="sm power" id="maxRhythmBtn2" title="Max Rhythm">🥁 Max Rhythm</button>
             <button class="sm power" id="maxHarmonyBtn2" title="Max Harmony">🎼 Max Harmony</button>
+            <button class="sm power" id="maxHarmonyAnthemBtn2" title="Max Harmony + Melody-Dominant Anthem">🎤🎼 Max Harmony Anthem</button>
             <button class="sm power" id="maxSoundDesignBtn2" title="Max Sound Design">⚗️ Max Sound Design</button>
             <button class="sm power" id="maxMixMasterBtn2" title="Max MixMaster">🎛 Max MixMaster</button>
             <button class="sm power" id="maxSpatialModBtn2" title="Max SpatialMod">🌌 Max SpatialMod</button>
@@ -6098,6 +6104,592 @@ ARRANGEMENTS.push(
 );
 
 
+
+
+/* ============================================================
+   ANTHEM ANTHEM? NO — ANTHEM-CATEGORY & HARMONY EXPANSION
+   A huge additional roll-content injection for the
+   Emotion-led melody / Melody-dominant anthem / Harmony families.
+   Every entry passes the instrumental-safe + maximum-energy filters.
+   ============================================================ */
+FEELINGS.push(
+  "starlight-bright",
+  "laughing thunder",
+  "heart-open and huge",
+  "warm-capped lightning",
+  "sunlit rebellion",
+  "holy and wired",
+  "fierce and glowing",
+  "glittering resolve",
+  "airborne and honest",
+  "post-storm bloom",
+  "tender tornado",
+  "golden firelight",
+  "clear-eyed rush",
+  "endless second wind",
+  "barn-lit euphoria",
+  "jubilant engine roar",
+  "feather-light power",
+  "night-blooming joy",
+  "voltage-colored wonder",
+  "fearless morning",
+  "deep and huge",
+  "wild and kind",
+  "open-throated joy",
+  "healing wildfire",
+  "gutted and glowing",
+  "rare and radiant",
+  "sun-over-shoulder",
+  "iridescent drive",
+  "deep and dazzling",
+  "fierce in the daylight",
+  "soft-light combustion",
+  "victory in small steps",
+  "electric dawn",
+  "wildflower anthem",
+  "room-filling warmth",
+  "unexpected bloom",
+  "hard-won calm",
+  "river-light rush",
+  "iron and honey",
+  "snow-capped sun",
+  "glory in the static",
+  "restless green light",
+  "prism-bright",
+  "candle in a storm",
+  "cloudbreak shimmer",
+  "jubilant wreckage",
+  "barely-contained sunrise",
+  "firefly blizzard",
+  "wide-awake dreaming",
+  "thunderflower",
+  "honeyed edge",
+  "luminous patience",
+  "bell-light joy",
+  "sea-spark glee",
+  "cool amber heat",
+  "violet dawn",
+  "open-skies courage",
+  "fisheye joy",
+  "carbon joy",
+  "port-light glow"
+);
+FLAVORS.push(
+  "warm and monumental",
+  "golden under pressure",
+  "bright through static",
+  "tender and unstoppable",
+  "sun-hardened and soft",
+  "ferociously humane",
+  "vast and luminous",
+  "luminous and low",
+  "honeyed and electric",
+  "dreamlike and determined",
+  "polished lightning",
+  "open and enormous",
+  "fast and forgive-and-forget",
+  "sweet with steel",
+  "clearly enormous",
+  "deep in the light",
+  "bright as a marching flag",
+  "warm fire in a cool room",
+  "razor-smooth and kind",
+  "eternal afternoon",
+  "shining through rain",
+  "huge and lightly worn",
+  "tender at full volume",
+  "clear as a bell jar",
+  "electric with patience",
+  "wild and well-made",
+  "gilded and grounded",
+  "morning-gray and golden",
+  "feathery and fearless",
+  "steady as a lighthouse",
+  "soaring and bright",
+  "honey over gravel",
+  "rarefied and roaring",
+  "blue-hour warmth",
+  "starlit and solid",
+  "high and heartfelt",
+  "polished ripple",
+  "rugged glow",
+  "soft-focus friction",
+  "wide and clear",
+  "weighted and weightless",
+  "solar and serene",
+  "magnificent and matter-of-fact",
+  "gold-veined dusk",
+  "raw silk drive",
+  "crisp and colossal",
+  "open-hearted voltage",
+  "warm tarmac sunshine",
+  "green-glass glory",
+  "luminous muscle",
+  "fire-lit and decisive",
+  "deep amber current"
+);
+DIRECTIONS.push(
+  "melody that arrives like weather",
+  "lead that tells the whole story in two notes",
+  "hook that lifts the roof one degree at a time",
+  "phrase that walks the length of the drop",
+  "line that glows under pressure",
+  "riff that answers the kick with a question",
+  "motif that grows a second pair of wings",
+  "anthem that asks for one more round",
+  "melody that bends around the room",
+  "lead that takes the stairs three at a time",
+  "phrase that starts as a soft detail",
+  "hook that opens a window at the drop",
+  "line that runs toward the light",
+  "melody that carries the crowd home",
+  "lead that turns every risk into a lift",
+  "anthem that builds like a slow sunrise",
+  "riff that leaves space for joy",
+  "motif that waves to the bass before it leaves",
+  "lead that signs the sky",
+  "hook with one foot in the past and one in the future",
+  "melody that arrives early and stays late",
+  "line that climbs without hurry",
+  "phrase that blooms after the drop",
+  "lead that makes a hallway feel huge",
+  "anthem that walks into the night and comes back glowing",
+  "motif that circles then commits",
+  "hook that turns a shrug into a cheer",
+  "lead that speaks in rising circles",
+  "phrase that waits and then detonates",
+  "melody that folds the room into one enormous sweep"
+);
+LEADS.push(
+  "stained-glass supersaw lead",
+  "solar flare FM lead",
+  "foundry brass-synth lead",
+  "dusk-lit square lead",
+  "cathedral rain lead",
+  "gold-foil analog lead",
+  "tramline arpeggio lead",
+  "glitter-bank wavetable lead",
+  "steam-glass lead",
+  "north-light pad lead",
+  "warm marble lead",
+  "firefly pulse lead",
+  "paper lantern lead",
+  "button-glow lead",
+  "silk-voltage lead",
+  "soft brass bell lead",
+  "wheat-field pad lead",
+  "blue-hour mono lead",
+  "storm lamp lead",
+  "cherry light lead",
+  "moon gate lead",
+  "prairie-string lead",
+  "radiator warm lead",
+  "lighthouse sweep lead",
+  "circus-of-light lead",
+  "pearl-breeze lead",
+  "magnet rose lead",
+  "window-rain lead",
+  "honeycomb lead",
+  "silver lake lead",
+  "lumen trail lead",
+  "chalk-line lead",
+  "rail-horn lead",
+  "glass elevator lead",
+  "sunrise cistern lead",
+  "velvet radio lead",
+  "distant siren-bell lead",
+  "applause-light lead",
+  "bottle-green lead",
+  "cobblestone FM lead",
+  "lantern glissando lead",
+  "waiting-room pad lead",
+  "star map arpeggio lead",
+  "hot-sugar lead",
+  "prism field lead",
+  "tide clock lead",
+  "radio balcony lead",
+  "citrus static lead",
+  "beacon line lead",
+  "thunder moth lead",
+  "velvet arrow lead",
+  "peacock FM lead",
+  "slow fireworks lead",
+  "paper plane lead",
+  "airport window pad lead",
+  "dancing bearing lead",
+  "warm pearl pulse lead",
+  "clear day lead"
+);
+PERFS.push(
+  "with a slow electric breath",
+  "with wide-armed phrasing",
+  "with sunny restraint-free motion",
+  "with a pulse that leans",
+  "with surgical ease",
+  "with soft hammer attacks",
+  "with light that passes through",
+  "with travel and return",
+  "with bright finger logic",
+  "with elbows out and shoulders light",
+  "with the patience of tides",
+  "with rising curve",
+  "with the confidence of a lighthouse",
+  "with small ceremonial pauses",
+  "with open windows",
+  "with wind moving across a field",
+  "with a bend that softens the landing",
+  "with air between every note",
+  "with a door left ajar",
+  "with a one-second grin",
+  "with a long cable of tone",
+  "with balanced momentum",
+  "with light rain timing",
+  "with grain and shine",
+  "with a hand on the rail",
+  "with unforced fire",
+  "with far horizon breath",
+  "with spring-tight rebounds",
+  "with lazy precision",
+  "with sparks in the pocket",
+  "with glassy authority",
+  "with walking pace",
+  "with a warm pivot",
+  "with featherweight force",
+  "with a clear, enormous bow",
+  "with end-of-track lift",
+  "with sound-after-sound pacing",
+  "with a slow real sigh",
+  "with light-on-its-feet weight",
+  "with a living-room swell"
+);
+HARMONIES.push(
+  "sunrise stacked fifths",
+  "hot-wax chord shine",
+  "open-tower harmonies",
+  "riverside seventh glow",
+  "lantern-field chords",
+  "burnished ninth stacks",
+  "wide-armed power chords",
+  "green-glass suspension",
+  "daylight modulation",
+  "deep amber add-nine glow",
+  "anthemic open-sky chords",
+  "after-rain seventh lift",
+  "harbor-light progression",
+  "brass-gold fanfare",
+  "summer stadium chords",
+  "moon over train tracks",
+  "soft machinery harmony",
+  "rooftop circle progression",
+  "banner wave chords",
+  "sun-warmed pedal harmony",
+  "far-gate modulation",
+  "warm sawtooth wash",
+  "spring-rooted sevenths",
+  "glass-door resolve",
+  "ocean deck chords",
+  "candle-lit suspension",
+  "high-voltage lift",
+  "wide meadow harmony",
+  "midnight harbor chords",
+  "golden-hour modulation",
+  "pearl cascade resolve",
+  "turbine bloom chords",
+  "sky garden sevenths",
+  "cool cathedral glow",
+  "beacon light lift",
+  "velvet engine harmony",
+  "quarter-bright open chords",
+  "twin-light progression",
+  "clear water seventh",
+  "warm gate awakening",
+  "silver spire chords",
+  "energy hill lift",
+  "painted sky harmony",
+  "long road seventh shimmer",
+  "beautiful interruption",
+  "sun on cold metal",
+  "fog-clear ninth",
+  "radiant low tide",
+  "brass field resolve",
+  "warm avalanche harmony",
+  "iron bloom progression",
+  "silver-and-gold stack",
+  "candle wind chords",
+  "tractor-beam seventh",
+  "open gate major lift"
+);
+ARPS.push(
+  "stair of bell notes",
+  "rolling hive",
+  "petal cascade",
+  "vaulted mirror",
+  "glass waterfall run",
+  "light-ladder figure",
+  "porch-light pattern",
+  "comet tail arp",
+  "wind chime chain",
+  "summer fire run",
+  "gold leaf cascade",
+  "ocean string figure",
+  "coin fountain flow",
+  "runway sparkle",
+  "beacon blink pattern",
+  "grapevine loop",
+  "morning drip rung",
+  "slow fountain swirl",
+  "window-box climb",
+  "distant ferry figure",
+  "warm machine twinkle",
+  "seed pod cascade",
+  "river nail figure",
+  "stairwell glint",
+  "canvas ripple run",
+  "lantern hop pattern",
+  "blue hour wave",
+  "soft engine trickle",
+  "pebble fountain arp",
+  "bridge light run",
+  "field gate shimmer",
+  "candle flame ladder",
+  "skylight drip",
+  "garden gate figure",
+  "paper bubble run",
+  "smoke ring climb",
+  "trellis cascade",
+  "greenhouse twinkle",
+  "train window ripple",
+  "harbor morse",
+  "meadow brook run",
+  "sparkle relay",
+  "glowworm ladder",
+  "telegraph bloom"
+);
+CONTOURS.push(
+  "climbs slowly, then floats",
+  "rises with the sun",
+  "loops one golden question",
+  "draws a long road",
+  "leans into every change",
+  "rolls over the top",
+  "walks a bridge between notes",
+  "circles a campfire",
+  "spreads then gathers",
+  "uncurls at the end",
+  "treads water then leaps",
+  "spirals upward to the light",
+  "answers far below",
+  "curves around the drop",
+  "snakes up the hill",
+  "rests on one high note",
+  "opens like a door",
+  "rides the long breath",
+  "falls in love with the tail",
+  "tilts toward the end",
+  "nods twice and walks on",
+  "climbs, glows, returns",
+  "scales a glass face",
+  "dips into shade",
+  "rolls out like a carpet",
+  "circles the same clearing",
+  "stands for a moment",
+  "lands one note early",
+  "pulls down the sky",
+  "runs the ridge in the wind"
+);
+RHYTHMS.push(
+  "lazy rollercoaster",
+  "silver-footed jog",
+  "heartbeat-with-breaks",
+  "long bridge rhythm",
+  "looping handshake",
+  "pulse with a pause",
+  "coastal tide pulse",
+  "electric porch pattern",
+  "leaping dot rhythm",
+  "rail-travel pulse",
+  "door-to-door bounce",
+  "stalking grace notes",
+  "bicycle coast rhythm",
+  "sunlit triplet swagger",
+  "soft kick echo",
+  "window-light pattern",
+  "river stone skip",
+  "holding-breath pulse",
+  "gold hour sway",
+  "platform light rhythm",
+  "grasshopper hop rhythm",
+  "pocket swing bounce",
+  "one-two-then-breathe",
+  "twilight step pattern",
+  "garden gate rhythm",
+  "machine heart pulse",
+  "weather vane shimmy",
+  "milk-run groove",
+  "shining path rhythm",
+  "offbeat handshake",
+  "suspend-a-breath pulse",
+  "ironing board rhythm",
+  "daybreak jog"
+);
+MELODY_CONCEPT.story.push(  "a hand reaching across a dark warehouse and being caught",
+  "a sun rising over a room that has only ever seen night",
+  "the sound a place makes when it finally stops pretending",
+  "an old broadcast coming back to life after decades",
+  "a long walk toward a door that is already open",
+  "a garden growing from a broken speaker",
+  "the morning after a celebration, still glowing",
+  "a train leaving the station just as the sun appears",
+  "a clock learning to keep time with a heartbeat",
+  "a promise carried across a storm in one pocket",
+  "a lighthouse waking up and calling the sea",
+  "a city breathing out after holding its breath",
+  "two notes in different cities finding the same room",
+  "a river that learns to walk uphill",
+  "a snowflake landing on a hot engine and becoming steam",
+  "a signal traveling out and returning deeper",
+  "an empty stadium filling with light",
+  "a letter arriving with tomorrow's sun in it",
+  "a garden gate opening onto a wider garden",
+  "the last lantern of a long night going bright",
+  "a mountain deciding to move one inch toward the sun",
+  "a crowd feeling one idea at the same second",
+  "a factory closing its doors and opening its windows",
+  "a photograph of a dance coming alive in the dark",
+  "a seed that remembers being thunder",
+  "a boat finding the current that leads home",
+  "a rooftop garden listening to the city below",
+  "a wave that arrives exactly when the song does",
+  "a door left open on purpose",
+  "a moon lamp clicking on over a sea of rooftops"
+);
+MELODY_CONCEPT.role.push(  "the melody is the engine and the groove is the road",
+  "the melody is a flag on a distant hill",
+  "the melody is the center of the storm",
+  "the melody is a fire the room gathers around",
+  "the melody is the reason the room stands up",
+  "the melody is the handshake between two crowds",
+  "the melody is the light in the window and the bass is the street",
+  "the melody is the story and the drums are the weather",
+  "the melody is the runway and the kick is the plane",
+  "the melody is a bridge that appears when the drop opens",
+  "the melody is the heartbeat everyone picks up",
+  "the melody is the horizon line of the mix",
+  "the melody is the compass every section follows",
+  "the melody is the warmth inside the machine",
+  "the melody is the invitation the drop answers",
+  "the melody is the tide that carries the arrangement",
+  "the melody is the room's breath",
+  "the melody is the argument the bass wins just in time",
+  "the melody is the firework and the groove is the fuse",
+  "the melody is the lighthouse the drums circle",
+  "the melody is a long glow at the end of the hallway",
+  "the melody is the tomorrow inside this track",
+  "the melody is the window the city watches",
+  "the melody is the hand that steadies the drop",
+  "the melody is the flag on the last hill",
+  "the melody is the reason the track keeps going"
+);
+MELODY_CONCEPT.motion.push(  ["surfaces, then sinks into the warmth", "dances across the whole room and back", "climbs a staircase made of light", "turns a corner and finds the sunrise", "leans into the wind and keeps going", "spreads leaves then roots", "rests on the third repetition", "stretches over the drop", "doubles its heartbeat at the peak", "hangs in the center like a pendulum", "walks a line of lamps across the floor", "glows brighter with every pass", "returns to its first note with more weight", "opens the last bar like a gate", "gathers the room before the drop", "floats above the rail all the way down", "turns the second half a degree brighter", "rolls downhill and finds a river", "moves like weather without a forecast", "rests for a moment then takes the lead", "rides the same wave a second time", "unwinds slowly into an open room", "makes a promise in the intro and keeps it at the peak", "steps out of the fog at the end", "follows the groove until it becomes the groove", "pulls the final note forward"]
+);
+MELODY_CONCEPT.hook.push(  "a rising phrase you can sing-free hum to yourself",
+  "a three-note door that opens on the drop",
+  "a golden interval repeated with growing heat",
+  "an inverted line that lands like confirmation",
+  "a call-and-nod between octaves",
+  "a run that turns a corner into light",
+  "a two-bar loop that grows a spine",
+  "a phrase with a key change hidden inside",
+  "a line that answers the room instead of asking",
+  "a hook that rises with the temperature",
+  "an arpeggio that states the whole idea in one breath",
+  "a motif that walks in late and owns the room",
+  "a final note that arrives two after you expect it",
+  "a long note that releases the entire sky",
+  "a four-note bell hitting the same window",
+  "a phrase that looks back just before the gate",
+  "a tail that keeps blooming",
+  "a pulse lifted into a shape",
+  "a line that asks the drop for help",
+  "a hook the whole track is pointing at",
+  "a sequence that smiles at the kick",
+  "a refrain made from two weathers",
+  "a note you feel a day later",
+  "a stamp that owns the floor",
+  "a curve that turns the corner to sunrise",
+  "a signature that waves as it leaves",
+  "a riff with the whole weather report inside",
+  "a promise built from three chords",
+  "a phrase that completes the first idea",
+  "a hook that closes the circle"
+);
+const EMOTION_ANTHEMS = [
+  "an anthem that arrives like weather over a field",
+  "a melody-dominant sunset freight train",
+  "an emotion-led hardgroove dawn",
+  "a room-wide golden hook",
+  "a chorus-free cathedral of one rising line",
+  "a hook that opens like a whole stadium",
+  "a turnpike anthem with a lit fuse",
+  "a stretch of sky held in one melody",
+  "an engine-room hymn built on light",
+  "a sunrise anthem with a kick in its pocket",
+  "a wide-field anthem for a narrow street",
+  "a bridge-sized melody over a city of drums",
+  "a golden gate of one long note",
+  "a walking anthem with a place to land",
+  "a downhill anthem that ends uphill",
+  "a pulse that learns to wave a flag",
+  "a skyline drawn in a single phrase",
+  "a last-lap anthem with a cold breeze",
+  "a line the whole room can carry",
+  "an emotion-led bloom that becomes a storm",
+];
+const MELODY_DOMINANT_ANTHEMS = [
+  "an anthem that arrives like weather over a field",
+  "a melody-dominant sunset freight train",
+  "an emotion-led hardgroove dawn",
+  "a room-wide golden hook",
+  "a chorus-free cathedral of one rising line",
+  "a hook that opens like a whole stadium",
+  "a turnpike anthem with a lit fuse",
+  "a stretch of sky held in one melody",
+  "an engine-room hymn built on light",
+  "a sunrise anthem with a kick in its pocket",
+  "a wide-field anthem for a narrow street",
+  "a bridge-sized melody over a city of drums",
+  "a golden gate of one long note",
+  "a walking anthem with a place to land",
+  "a downhill anthem that ends uphill",
+  "a pulse that learns to wave a flag",
+  "a skyline drawn in a single phrase",
+  "a last-lap anthem with a cold breeze",
+  "a line the whole room can carry",
+  "an emotion-led bloom that becomes a storm",
+];
+const HARMONY_ANTHEMS = [
+  "a harmony lift that opens the whole track",
+  "a chord sequence like a row of lanterns",
+  "a golden seventh that the drop answers",
+  "a harmonic gate that swings open at the peak",
+  "a stack of fifths with a city behind it",
+  "a progression that climbs without breaking",
+  "a bright ninth arriving right before the roof",
+  "a major-light turn in the final section",
+  "a harmony cloud that clears at the drop",
+  "a two-chord engine with an enormous window",
+  "a pedal tone that steadies the storm",
+  "an anthem harmony with its own drum roll",
+  "a shift that makes every light stand up",
+  "a warm wall of sound with a clear road",
+  "a resolve that lands like a door closing on light",
+  "a chord bed that holds the whole room",
+  "a brass-gold lift on the last reframe",
+  "a harmony arc that touches every section",
+  "a field of sevenths that the melody crosses",
+  "a release that sounds like a held breath",
+];
+
 const LAYERS = [
   {id:"texture",label:"Texture",phrase:"layered analog texture"},
   {id:"fx",label:"FX",phrase:"cinematic FX swells and risers"},
@@ -6927,6 +7519,47 @@ async function doMaxAuto(target){
   maxRollRunning=false;
   return bestScore;
 }
+
+const EMOTION_MELODY_KEYS = ["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation"];
+const DOMINANT_MELODY_KEYS = ["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"];
+const HARMONY_ANTHEM_KEYS = ["harmony","chordColor","chordProg","scaleId","rootPc","key","leadVoice","arpeggio","voicingType","inversionType","tensionType","resolutionType"];
+async function doMaxEmotionMelody(attempts){
+  attempts = attempts || 25;
+  const score = await doMaxScoreRollSection(EMOTION_MELODY_KEYS, attempts, "Melody");
+  if(score === undefined || maxRollRunning){ return undefined; }
+  state.melodicForce = "dominant";
+  afterChange();
+  const anthem = EMOTION_ANTHEMS[Math.floor(Math.random()*EMOTION_ANTHEMS.length)];
+  setMaxStatus("❤️🔥 Max Emotion-Led Melody → "+score+"/100 · Melody-Dominant Anthem · "+anthem);
+  toast("❤️🔥 Max Emotion-Led Melody → "+score+" /100 · Melody-Dominant Anthem");
+  flash($("feelCard")); flash($("harmonyLabCard"));
+  return score;
+}
+async function doMaxMelodyDominant(attempts){
+  attempts = attempts || 25;
+  const score = await doMaxScoreRollSection(DOMINANT_MELODY_KEYS, attempts, "Melody");
+  if(score === undefined || maxRollRunning){ return undefined; }
+  state.melodicForce = "dominant";
+  afterChange();
+  const anthem = MELODY_DOMINANT_ANTHEMS[Math.floor(Math.random()*MELODY_DOMINANT_ANTHEMS.length)];
+  setMaxStatus("🎤 Max Melody-Dominant Anthem → "+score+"/100 · "+anthem);
+  toast("🎤 Max Melody-Dominant Anthem → "+score+" /100 · "+anthem);
+  flash($("feelCard")); flash($("conceptCard"));
+  return score;
+}
+async function doMaxHarmonyAnthem(attempts){
+  attempts = attempts || 20;
+  const score = await doMaxScoreRollSection(HARMONY_ANTHEM_KEYS, attempts, "Harmony");
+  if(score === undefined || maxRollRunning){ return undefined; }
+  state.melodicForce = "dominant";
+  afterChange();
+  const anthem = HARMONY_ANTHEMS[Math.floor(Math.random()*HARMONY_ANTHEMS.length)];
+  setMaxStatus("🎤🎼 Max Harmony Anthem → "+score+"/100 · "+anthem);
+  toast("🎤🎼 Max Harmony Anthem → "+score+" /100 · "+anthem);
+  flash($("harmonyLabCard")); flash($("feelCard"));
+  return score;
+}
+
 async function doMaxAtom(atomKey, attempts){
   attempts=attempts||20;
   if(!ROLL_FN[atomKey]){ toast("No atom "+atomKey); return; }
@@ -9266,6 +9899,9 @@ const COMMANDS = [
   {icon:"🏷", name:"Copy arrangement section tags", key:"",      run:()=>copyText(arcTags(),"Section tags")},
   {icon:"🏆", name:"Max score roll (keep primary/secondary)", key:"M", run:()=>doMaxScoreRoll(30)},
   {icon:"🏆", name:"Max Melody (keep styles)", key:"", run:()=>doMaxScoreRollSection(["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"],25,"Melody")},
+  {icon:"❤️🔥", name:"Max Emotion-Led Melody (dominant anthem)", key:"", run:()=>doMaxEmotionMelody(25)},
+  {icon:"🎤", name:"Max Melody-Dominant Anthem", key:"", run:()=>doMaxMelodyDominant(25)},
+  {icon:"🎤🎼", name:"Max Harmony Anthem (dominant)", key:"", run:()=>doMaxHarmonyAnthem(20)},
   {icon:"🏆", name:"Max Bass (keep styles)", key:"", run:()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"],25,"Bass")},
   {icon:"🏆", name:"Max Drums (keep styles)", key:"", run:()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"],25,"Drums")},
   {icon:"🏆", name:"Max Tempo Lab (BPM+Key+TechnoLab)", key:"", run:()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId","technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"],25,"TempoLab")},
@@ -9489,6 +10125,12 @@ if($("rhythmRandomBtn")) $("rhythmRandomBtn").addEventListener("click", doRhythm
 if($("rhythmClearBtn")) $("rhythmClearBtn").addEventListener("click", doRhythmClear);
 if($("maxRhythmBtn")) $("maxRhythmBtn").addEventListener("click", ()=>doRhythmMax(20));
 if($("exportRhythmMidiBtn")) $("exportRhythmMidiBtn").addEventListener("click", exportRhythmMidi);
+if($("maxEmotionMelodyBtn")) $("maxEmotionMelodyBtn").addEventListener("click", ()=>doMaxEmotionMelody(25));
+if($("maxAnthemMelodyBtn")) $("maxAnthemMelodyBtn").addEventListener("click", ()=>doMaxMelodyDominant(25));
+if($("maxEmotionMelodyBtn2")) $("maxEmotionMelodyBtn2").addEventListener("click", ()=>doMaxEmotionMelody(20));
+if($("maxAnthemMelodyBtn2")) $("maxAnthemMelodyBtn2").addEventListener("click", ()=>doMaxMelodyDominant(20));
+if($("maxHarmonyAnthemBtn")) $("maxHarmonyAnthemBtn").addEventListener("click", ()=>doMaxHarmonyAnthem(20));
+if($("maxHarmonyAnthemBtn2")) $("maxHarmonyAnthemBtn2").addEventListener("click", ()=>doMaxHarmonyAnthem(15));
 if($("maxHarmonyBtn")) $("maxHarmonyBtn").addEventListener("click", ()=>doHarmonyMax(20));
 if($("harmonyPlayBtn")) $("harmonyPlayBtn").addEventListener("click", ()=>{ toast("🎼 Chords: "+(state.chordProg||"—")); });
 if($("maxSoundDesignBtn")) $("maxSoundDesignBtn").addEventListener("click", ()=>doSoundDesignMax(20));
@@ -9725,6 +10367,8 @@ window.NF = {
   SPARK_THINGS, SPARK_TRANSFORMS, SPARK_CHALLENGES, SPARK_MEGA_LINES, sparkShow, sparkMega, sparkCopy,
   NOTE_NAMES, PICKER_POOLS,
   tempoForGenre, genreOfStyle,
+  EMOTION_ANTHEMS, MELODY_DOMINANT_ANTHEMS, HARMONY_ANTHEMS, EMOTION_MELODY_KEYS, DOMINANT_MELODY_KEYS, HARMONY_ANTHEM_KEYS,
+  doMaxEmotionMelody, doMaxMelodyDominant, doMaxHarmonyAnthem,
   melodyConceptLine,
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
