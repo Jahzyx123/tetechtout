@@ -367,5 +367,40 @@ t("anthem builder commands registered", ()=>{
   return names.some(n=>/Build Melody-Dominant Anthem Idea/i.test(n)) && names.some(n=>/extra spark/i.test(n)) && names.some(n=>/Max Concept Anthem/i.test(n)) || "missing commands";
 });
 
+console.log("\n== MORE MAGIC FEATURES ==\n");
+t("more magic buttons exist", ()=>{
+  const ids=["luckyDipBtn","timeMachineBtn","chaosGridBtn","randomFocusBtn","copySessionBtn","goPerfectBtn"];
+  const missing=ids.filter(id=>!d.getElementById(id));
+  return missing.length===0 || missing.join(",");
+});
+t("lucky dip runs sync + respects style locks when fully locked", ()=>{
+  S().locks.primary=true; S().locks.secondary=true; S().locks.genre=true; S().locks.bpm=false;
+  const before=S().primaryStyle+"|"+S().secondaryStyle;
+  w.NF.luckyDip();
+  S().locks.primary=false; S().locks.secondary=false; S().locks.genre=false;
+  return (S().primaryStyle+"|"+S().secondaryStyle===before && S().melodicForce==="dominant") || "styles changed or not dominant";
+});
+t("time machine changes bpm/key temporal setup", ()=>{
+  S().locks.bpm=false; S().locks.key=false;
+
+  const a=S().bpm; w.NF.timeMachine();
+  return (typeof S().bpm==="number" && S().bpm>=60 && S().bpm<=200 && typeof S().duration==="string") || "bad bpm/dur";
+});
+t("chaos grid fills 16 cells + pattern", ()=>{
+  w.NF.chaosGrid();
+  return (Array.isArray(S().rhythmGrid) && S().rhythmGrid.length===16 && !!S().rhythmPattern) || "bad grid";
+});
+t("copy session JSON returns encoded state", ()=>{
+  const e=w.NF.copySessionJson();
+  return typeof e==="string" && e.length>50 && !!w.NF.decodeState(e) || "bad encode";
+});
+t("random focus uses 12 categories", ()=>{
+  return w.NF.FOCUS_CATEGORIES.length===12 && typeof w.NF.randomFocus==="function" && typeof w.NF.goPerfect==="function";
+});
+t("more magic commands registered", ()=>{
+  const names=w.NF.COMMANDS.map(c=>c.name);
+  return names.some(n=>/Lucky Dip/.test(n)) && names.some(n=>/Time Machine/.test(n)) && names.some(n=>/Chaos Grid/.test(n)) && names.some(n=>/Random Focus/.test(n)) && names.some(n=>/Copy session as JSON/.test(n)) && names.some(n=>/Go for 100/.test(n)) || "missing magic commands";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

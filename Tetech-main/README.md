@@ -112,6 +112,15 @@ python3 -m http.server 8080
 - **🎯 Apply challenge** — pushes a rolled challenge straight into the Concept narrative.
 - All of these are also in the ⌘ command palette. Every new entry passes the instrumental-only sanitizer and maximum-energy filter.
 
+### 🎰 MORE MAGIC — random + useful one-click tools
+- **🎰 Lucky Dip** — rolls a whole surprise track in one click: styles, mood, melody, bass, drums, harmony, techno, sound design, mix, arrangement, concept + fresh variations. Keeps whatever you locked.
+- **🕰 Time Machine** — randomizes BPM/key/duration/arrangement/energy shape for a fresh temporal mood.
+- **🎛 Chaos Grid** — rolls a brand-new 16-step rhythm grid + pattern.
+- **🧠 Random Focus** — picks a random section (Melody/Bass/Drums/Tempo/TechnoLab/Concept/Arrangement/Sound/Mix/Spatial/Groove/Texture) and runs a 12-try maximizer on it.
+- **📋 Copy session JSON** — copies the entire current session as a shareable JSON snapshot.
+- **🎯 Go for 100** — Auto-Max targeting a perfect 100/100 (keeps styles, up to 200 tries).
+- All six are also available in the ⌘ command palette.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed

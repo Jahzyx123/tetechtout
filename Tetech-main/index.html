@@ -478,6 +478,15 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm" id="sparkMoreBtn" title="Roll one of the extra spark pools — weather / light / sounds / futures / anthem names">🎲 More spark</button>
             <button class="sm" id="sparkApplyChallengeBtn" title="Put the current challenge into the Concept narrative">🎯 Apply challenge</button>
           </div>
+          <div class="cluster">
+            <span class="readout" style="width:100%;font-weight:900;letter-spacing:1px;color:var(--cyan)">MORE MAGIC</span>
+            <button class="sm power" id="luckyDipBtn" title="Roll a whole lucky surprise track — styles, mood, melody, bass, drums, concept, arrangement ⟩ keep what you love">🎰 Lucky Dip</button>
+            <button class="sm" id="timeMachineBtn" title="Randomize BPM/key/duration/arrangement/energy — a fresh temporal mood">🕰 Time Machine</button>
+            <button class="sm" id="chaosGridBtn" title="Roll a random 16-step rhythm grid + rhythm pattern">🎛 Chaos Grid</button>
+            <button class="sm power" id="randomFocusBtn" title="Pick a random section and maximize it (keeps styles)">🧠 Random Focus</button>
+            <button class="sm" id="copySessionBtn" title="Copy the whole current session as a shareable JSON to your clipboard">📋 Copy session JSON</button>
+            <button class="sm power" id="goPerfectBtn" title="Auto-max until 100 (keeps styles, up to 200 tries)">🎯 Go for 100</button>
+          </div>
           <div class="readout" id="sparkMeta">Hundreds of random sparks are loaded. Roll until one gives you a whole song.</div>
         </div>
       </div>
@@ -10174,6 +10183,85 @@ function sparkApplyChallenge(){
   commit(); state.concept.narrative = lastSpark; afterChange(); toast("🎯 Challenge applied: " + lastSpark);
 }
 
+
+const FOCUS_CATEGORIES = [
+  {label:"Melody", keys:["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept"]},
+  {label:"Bass", keys:["bassVoice","bassMovement","bassRel"]},
+  {label:"Drums", keys:["kick","hats","snare","perc","toms","groove","swing","sync","intensity"]},
+  {label:"Tempo", keys:["bpm","key","rootPc","scaleId"]},
+  {label:"TechnoLab", keys:["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"]},
+  {label:"Concept", keys:["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"]},
+  {label:"Arrangement", keys:["arrangement"]},
+  {label:"SoundDesign", keys:["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity"]},
+  {label:"MixMaster", keys:["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain"]},
+  {label:"SpatialMod", keys:["stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer"]},
+  {label:"GrooveMelodic", keys:["ghostNotes","humanizeType","pocketType","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType"]},
+  {label:"TextureFx", keys:["rideType","crashType","clapLayer","percFill","fxType","transitionType","riserType","impactType","energyCurve","buildType","dropType"]}
+];
+async function randomFocus(){
+  if(maxRollRunning){ toast("⏳ Already running — wait for the current maximizer"); return; }
+  const cat = FOCUS_CATEGORIES[Math.floor(Math.random()*FOCUS_CATEGORIES.length)];
+  toast("🧠 Random Focus → optimizing " + cat.label + "…");
+  const score = await doMaxScoreRollSection(cat.keys, 12, cat.label);
+  if(score !== undefined && !maxRollRunning){
+    setSpark("🧠 Random Focus optimized " + cat.label + " → " + score + "/100", "Random Focus", cat.label + " · " + cat.keys.length + " atoms · score " + score + "/100");
+    toast("🧠 Random Focus → " + cat.label + " best " + score + "/100");
+  }
+  return score;
+}
+function luckyDip(){
+  commit(); beginRoll();
+  ["genre","feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","bassVoice","bassMovement","bassRel","kick","hats","snare","perc","toms","groove","swing","sync","intensity","technoLab","soundDesign","mixMaster","spatialMod","grooveMelodic","textureFx","arrangement","concept","melodyConcept","chord","rhythmPattern"].forEach(k=>{
+    const ks = GROUPS[k] ? GROUPS[k] : [k];
+    ks.forEach(x=>{ if(!state.locks[x]) ROLL_FN[x](state); });
+  });
+  state.melodicForce = "dominant"; state.influence = "strong"; state.duration = "extended";
+  generateVariations();
+  const picked = pick(SPARK_VIBES);
+  afterChange();
+  setSpark("🎰 " + picked, "Lucky Dip", "Lucky Dip · " + (state.bpm||140) + " BPM · " + keyName(state) + " · " + (state.primaryStyle||"") + " · score " + scorePrompt().total + "/100");
+  toast("🎰 Lucky Dip: " + picked);
+  return picked;
+}
+function timeMachine(){
+  commit(); beginRoll();
+  const bpmOpts = [70,80,85,90,95,100,110,120,122,124,126,128,130,132,134,136,138,140,142,144,146,148,150,152,155,160,170,180,190,200];
+  if(!state.locks.bpm) state.bpm = bpmOpts[Math.floor(rng()*bpmOpts.length)];
+  if(!state.locks.key) ROLL_FN.key(state);
+  if(!state.locks.arrangement) ROLL_FN.arrangement(state);
+  state.duration = ["compact","standard","extended"][Math.floor(rng()*3)];
+  if(!state.locks["energyCurve"]) ROLL_FN.energyCurve(state);
+  if(!state.locks["buildType"]) ROLL_FN.buildType(state);
+  if(!state.locks["dropType"]) ROLL_FN.dropType(state);
+  afterChange();
+  setSpark("🕰 Time Machine: " + state.bpm + " BPM · " + keyName(state) + " · " + (state.duration||"standard") + " · " + (state.arrangement||"—"), "Time Machine", "Fresh tempo + key + duration + arrangement + energy shape");
+  toast("🕰 Time Machine → " + state.bpm + " BPM · " + keyName(state) + " · " + state.duration);
+  return state.bpm;
+}
+function chaosGrid(){
+  commit(); beginRoll();
+  state.rhythmGrid = Array.from({length:16},()=>rng()>0.45);
+  if(!state.locks.rhythmPattern) ROLL_FN.rhythmPattern(state);
+  state.rhythmPattern = pick(RHYTHM_PATTERNS);
+  afterChange();
+  setSpark("🎛 Chaos Grid: " + state.rhythmGrid.map((on,i)=>on?(i+1):"-").join(" "), "Chaos Grid", "16-step random grid · " + (state.rhythmPattern||"custom") + " · " + (state.bpm||140) + " BPM");
+  toast("🎛 Chaos Grid randomized");
+  return state.rhythmGrid.join("");
+}
+function copySessionJson(){
+  const enc = encodeState(state);
+  const data = {app:"NEON FORGE", saved_at:new Date().toISOString(), seed:state.seed, state:enc};
+  copyText(JSON.stringify(data), "Session JSON");
+  return enc;
+}
+async function goPerfect(){
+  if(maxRollRunning){ toast("⏳ Already running"); return; }
+  commit(); state.melodicForce="dominant"; afterChange();
+  const score = await doMaxAuto(100);
+  if(score !== undefined) toast("🎯 Go for 100 → best " + score + "/100");
+  return score;
+}
+
 /* ==================================================================
    COMMAND PALETTE + SHORTCUTS
    Every action in the app reachable from the keyboard in two keystrokes.
@@ -10259,6 +10347,12 @@ const COMMANDS = [
   {icon:"🎲", name:"Roll extra spark (weather/light/sounds)", key:"", run:()=>sparkShowExtra()},
   {icon:"💡", name:"Max Concept Anthem (dominant)", key:"", run:()=>doMaxConceptAnthem(16)},
   {icon:"🎯", name:"Apply challenge to concept", key:"", run:()=>sparkApplyChallenge()},
+  {icon:"🎰", name:"Lucky Dip (whole surprise track)", key:"", run:()=>luckyDip()},
+  {icon:"🕰", name:"Time Machine (BPM/key/duration/arrangement)", key:"", run:()=>timeMachine()},
+  {icon:"🎛", name:"Chaos Grid (16-step rhythm)", key:"", run:()=>chaosGrid()},
+  {icon:"🧠", name:"Random Focus (random maximized category)", key:"", run:()=>randomFocus()},
+  {icon:"📋", name:"Copy session as JSON", key:"", run:()=>copySessionJson()},
+  {icon:"🎯", name:"Go for 100 (auto-max perfect)", key:"", run:()=>goPerfect()},
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
 let cmdSel = 0, cmdFiltered = COMMANDS.slice();
@@ -10523,6 +10617,12 @@ if($("sparkTransformApplyBtn")) $("sparkTransformApplyBtn").addEventListener("cl
 if($("anthemIdeaBtn")) $("anthemIdeaBtn").addEventListener("click", anthemIdea);
 if($("maxAnthemIdeaBtn")) $("maxAnthemIdeaBtn").addEventListener("click", ()=>maxAnthemIdea(18));
 if($("sparkMoreBtn")) $("sparkMoreBtn").addEventListener("click", sparkShowExtra);
+if($("luckyDipBtn")) $("luckyDipBtn").addEventListener("click", luckyDip);
+if($("timeMachineBtn")) $("timeMachineBtn").addEventListener("click", timeMachine);
+if($("chaosGridBtn")) $("chaosGridBtn").addEventListener("click", chaosGrid);
+if($("randomFocusBtn")) $("randomFocusBtn").addEventListener("click", randomFocus);
+if($("copySessionBtn")) $("copySessionBtn").addEventListener("click", copySessionJson);
+if($("goPerfectBtn")) $("goPerfectBtn").addEventListener("click", goPerfect);
 if($("sparkApplyChallengeBtn")) $("sparkApplyChallengeBtn").addEventListener("click", sparkApplyChallenge);
 if($("maxConceptAnthemBtn")) $("maxConceptAnthemBtn").addEventListener("click", ()=>doMaxConceptAnthem(16));
 if($("sparkCopyBtn")) $("sparkCopyBtn").addEventListener("click", sparkCopy);
@@ -10711,6 +10811,7 @@ window.NF = {
   SPARK_IDEAS, SPARK_TITLES, SPARK_MASHUPS, SPARK_CONSTRAINTS, SPARK_TIPS, SPARK_VIBES, SPARK_PLACES,
   SPARK_WEATHER, SPARK_LIGHT, SPARK_SOUNDS, SPARK_FUTURES, SPARK_ANTHEM_NAMES, EXTRA_SPARK_KINDS,
   SPARK_THINGS, SPARK_TRANSFORMS, SPARK_CHALLENGES, SPARK_MEGA_LINES, sparkShow, sparkMega, sparkCopy,
+  FOCUS_CATEGORIES, randomFocus, luckyDip, timeMachine, chaosGrid, copySessionJson, goPerfect,
   sparkShowExtra, anthemIdea, maxAnthemIdea, doMaxConceptAnthem, sparkApplyChallenge,
   NOTE_NAMES, PICKER_POOLS,
   tempoForGenre, genreOfStyle,
