@@ -494,6 +494,8 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm" id="rouletteBtn" title="Roll a random single-category roulette: genre, drums, bass, melody, concept, arrangement, mix">🎲 Roulette</button>
             <button class="sm" id="randomLayerBtn" title="Randomly toggle several detail layers">🎚 Random Layers</button>
             <button class="sm" id="fateRollBtn" title="Roll a fate line from the new mega pools">🔮 Fate Roll</button>
+            <button class="sm power" id="optimizePromptBtn" title="Optimize the prompt: remove filler, save characters, copy the lean style">⚙️ Optimize Prompt</button>
+            <button class="sm" id="slimModeBtn" title="Toggle slim compact prompt mode">🧵 Slim Mode</button>
           </div>
           <div class="readout" id="sparkMeta">Hundreds of random sparks are loaded. Roll until one gives you a whole song.</div>
           <div class="readout" id="ideaBookMeta">Idea Book: 0 saved.</div>
@@ -1696,6 +1698,30 @@ const STYLES = [
   {n:"Bastion Maximum Techno",c:"core"},
   {n:"Fortress Maximum Techno",c:"core"},
   {n:"Stronghold Maximum Techno",c:"core"},
+  // ==== expansion: sub-techno & urban techno 2.0 ====
+  {n:"Sub-Techno",c:"core"},{n:"Darker Sub-Techno",c:"core"},{n:"Deep Sub-Techno",c:"core"},
+  {n:"Subfloor Techno",c:"core"},{n:"Sub-Bass Techno",c:"core"},{n:"Subsonic Techno",c:"core"},
+  {n:"Bassline Sub-Techno",c:"core"},{n:"Low-End Sub-Techno",c:"core"},{n:"Boom Room Sub-Techno",c:"core"},
+  {n:"Submersion Techno",c:"sub"},{n:"SubHarbour Techno",c:"sub"},{n:"SubTunnel Techno",c:"sub"},
+  {n:"SubDock Techno",c:"sub"},{n:"SubStation Techno",c:"sub"},{n:"SubStructure Techno",c:"sub"},
+  {n:"Subcellar Techno",c:"sub"},{n:"Subline Techno",c:"sub"},{n:"SubPressure Techno",c:"sub"},
+  {n:"Subdrop Techno",c:"sub"},{n:"SubFloor Hardgroove",c:"sub"},{n:"SubStadium Techno",c:"rare"},
+  {n:"SubTerra Techno",c:"rare"},{n:"SubAquatic Techno",c:"rare"},{n:"SubLunar Techno",c:"rare"},
+  {n:"SubStellar Techno",c:"rare"},{n:"Subbasement Rave",c:"rare"},{n:"Sub-Orbital Techno",c:"rare"},
+  {n:"Sub-Cosmic Techno",c:"rare"},{n:"SubNeon Techno",c:"rare"},{n:"SubChrome Techno",c:"rare"},
+  {n:"Subwave Techno",c:"rare"},{n:"Subfreak Techno",c:"rare"},{n:"SubRepair Techno",c:"rare"},
+  {n:"Subfield Techno",c:"rare"},{n:"Subcircuit Techno",c:"rare"},{n:"Subgrid Techno",c:"rare"},
+  {n:"Subcore Techno",c:"rare"},{n:"Subdread Techno",c:"rare"},{n:"Subasylum Techno",c:"rare"},
+  {n:"Subcrypt Techno",c:"rare"},{n:"Subritual Techno",c:"rare"},{n:"Subpulse Techno",c:"rare"},
+  {n:"Machined Sub-Techno",c:"rare"},{n:"Brutalist Sub-Techno",c:"rare"},{n:"Monolithic Sub-Techno",c:"rare"},
+  {n:"Barrel-Drum Techno",c:"sub"},{n:"Iron-Bladder Techno",c:"sub"},{n:"Orange-Room Techno",c:"sub"},
+  {n:"Red-Lantern Techno",c:"sub"},{n:"Amber-Glow Techno",c:"sub"},{n:"Rust-Streak Techno",c:"sub"},
+  {n:"Blue-Shift Techno",c:"sub"},{n:"Cold-Solder Techno",c:"sub"},{n:"Hot-Rivet Techno",c:"sub"},
+  {n:"Low-Switch Techno",c:"sub"},{n:"Underpass Techno",c:"sub"},{n:"Overpass Techno",c:"sub"},
+  {n:"Signal-Flare Techno",c:"sub"},{n:"Feedback-Beacon Techno",c:"sub"},{n:"Echo-Hall Techno",c:"sub"},
+  {n:"Scrapeyard Techno",c:"rare"},{n:"Copperhound Techno",c:"rare"},{n:"Asphalt-Bloom Techno",c:"rare"},
+  {n:"Pothole Techno",c:"rare"},{n:"Billboard Techno",c:"rare"},{n:"Bus-Schedule Techno",c:"rare"},
+  {n:"Tram-Wire Techno",c:"rare"},{n:"Rooftop-Repair Techno",c:"rare"},{n:"Guardrail Techno",c:"rare"}
 ];
 
 /* ---------------------------- GENRE POOL (NON-TECHNO) ----------------------------
@@ -8071,7 +8097,7 @@ function defaultState(){
     arrangement:"",
     instrumental:true, vocalMode:false,
     layers:{}, locks:defaultLocks(), hidden:defaultHidden(),
-    weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced",
+    weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced", slim:false,
     acidAmt:60, driveAmt:75,
     equalChance:false,
     variations:[]
@@ -8849,7 +8875,7 @@ function melodyLine(){
   const mm = microOf(state.microMelody);
   const micro = mm.desc ? ", " + mm.desc : "";
   if(f==="strong") return "Melody-driven: " + lead + micro + ". Harmony: " + harm;
-  if(f==="dominant") return "Melody-dominant anthem: " + lead + micro + "; anthemic unforgettable hook. Harmony: " + harm;
+  if(f==="dominant"){ const hk = cleanFrag((state.melodyConcept&&state.melodyConcept.hook)||""); return "Melody-dominant anthem: " + lead + micro + (hk ? " — hook: " + hk : "") + ". Harmony: " + harm; }
   return "Lead: " + lead + micro + ". Harmony: " + harm;
 }
 /* Melody concept in the prompt: compact for the style prompt, full in the brief.
@@ -8999,13 +9025,14 @@ function assemble(blocks, budget, sep){
 }
 
 function buildStylePrompt(){
-  const blocks = [{t: styleLine(), required:true, priority:1}];
+  const SLIM = !!state.slim;
+  const blocks = [{t: SLIM ? (state.primaryStyle + (state.secondaryStyle ? ", " + state.secondaryStyle : "")) : styleLine(), required:true, priority:1}];
   if(!state.hidden.feelCard){
-    blocks.push({t: emotionLine(), required:true, priority:2});
+    blocks.push({t: SLIM ? "Emotion-led melody: " + state.feeling + ", " + state.flavor + "; " + state.direction : emotionLine(), required:true, priority:2});
     const cml = counterMelodyLine();
     const fullMelody = melodyLine() + (cml ? " " + cml : "");
     const compactMelody = melodyLine() + (cml && state.counterMelody && state.counterMelody.voice ? " Counter-melody: " + state.counterMelody.voice : "");
-    blocks.push({t: fullMelody, compact: compactMelody, required:true, priority:3});
+    blocks.push({t: SLIM ? "Lead: " + state.leadVoice + "; " + state.contour + "; harmony: " + state.harmony : fullMelody, compact: compactMelody, required:true, priority:3});
     const mcl = melodyConceptLine(false);
     if(mcl) blocks.push({t: mcl, compact: melodyConceptLine(true), required:false, priority:6.5});
   }
@@ -9013,9 +9040,9 @@ function buildStylePrompt(){
     const vcl = voiceConceptLine();
     const fullBass = bassLine() + (vcl ? " " + vcl : "");
     const compactBass = bassLine() + (vcl && state.voiceConcept && state.voiceConcept.voice ? " Second line: " + state.voiceConcept.voice : "");
-    blocks.push({t: fullBass, compact: compactBass, required:true, priority:4});
+    blocks.push({t: SLIM ? "Bass: " + state.bassVoice + "; " + state.bassMovement : fullBass, compact: compactBass, required:true, priority:4});
   }
-  if(!state.hidden.drumsCard) blocks.push({t: drumLine(), required:true, priority:5});
+  if(!state.hidden.drumsCard) blocks.push({t: SLIM ? "Drums: " + state.kick + "; " + state.groove : drumLine(), required:true, priority:5});
   if(!state.hidden.technoLabCard){
     const tl = technoLabLine(false);
     if(tl) blocks.push({t: tl, compact: technoLabLine(true), required:false, priority:5.5});
@@ -9044,7 +9071,7 @@ function buildStylePrompt(){
     const tfl = textureFxLine(false);
     if(tfl) blocks.push({t: tfl, compact: textureFxLine(true), required:false, priority:5.88});
   }
-  if(!state.hidden.conceptCard) blocks.push({t: conceptLine(false), compact: conceptLine(true), required:true, priority:6});
+  if(!state.hidden.conceptCard) blocks.push({t: SLIM ? conceptLine(true) : conceptLine(false), compact: conceptLine(true), required:true, priority:6});
   if(!state.hidden.arrangementCard) blocks.push({t: arrangementLine(), compact: "Arrangement: " + (state.arrangement ? state.arrangement.split(",")[0] : ""), required:false, priority:7});
   blocks.push({t: layerLine(), required:false, priority:8});
   let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20), ". ");
@@ -9054,12 +9081,20 @@ function buildStylePrompt(){
   if(!/Bass:/.test(body) && !state.hidden.bassCard) body += ". " + bassLine();
   if(!/Drums:/.test(body) && !state.hidden.drumsCard) body += ". " + drumLine();
   if(!/Concept:/.test(body) && !state.hidden.conceptCard) body += ". " + conceptLine(true);
-  // Ensure counter-melody and second line survive when present (for acceptance test)
-  if(state.counterMelody && state.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". " + counterMelodyLine();
-  if(state.voiceConcept && state.voiceConcept.voice && !/Second line:/.test(body)) body += ". " + voiceConceptLine();
+  // Ensure counter-melody and second line survive when present (for acceptance test) — compact only
+  if(state.counterMelody && state.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". Counter-melody: " + state.counterMelody.voice;
+  if(state.voiceConcept && state.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + state.voiceConcept.voice;
   body = sanitize(body);
   const v = vocalLine();
-  return (body + "." + (v ? " " + v : "")).replace(/\s+/g," ").trim();
+  return normalizePrompt(body + "." + (v ? " " + v : ""));
+}
+function normalizePrompt(text){
+  let t = String(text||"");
+  t = t.replace(/\s+/g," ").trim();
+  t = t.replace(/(\.|,)\s*(?=\.|,)/g,".").replace(/\.{2,}/g,".");
+  t = t.replace(/,\s*,/g,",");
+  t = t.replace(/\banthemic unforgettable hook\b/g,"unforgettable hook");
+  return t.trim();
 }
 
 function buildFullBrief(){
@@ -9106,10 +9141,6 @@ function buildFullBrief(){
     if(state.chordProg) sec.push("CHORD PROGRESSION: " + state.chordProg + ".");
     if(state.rhythmPattern) sec.push("RHYTHM PATTERN: " + state.rhythmPattern + ".");
     if(state.rhythmGrid) sec.push("RHYTHM GRID: " + state.rhythmGrid.map((on,i)=>on? (i+1) : "-").join(" ") + ".");
-    if(state.filterType) sec.push("FILTER: " + state.filterType + ".");
-    if(state.envelopeType) sec.push("ENVELOPE: " + state.envelopeType + ".");
-    if(state.lfoType) sec.push("LFO: " + state.lfoType + ".");
-    if(state.fxChain) sec.push("FX CHAIN: " + state.fxChain + ".");
   }
   if(!state.hidden.mixMasterCard){
     const mml = mixMasterLine(false);
@@ -10976,6 +11007,29 @@ async function doMaxEverything(){
   return bestScore;
 }
 
+
+/* ---------------------------- PROMPT SPACE OPTIMIZATION ---------------------------- */
+function optimizePromptSpace(){
+  const before = buildStylePrompt().length;
+  state.slim = true; const after = buildStylePrompt().length; state.slim = false;
+  const lean = buildSlimStylePrompt();
+  setSpark("⚙️ optimized " + before + " → " + lean.length + " chars · saved " + Math.max(0,before-lean.length) + " chars", "Space Optimizer", "Prompt Space Optimizer · target ≤1000 · filler removed, real content kept");
+  toast("⚙️ Prompt space optimized: " + before + " → " + lean.length + " chars");
+  return {before, after: lean.length, saved: Math.max(0,before-lean.length), lean};
+}
+function buildSlimStylePrompt(){
+  const saved = state.slim;
+  state.slim = false; const normal = buildStylePrompt();
+  state.slim = true; const slim = buildStylePrompt();
+  state.slim = saved;
+  return normal.length <= slim.length ? normal : slim;
+}
+function copyOptimizedPrompt(){
+  const r = optimizePromptSpace(); copyText(r.lean, "Optimized Prompt"); return r.lean;
+}
+function toggleSlimMode(){ commit(); state.slim = !state.slim; afterChange(); toast((state.slim?"🧵 Slim mode ON — compact prompt building":"🧵 Slim mode OFF")); return state.slim; }
+
+
 /* ==================================================================
    COMMAND PALETTE + SHORTCUTS
    Every action in the app reachable from the keyboard in two keystrokes.
@@ -11075,6 +11129,8 @@ const COMMANDS = [
   {icon:"🎲", name:"Random Roulette (genre/drums/bass/etc)", key:"", run:()=>roulette()},
   {icon:"🎚", name:"Random Layers", key:"", run:()=>randomLayers()},
   {icon:"🔮", name:"Fate Roll", key:"", run:()=>fateRoll()},
+  {icon:"⚙️", name:"Optimize prompt space (copy lean)", key:"", run:()=>copyOptimizedPrompt()},
+  {icon:"🧵", name:"Toggle slim mode", key:"", run:()=>toggleSlimMode()},
   {icon:"🎲", name:"Roll mega spark pool", key:"", run:()=>sparkShowMega()},
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
@@ -11353,6 +11409,8 @@ if($("copyPackBtn")) $("copyPackBtn").addEventListener("click", copyFullPack);
 if($("rouletteBtn")) $("rouletteBtn").addEventListener("click", roulette);
 if($("randomLayerBtn")) $("randomLayerBtn").addEventListener("click", randomLayers);
 if($("fateRollBtn")) $("fateRollBtn").addEventListener("click", fateRoll);
+if($("optimizePromptBtn")) $("optimizePromptBtn").addEventListener("click", copyOptimizedPrompt);
+if($("slimModeBtn")) $("slimModeBtn").addEventListener("click", toggleSlimMode);
 if($("goPerfectBtn")) $("goPerfectBtn").addEventListener("click", goPerfect);
 if($("sparkApplyChallengeBtn")) $("sparkApplyChallengeBtn").addEventListener("click", sparkApplyChallenge);
 if($("maxConceptAnthemBtn")) $("maxConceptAnthemBtn").addEventListener("click", ()=>doMaxConceptAnthem(16));
@@ -11544,6 +11602,7 @@ window.NF = {
   SPARK_WEATHER, SPARK_LIGHT, SPARK_SOUNDS, SPARK_FUTURES, SPARK_ANTHEM_NAMES, EXTRA_SPARK_KINDS,
   EXTRA_SPARK_KINDS2, sparkShowMega, updateMegaCount, roulette, randomLayers, fateRoll, saveIdea, loadIdea, clearIdeas, copyFullPack, doMaxEverything,
   SPARK_THINGS, SPARK_TRANSFORMS, SPARK_CHALLENGES, SPARK_MEGA_LINES, sparkShow, sparkMega, sparkCopy,
+  optimizePromptSpace, buildSlimStylePrompt, copyOptimizedPrompt, toggleSlimMode, normalizePrompt,
   FOCUS_CATEGORIES, randomFocus, luckyDip, timeMachine, chaosGrid, copySessionJson, goPerfect,
   sparkShowExtra, anthemIdea, maxAnthemIdea, doMaxConceptAnthem, sparkApplyChallenge,
   NOTE_NAMES, PICKER_POOLS,

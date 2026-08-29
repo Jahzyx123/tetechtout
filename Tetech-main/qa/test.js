@@ -437,5 +437,42 @@ t("total spark count grew massively", ()=>{
   return num>900 || ("only "+num);
 });
 
+console.log("\n== SUB-TECHNO STYLE + PROMPT SPACE OPTIMIZER ==\n");
+t("style pool grew + has sub-techno entries", ()=>{
+  const tech=w.NF.STYLES.filter(x=>/Sub-?Techno|Subfloor|Sub-Bass|Subsonic|Subdrop|SubTunnel|SubHarbour|SubTerra/.test(x.n));
+  return w.NF.STYLES.length>=800 && tech.length>=14 || ("styles="+w.NF.STYLES.length+" subtech="+tech.length);
+});
+t("sub-techno names are unique in pool", ()=>{
+  const seen=new Set(); const bad=[];
+  for(const st of w.NF.STYLES){ if(seen.has(st.n)) bad.push(st.n); seen.add(st.n); }
+  return bad.length===0 || "dupes:"+bad.join(",");
+});
+t("slim mode never exceeds 1000", ()=>{
+  S().slim=true; let bad=0;
+  for(let i=0;i<40;i++){ w.NF.doRoll("power"); if(w.NF.buildStylePrompt().length>1000) bad++; }
+  S().slim=false; return bad===0 || bad+" over";
+});
+t("optimize prompt saves chars and copies a lean result", ()=>{
+  w.NF.doRoll("power");
+  const a=w.NF.buildStylePrompt(); const r=w.NF.optimizePromptSpace();
+  return (r && r.lean && r.saved>=0 && r.lean.length<=a.length && r.lean.length<=1000) || JSON.stringify(r);
+});
+t("full brief no longer repeats filter/env/lfo/fx", ()=>{
+  w.NF.doRoll("power");
+  const b=w.NF.buildFullBrief();
+  const dupes=(b.match(/FILTER:|ENVELOPE:|LFO:|FX CHAIN:/g)||[]).length;
+  return dupes===0 || ("duplicate detail headers: "+dupes);
+});
+t("dominant melody uses real hook instead of generic filler", ()=>{
+  S().melodicForce="dominant"; w.NF.doRoll("melody");
+  const line=w.NF.buildStylePrompt();
+  S().melodicForce="balanced";
+  return !/anthemic unforgettable hook/.test(line) || "generic filler remains";
+});
+t("optimizer commands registered", ()=>{
+  const names=w.NF.COMMANDS.map(c=>c.name);
+  return names.some(n=>/Optimize prompt space/.test(n)) && names.some(n=>/Toggle slim mode/.test(n)) || "missing optimizer commands";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

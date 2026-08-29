@@ -131,6 +131,13 @@ python3 -m http.server 8080
 - **📦 Copy Full Pack** — copies Style Prompt + Full Brief + Suno Kit + Engineer notes in one clipboard payload.
 - Everything is available in the ⌘ command palette and passes the instrumental-only sanitizer.
 
+### 🏭 Sub-Techno style expansion + prompt space optimizer
+- **+69 new styles** (838 total): a large **Sub-Techno** family — Sub-Techno, Darker/Deep Sub-Techno, Subfloor, Sub-Bass, Subsonic, Submersion, SubTunnel, SubHarbour, SubTerra, SubStellar + urban/industrial extras (Underpass, Signal-Flare, Echo-Hall, Asphalt-Bloom, Tram-Wire, Guardrail…), spread across core / sub / rare. All unique and sanitizer-safe.
+- **⚙️ Optimize Prompt** — removes throwaway filler, duplicate punctuation, and repeated detail headers; copies the lean Style Prompt and reports how many chars were saved.
+- **🧵 Slim Mode** — toggles compact prompt building (always ≤1000 chars); the optimizer returns whichever of normal/slim is shorter.
+- **Full Brief de-duplicated** — FILTER / ENVELOPE / LFO / FX CHAIN were already inside the Sound Design line, so those separate lines are gone (frees ~100+ chars for real detail).
+- **Real hooks instead of filler** — "Melody-dominant anthem" now writes the actual melody-concept hook when one exists instead of the generic phrase.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed
