@@ -121,6 +121,16 @@ python3 -m http.server 8080
 - **🎯 Go for 100** — Auto-Max targeting a perfect 100/100 (keeps styles, up to 200 tries).
 - All six are also available in the ⌘ command palette.
 
+### 💥 MEGA BATCH — huge extra random content + more one-click tools
+- **16 brand-new spark pools** (hundreds more entries): Titles II, Hooks, Openers, Section Sparks, Style Stunts, Genre Scrambles, Basslines, Drum Lines, Melody Phrases, Concept Twists, Arrangement Packs, Mix Punches, Master Hearts, Suno Cues, DJ Notes, Magic II.
+- **🎲 Roulette** — randomly targets one category (genre / drums / bass / melody / concept / arrangement / mix) and rerolls it.
+- **🎚 Random Layers** — randomizes the detail layers on or off.
+- **🔮 Fate Roll** — pulls from a rotating set of the mega pools.
+- **💪 Max EVERYTHING** — the ultimate: 60 tries that unlock *everything including styles* and keep the best score.
+- **📌 Idea Book** — save up to 40 full snapshots locally; **📖 Load Idea** restores a random saved one; **🧹 Clear Ideas** empties it.
+- **📦 Copy Full Pack** — copies Style Prompt + Full Brief + Suno Kit + Engineer notes in one clipboard payload.
+- Everything is available in the ⌘ command palette and passes the instrumental-only sanitizer.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed

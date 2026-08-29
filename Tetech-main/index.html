@@ -486,8 +486,17 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm power" id="randomFocusBtn" title="Pick a random section and maximize it (keeps styles)">🧠 Random Focus</button>
             <button class="sm" id="copySessionBtn" title="Copy the whole current session as a shareable JSON to your clipboard">📋 Copy session JSON</button>
             <button class="sm power" id="goPerfectBtn" title="Auto-max until 100 (keeps styles, up to 200 tries)">🎯 Go for 100</button>
+            <button class="sm power" id="maxEverythingBtn" title="Max EVERYTHING including styles — the mega ultimate">💪 Max EVERYTHING</button>
+            <button class="sm" id="saveIdeaBtn" title="Save the current result to your Idea Book">📌 Save idea</button>
+            <button class="sm" id="loadIdeaBtn" title="Load a random saved idea from your Idea Book">📖 Load idea</button>
+            <button class="sm" id="clearIdeasBtn" title="Clear the Idea Book">🧹 Clear ideas</button>
+            <button class="sm" id="copyPackBtn" title="Copy Style + Full Brief + Suno Kit + Engineer notes in one clipboard">📦 Copy Full Pack</button>
+            <button class="sm" id="rouletteBtn" title="Roll a random single-category roulette: genre, drums, bass, melody, concept, arrangement, mix">🎲 Roulette</button>
+            <button class="sm" id="randomLayerBtn" title="Randomly toggle several detail layers">🎚 Random Layers</button>
+            <button class="sm" id="fateRollBtn" title="Roll a fate line from the new mega pools">🔮 Fate Roll</button>
           </div>
           <div class="readout" id="sparkMeta">Hundreds of random sparks are loaded. Roll until one gives you a whole song.</div>
+          <div class="readout" id="ideaBookMeta">Idea Book: 0 saved.</div>
         </div>
       </div>
 
@@ -6976,6 +6985,556 @@ const SPARK_ANTHEM_NAMES = [
   "Wait for the Cue",
 ];
 
+
+
+/* ============================================================
+   MEGA BATCH — dozens of new random spark pools + tools
+   ============================================================ */
+const SPARK_TITLES2 = [
+  "After the Last Train",
+  "City of Warm Signals",
+  "The Green Line Waltz",
+  "A Memory of Rain on Steel",
+  "Static Garden",
+  "Chrome Botany",
+  "The Lighthouse Frequency",
+  "Neon Underpass",
+  "Roadmap for a Lost Sun",
+  "Pulse of the Empty Docks",
+  "Antenna Fields",
+  "The Last Ferry Out",
+  "Electric Orchard",
+  "Midnight Freight",
+  "Balcony of Hot Lights",
+  "A Portrait of Moving Light",
+  "The Bridge That Listens",
+  "Halo of the Motorway",
+  "Sunrise Over the Scrapyard",
+  "Magnetic Boulevard",
+  "Signal on Amber",
+  "The Long Way Home at 132 BPM",
+  "Found Sound Cathedral",
+  "Powerline Ballet",
+  "The Roof At Blue Hour",
+  "A Picture of the Next Exit",
+  "One Tile of a Giant Mosaic",
+  "Tunnels With No Wires",
+  "The Shifting Archipelago",
+  "Waterlight Avenue",
+  "Glasshouse of the Night",
+  "The Weight of a Rooftop",
+  "Postcard From the Grid",
+  "A Loud Hum",
+  "Concrete Weather Report",
+  "The Sound of Open Gates",
+  "Rain Check at the Junction",
+  "Deep Storage of Joy",
+  "The Road at Signal Green",
+  "Every Light a Drummer",
+  "Baroque of the Roundabout",
+  "Train Time in the Park",
+  "Chrome Field Notes",
+  "Backstage at the Sky",
+  "The Last Meter of the City",
+  "A Field That Never Sleeps",
+  "Blueprint of the Blast",
+  "Afterhours at the Observatory",
+  "A Ten-Minute Century",
+  "Wait for the Drop",
+  "November at the Warehouse",
+  "The Map of Neon Puddles",
+  "Second Sunrise on Route 9",
+  "Luminous Coil",
+  "The Record That Smells of Rubber",
+  "A Single Frame of Thunder",
+  "Skyline Retold Brightly",
+  "All Systems Bloom",
+  "Broken Shutter Parade",
+  "Amber Over the Freight Yard",
+  "The Elevator to the Pool",
+  "The Green Dispatcher",
+  "Salt on the Antenna",
+  "A Little Bit Further",
+  "Running the Wire",
+  "Glass Over the Harbour",
+  "Sea of Wet Pavement",
+  "Flares at the Edge of Town",
+  "The Pattern That Found Us",
+  "Zero Degrees of Warm",
+  "A Long Soft Hiss",
+  "The Mechanical Weather",
+  "Curve at the End of the Track",
+  "Softer Sky",
+  "The Bus at 2:12",
+  "Silk and Iron",
+];
+const SPARK_HOOKS = [
+  "a melody that starts on the wrong note and wins",
+  "a two-bar lift with a door in the middle",
+  "a phrase built from three stairwells",
+  "a hook that turns an alley into a runway",
+  "a line that answers every question with heat",
+  "a riff that runs home through the rain",
+  "a golden interval that opens at the last second",
+  "a loop that grows a second pair of hands",
+  "a figure that walks off a quay and comes back with music",
+  "a single rise that owns the whole room",
+  "a refrain that climbs a fence and keeps going",
+  "a hook carried by the room rather than the lead",
+  "a pattern that turns a corridor into a stage",
+  "a phrase that lands right where the kick breathes",
+  "a run that makes the whole grid lean",
+  "a tail that picks up the track and walks it home",
+  "a line that waves at the drop from a distance",
+  "a motif that agrees to become an anthem",
+  "a spark that repeats until it is a skyline",
+  "a rise that pulls the next section toward it",
+  "a hook with a slight bend at the peak",
+  "a two-note answer that opens a third door",
+  "a phrase that arrives early then waits at the gate",
+  "a rhythm that hums the melody under the lead",
+  "a line that walks a long bridge and never repeats",
+  "a run that folds space and returns with light",
+  "a swell that puts the whole room on one side",
+  "a melodic brick that becomes a whole wall",
+  "a figure that tucks itself behind the bass",
+  "a rise that gives the drop a better exit",
+  "a hook that asks, then answers itself lower",
+  "a phrase that rests for exactly one heartbeat",
+  "a pattern made from two doorbells and a train",
+  "a run that finds the road before the map",
+  "a refrain that grows a horizon every pass",
+  "a line that catches the sun at the exact chord",
+  "a hook that sounds like a signal going home",
+  "a tail that hurries to catch the next bar",
+  "a climb that turns the corner into light",
+  "a two-tone call that the crowd repeats",
+  "a phrase that leaves space for the sub to speak",
+  "a rise that tips the whole arrangement forward",
+  "a figure that breaks a promise and keeps it louder",
+  "a hook that opens like a gate in a fence",
+  "a line that calls across the stadium of the street",
+  "a motif that falls then catches a train",
+  "a sway that makes the kick sound like a hinge",
+  "a crest that the next section climbs back over",
+  "a run that comes from the back of the mix",
+  "a phrase that plants a small flag at the drop",
+  "a figure that holds the room with one held note",
+  "a rise that ends exactly at the wind",
+  "a hook that walks to the glass and waves back",
+  "a pattern that takes the long way to the root",
+  "a tail that turns the repeat into a new idea",
+  "a line that explains itself in two octaves",
+  "a swell full of doors left open",
+  "a crest built from the opposite of a wall",
+  "a climb that borrows warmth from the bass",
+  "a hook that answers the room with a question",
+  "a run that lands at the end of every light",
+  "a melody that makes a utility pole feel grand",
+];
+const SPARK_OPENERS = [
+  "a distant radio clearing the room",
+  "a single tone that opens the door",
+  "a shaker laying down the first footprint",
+  "a chord that arrives before the light",
+  "a breath of static outlining the stage",
+  "a gate closing then swinging wide",
+  "a tone the size of the whole building",
+  "a loop that stakes a claim on the floor",
+  "a piano note rolling down a metal staircase",
+  "a filter sweeping a wall of color",
+  "a bell far enough that it answers itself",
+  "a texture holding the room for six bars",
+  "a sub note that reaches you from outside",
+  "a rhythm drawn one stick at a time",
+  "a single kick agreeing to the evening",
+  "a pad spreading across the ceiling",
+  "a pluck that echoes into the middle of the room",
+  "a groove that arrives through a side door",
+  "a wobble that promises something bigger",
+  "a glass tone that stays just inside the ear",
+  "a hiss that becomes a curtain",
+  "a string swell that pulls the sky down",
+  "a very small attack followed by a long bloom",
+  "a count-off made from traffic",
+  "a note you only notice when it leaves",
+  "a pulse behind a curtain of air",
+  "a tap against a radiator",
+  "a swell that asks for silence",
+  "an empty bar that plans the drop",
+  "a drone that starts on the horizon",
+  "a chordal breath before the first gate",
+  "a wave breaking out of a speaker",
+  "a loop hidden in the distance",
+  "a mechanical hum that feels expensive",
+  "a figure that walks in before the lights",
+  "a space that makes the first kick feel huge",
+  "a distant horn setting a course",
+  "a shimmer that holds until the beat arrives",
+  "a pre-drop light through a crack",
+  "a long tail with a heartbeat inside",
+  "a texture that arrives like a second room",
+  "a filter starting from the back of the mix",
+  "a frame that sets the whole track in motion",
+  "a faint bell tying the ceiling to the floor",
+  "a swell made of several winds",
+  "a kick landing in an open field",
+  "a strum of air through a corridor",
+  "a slow rise that hides the arrival",
+  "a chord that changes the weather",
+  "a gust at the master edge",
+];
+const SPARK_SECTION_SPARKS = [
+  "the build ends on one held note",
+  "the drop enters through a glass door",
+  "the breakdown uses the bass as a clock",
+  "the second drop adds one more layer",
+  "the intro is the outro with different lights",
+  "the bridge walks four steps left",
+  "the final section starts on the offbeat",
+  "the middle section lets the lead rest",
+  "the build adds a new text each bar",
+  "the drop makes the room acoustic for four bars",
+  "the breakdown shortens everything except the pad",
+  "the last stretch turns the main riff inside out",
+  "the intro uses a count from a previous idea",
+  "the first drop arrives after a held silence",
+  "the post-drop keeps one sound from the build",
+  "the break hands the mix to the hats",
+  "the second build comes from a different angle",
+  "the final bar leaves a gap for the crowd",
+  "the next section borrows a rhythm from the last",
+  "the drop is cut to sixteen bars",
+  "the middle lifts the melody an octave",
+  "the outro folds the track back into its start",
+  "the build takes a breath before rising again",
+  "the final push starts on the two",
+  "the bridge slides the root a step lower",
+  "the second refrain folds the counter into the lead",
+  "the intro is stripped to a pulse",
+  "the first break happens after the first peak",
+  "the transition uses the previous tail as a door",
+  "the drop changes texture every eight bars",
+  "the breakdown stacks three extra layers",
+  "the final run uses one interval for the stamina",
+  "the intro trades a beat with the crowd",
+  "the last section walks the groove home",
+  "the breakdown hands the melody a single breath",
+  "the build never repeats the first eight bars",
+  "the drop begins on an unexpected angle",
+  "the outro takes the theme down a level",
+  "the first section holds its shape for longer",
+  "the bridge uses the gate as a harmonic",
+  "the middle of the track opens one door",
+  "the last lift comes from the bassline",
+];
+const SPARK_STYLE_STUNTS = [
+  "write this as if the room is one instrument",
+  "make the drop feel like a corridor",
+  "describe it without any movement words",
+  "give the melody a building of its own",
+  "describe the low end as weather",
+  "make the stage feel sideways",
+  "write it for a crowd that already knows the track",
+  "give each section a different time of day",
+  "assign every bar a different window",
+  "turn the arrangement into a map",
+  "write it as if the drums are the walls",
+  "make the lead feel like a train making time",
+  "describe the whole mix as one long street",
+  "write it for a ceiling you cannot see",
+  "make the kick the only clock",
+  "describe the transition as a door staying open",
+  "write it as if the track owns the room",
+  "describe the bass as a handrail",
+  "make the break feel like a single held look",
+  "write the main hook as a destination",
+  "describe the drop as a building leaning in",
+  "give each layer a different weather",
+  "make the cymbals feel like a tide",
+  "write it for a stage made of glass",
+  "make the groove feel like a long hallway",
+  "describe the master as daylight",
+  "write it as if only the roof hears it",
+  "give the intro one word of direction",
+  "describe the build as a queue filling up",
+  "make the second drop feel like an answer",
+  "write the bridge as a side street",
+  "describe the breakdown as a window",
+  "make the counter feel like a shadow",
+  "give the low end a sense of direction",
+  "write it so the mix breathes at the end",
+  "describe the drop as a gate swinging",
+  "make the whole thing feel reversible",
+  "give the lead a view from the back",
+  "write it for a room that has no corners",
+  "describe the riser as a road growing",
+  "make the kick sound like a decision",
+  "give the arrangement a second reading",
+  "write it as if the sun is behind the speakers",
+  "describe the pad as a field",
+  "make the transition feel like a conversation",
+  "give the track a single held object",
+  "describe the build as a hand reaching",
+  "make the final drop feel like standing up",
+];
+const SPARK_GENRE_SCRAMBLES = [
+  "dark folk + warehouse techno + tape loops",
+  "jazz hop + broken beat + a steel roof",
+  "shoe gaze + electro + a distant brass band",
+  "reggae dub + hardgroove + a glass atrium",
+  "vaporwave + live percussion + field mist",
+  "classical strings + acid line + empty stadium",
+  "Afro beat + modular + a slow train",
+  "post punk + trance + a single held chord",
+  "garage + sitar + wet pavement",
+  "Latin jazz + industrial + an echo corridor",
+  "synth folk + breaks + a green-room pad",
+  "rap + orchestral + a lock changing",
+  "psychedelic + new beat + an open harbor",
+  "lo-fi + euro dance + a lit tunnel",
+  "bluegrass + techno + the back of a bus",
+  "soul + drum & bass + a winter terrace",
+  "maximal techno + string quartet + a kitchen",
+  "hip hop + ambient + a rooftop stair",
+  "jazz fusion + acid house + a long bridge",
+  "chamber pop + jungle + a glass elevator",
+  "film score + club + a control room after hours",
+  "punk + disco + an open field",
+  "trip hop + hard techno + a ferry deck",
+  "folk metal + house + a landing strip",
+  "electro swing + dub + a hotel bar",
+  "world fusion + breaks + a laundry room",
+];
+const SPARK_BASSLINES = [
+  "a bassline walking under a green light",
+  "a sub line that traces the roof line",
+  "a groove riding a single note",
+  "a line that answer the kick on the two",
+  "a pulse that never loses the door",
+  "a low end carrying the whole corridor",
+  "a bass figure built from one long tilt",
+  "a rolling line with a pause for the drop",
+  "a line that leans into every open window",
+  "a sub pressure that banks the curve",
+  "a walk that turns a corner at the drop",
+  "a pattern that leaves the crowd a step",
+  "a bass groove that holds the wall inside",
+  "a low movement with a freight of air",
+  "a line that joins the melody at the peak",
+  "a pulse that doubles before the second drop",
+  "a sub figure that keeps one half open",
+  "a walking line with a hinge at the top",
+  "a bass that answers a distant alarm",
+  "a roll that finds the frame between beats",
+  "a low end that opens the stage",
+  "a pattern that asks for stillness then breaks it",
+  "a line that rises with the room",
+  "a sub that steadies the crowd at the break",
+  "a groove that shifts one step per section",
+  "a bass melody that circles the kick",
+  "a pulse that moves like a light across water",
+  "a line that hugs the rails of the mix",
+  "a low figure that returns at the last possible second",
+  "a sub that makes the floor remember",
+];
+const SPARK_DRUM_LINES = [
+  "a kick pattern that assigns the backbeat",
+  "a groove with a rim on the four",
+  "a hat line that moves through the middle",
+  "a snare that answers one phrase later",
+  "a percussion row crossing the grid",
+  "a tom run that tucks behind the drop",
+  "a shaker bed that follows the melody",
+  "a clap that arrives with the section",
+  "a fill that turns a corner at the bar",
+  "a ride pattern building the long lift",
+  "a ghost note thread behind the floor",
+  "a swing that lifts the hats",
+  "a percussion layer that opens like a gate",
+  "a kick figure with one placed stop",
+  "a snare line that leans into the door",
+  "a groove with a rim accent at the turn",
+  "a hat layer that fades at the bridge",
+  "a set of ghost accents under the lead",
+  "a pulse that walks the count to the drop",
+  "a tom leaving a long arc",
+  "a clap change every eight",
+  "a ride that answers the second bar",
+  "a percussion pattern borrowing a shadow",
+  "a backbeat that shifts with the speaker",
+  "a groove that halves at the turn",
+  "a kick that keeps the room honest",
+  "a snare that lands one beat past the grid",
+  "a hat that opens only under the second phrase",
+];
+const SPARK_MELODY_PHRASES = [
+  "a melodic arc over a green horizon",
+  "a lead that keeps one foot on the roof",
+  "a two-line conversation between keys",
+  "a figure that walks the length of the drop",
+  "a run that trades with the counter",
+  "a line that rises without a fixed target",
+  "a hook that takes the long route home",
+  "a phrase cut from a different window",
+  "a lead that leans on the kick",
+  "a melody that steps out of the wall",
+  "a figure that splits at the second section",
+  "a run that folds its own shadow",
+  "a line that rests on the fifth and waits",
+  "a phrase with a clear diagonal",
+  "a motif that climbs before the light",
+  "a lead that softens at the gate",
+  "a hook that warms in the middle",
+  "a run that changes its answer each bar",
+  "a line that leaves the rail at the end",
+  "a figure born from a held chord",
+  "a melody that borrows a stride",
+  "a rise built from two adjacent notes",
+  "a phrase that tips the room forward",
+  "a lead that carries distance between phrases",
+  "a run with a hinge in the third bar",
+  "a figure that answers the first phrase lower",
+  "a line that never repeats its last lift",
+  "a hook made from a single interval",
+];
+const SPARK_CONCEPT_TWISTS = [
+  "a track that begins in the lobby",
+  "a signal found in a storage room",
+  "a party held at the end of a queue",
+  "a story told from inside a machine",
+  "a city that keeps one street open",
+  "a night that divides the crowd",
+  "a photograph that starts moving",
+  "a room that remembers a warmer time",
+  "a map that only shows the route to the drop",
+  "a season kept in an envelope",
+  "a machine that drifts while it works",
+  "a broadcast that learns a new language",
+  "a stage built from an old loading dock",
+  "a train that carries only rhythm",
+  "a lighthouse in an inland field",
+  "a flock that changes the key",
+  "a red phone in a green building",
+  "a door that opens into a smaller room",
+  "a garden grown in a motor",
+  "a signal shaped like a river",
+  "a town that hums at the edge",
+  "a river that finds the train line",
+  "a warehouse that knows one melody",
+  "a radio in a sealed room",
+  "a mirror that reflects the previous section",
+  "a street that answers the bass",
+  "a border that disappears at the drop",
+  "a machine repairing an old recording",
+  "a crowd that arrives in order",
+  "a storm parked outside the venue",
+  "a gate that only opens backwards",
+  "a laboratory with a window to the sky",
+  "a wall that turns into a runway",
+  "a neighborhood of one repeated pattern",
+];
+const SPARK_ARRANGEMENT_PACKS = [
+  "Intro - Build - Drop - Bridge - Second Build - Final Drop - Outro",
+  "Cold Open - Rising - Hold - Turn - Higher - Release - Afterglow",
+  "Lobby - Corridor - Staircase - Landing - Bridge - Roof - Dawn",
+  "Low - Gathering - Threshold - Break - Wide - Peak - Landing",
+  "One Note - Two Notes - Three - Door - Higher - Highest - Home",
+  "Call - Answer - Bigger Answer - Pause - Turn - Peak - Closing",
+  "Field - Path - Gate - Hill - Sky - Storm - Green After",
+  "Footsteps - Door - Lights - Crowd - Hands - Sky - Return",
+  "Signal - Interference - Lock - Open - Meet - Rise - Release",
+  "Whisperfree - Hiss - Beat - Frame - Drop - Echo - Close",
+  "Pulse - Hush - Rise - Hold - Turn - Fire - Still",
+  "Arrival - Recognition - Exchange - Departure - Return - Home",
+];
+const SPARK_MIX_PUNCH = [
+  "the sub gets its own room",
+  "the kick leans on the ceiling",
+  "the hats pass through a glass wall",
+  "the lead sits two feet closer",
+  "the pad opens at the eighth bar",
+  "the snare gets a second chance at the turn",
+  "the bass gains a row of light",
+  "the percussion moves to the edge",
+  "the counter walks through a back door",
+  "the master holds one high shelf",
+  "the low end banks the corner",
+  "the drums get a wider house",
+  "the melody gets a window at the top",
+  "the room opens one door by the drop",
+  "the groove gets a softer landing",
+  "the top lifts only at the last section",
+  "the stereo gains a second street",
+  "the lead casts a long shadow",
+  "the mix shifts a step at the bridge",
+  "the cymbals lean into the turn",
+];
+const SPARK_MASTER_HEART = [
+  "a master that breathes at the end",
+  "a loudness map with one held floor",
+  "a color that runs through the whole track",
+  "a chain with a single bright wire",
+  "a drive that opens as the keys rise",
+  "a limiter that catches the last lift",
+  "a glue that answers the room",
+  "a curve that holds the crowd on one side",
+  "a ceiling with a wide opening",
+  "a weight that arrives gradually",
+  "a tone that keeps the roof clear",
+  "a space that returns at the final bar",
+  "a top that stays above the road",
+  "a boundary that respects the kick",
+  "a warmth that hangs in the middle",
+  "a spark that settles into the mix",
+];
+const SPARK_SUNO_CUES = [
+  "[Intro: bare pulse]",
+  "[Build: rising filter]",
+  "[Drop: full force]",
+  "[Breakdown: one held note]",
+  "[Second Drop: storm]",
+  "[Bridge: distant signal]",
+  "[Outro: fading gate]",
+  "[Switch: open roof]",
+  "[Fade: empty room]",
+  "[Riser: long]",
+  "[Impact: landing]",
+  "[Space: hold]",
+  "[Afterglow: collapse]",
+  "[Turn: one step left]",
+  "[Peak: wide]",
+];
+const SPARK_DJ_NOTES = [
+  "open with the low end and let the crowd arrive",
+  "hold the magic-free build two bars longer",
+  "beat-match the first hit to the previous track's tail",
+  "let the final bar breathe before the next idea",
+  "set the hats one octave above the room",
+  "hand the filter to the front of the mix",
+  "let the drop carry the conversation",
+  "cue the turnaround just before the second rise",
+  "use the counter to pave the bridge",
+  "ride the master until the room tips",
+  "open a gate between two sections",
+];
+const SPARK_MORE_MAGIC_2 = [
+  "Print the first half and let it breathe",
+  "Turn the rule off and keep the trick",
+  "Write one bar, then repeat it with lights",
+  "Ask the track for a second opinion",
+  "Give the whole thing a horizon",
+  "Send the kick around the room once",
+  "Let the next section borrow a sound",
+  "Find the single word that fits the drop",
+  "Make the final bar wider",
+  "Offer the track one path and close the rest",
+  "Let the groove choose the next move",
+  "Move the crowd to the left side",
+  "Open with the loudest idea and walk back",
+  "Let one detail hold the whole frame",
+];
+
 const LAYERS = [
   {id:"texture",label:"Texture",phrase:"layered analog texture"},
   {id:"fx",label:"FX",phrase:"cinematic FX swells and risers"},
@@ -10262,6 +10821,161 @@ async function goPerfect(){
   return score;
 }
 
+
+/* ---------------------------- MEGA BATCH FEATURES ---------------------------- */
+const EXTRA_SPARK_KINDS2 = [
+ ["🏷 Random Title II", SPARK_TITLES2, "Title II"],
+ ["🪝 Random Hook", SPARK_HOOKS, "Hook"],
+ ["🚪 Random Opener", SPARK_OPENERS, "Opener"],
+ ["🧩 Random Section Spark", SPARK_SECTION_SPARKS, "Section"],
+ ["🕶 Random Style Stunt", SPARK_STYLE_STUNTS, "Style stunt"],
+ ["🔀 Random Genre Scramble", SPARK_GENRE_SCRAMBLES, "Genre scramble"],
+ ["🎚 Random Bassline", SPARK_BASSLINES, "Bassline"],
+ ["🥁 Random Drum Line", SPARK_DRUM_LINES, "Drum line"],
+ ["🎼 Random Melody Phrase", SPARK_MELODY_PHRASES, "Melody phrase"],
+ ["🌀 Random Concept Twist", SPARK_CONCEPT_TWISTS, "Concept twist"],
+ ["🗺 Random Arrangement Pack", SPARK_ARRANGEMENT_PACKS, "Arrangement"],
+ ["🎚 Random Mix Punch", SPARK_MIX_PUNCH, "Mix punch"],
+ ["💖 Random Master Heart", SPARK_MASTER_HEART, "Master heart"],
+ ["🔖 Random Suno Cue", SPARK_SUNO_CUES, "Suno cue"],
+ ["🎧 Random DJ Note", SPARK_DJ_NOTES, "DJ note"],
+ ["⚡ Random Magic II", SPARK_MORE_MAGIC_2, "Magic II"],
+];
+let megaIdx = 0;
+function sparkShowMega(){
+  const meta = EXTRA_SPARK_KINDS2[megaIdx % EXTRA_SPARK_KINDS2.length];
+  megaIdx++;
+  const pool = meta[1]; const text = sparkPick(pool);
+  setSpark(text, meta[2], meta[0] + " · " + pool.length + " options · mega pool " + megaIdx + "/" + EXTRA_SPARK_KINDS2.length);
+  return text;
+}
+function updateMegaCount(){
+  const el = $("sparkCount"); if(!el) return;
+  const base = [SPARK_IDEAS,SPARK_TITLES,SPARK_MASHUPS,SPARK_CONSTRAINTS,SPARK_TIPS,SPARK_VIBES,SPARK_PLACES,SPARK_THINGS,SPARK_TRANSFORMS,SPARK_CHALLENGES].reduce((a,x)=>a+x.length,0) + SPARK_MEGA_LINES.length;
+  const extra = [SPARK_WEATHER,SPARK_LIGHT,SPARK_SOUNDS,SPARK_FUTURES,SPARK_ANTHEM_NAMES].reduce((a,x)=>a+x.length,0);
+  const mega = [SPARK_TITLES2,SPARK_HOOKS,SPARK_OPENERS,SPARK_SECTION_SPARKS,SPARK_STYLE_STUNTS,SPARK_GENRE_SCRAMBLES,SPARK_BASSLINES,SPARK_DRUM_LINES,SPARK_MELODY_PHRASES,SPARK_CONCEPT_TWISTS,SPARK_ARRANGEMENT_PACKS,SPARK_MIX_PUNCH,SPARK_MASTER_HEART,SPARK_SUNO_CUES,SPARK_DJ_NOTES,SPARK_MORE_MAGIC_2].reduce((a,x)=>a+x.length,0);
+  el.textContent = (base+extra+mega) + " sparks loaded";
+}
+const ROU_LABELS = {
+  genre: ["genre"], drums: ["kick","hats","snare","perc","toms","groove","swing","sync","intensity"],
+  bass: ["bassVoice","bassMovement","bassRel"], melody: ["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm"],
+  concept: ["concept"], arrangement: ["arrangement"], mix: ["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain"]
+};
+function roulette(){
+  const cats = Object.keys(ROU_LABELS);
+  const cat = cats[Math.floor(rng()*cats.length)];
+  commit(); beginRoll();
+  const keys = ROU_LABELS[cat];
+  keys.forEach(k=>{ const ks=GROUPS[k]?GROUPS[k]:[k]; ks.forEach(x=>{ if(!state.locks[x]) ROLL_FN[x](state); }); });
+  afterChange();
+  const line = sparkPick(SPARK_MORE_MAGIC_2);
+  setSpark("🎲 " + cat.toUpperCase() + " ROULETTE: " + line, "Roulette", cat.toUpperCase() + " · " + keys.length + " atoms rerolled · " + keyName(state));
+  toast("🎲 " + cat.toUpperCase() + " Roulette");
+  return cat;
+}
+function randomLayers(){
+  commit();
+  const id = ["texture","fx","mix","experimental","acid","modulation","space","reverb","delay","glitch"];
+  id.forEach(k=>{ state.layers[k] = rng()>0.45; });
+  afterChange();
+  const on = id.filter(k=>state.layers[k]);
+  setSpark("🎚 Random Layers: " + (on.join(", ")||"none"), "Random Layers", on.length + " layers on · " + scorePrompt().total + "/100");
+  toast("🎚 Random Layers: " + on.length + " on");
+  return on;
+}
+function fateRoll(){
+  const pools = [SPARK_HOOKS,SPARK_OPENERS,SPARK_SECTION_SPARKS,SPARK_ARRANGEMENT_PACKS,SPARK_MIX_PUNCH,SPARK_MASTER_HEART,SPARK_DJ_NOTES];
+  const pool = pools[Math.floor(rng()*pools.length)];
+  const text = sparkPick(pool);
+  setSpark("🔮 " + text, "Fate", "Fate Roll · " + pool.length + " options in pool · " + (state.bpm||140) + " BPM");
+  toast("🔮 Fate Roll");
+  return text;
+}
+// Idea Book — localStorage-stored favorites, save a current packed snapshot
+let ideaBook = [];
+function loadIdeaBook(){ try{ ideaBook = JSON.parse(localStorage.getItem("neon_idea_book")||"[]"); }catch(e){ ideaBook=[]; } return ideaBook; }
+function renderIdeaBook(){
+  const el = $("ideaBookMeta"); if(el) el.textContent = "Idea Book: " + ideaBook.length + " saved.";
+}
+function saveIdea(){
+  loadIdeaBook();
+  const entry = {
+    at: Date.now(),
+    seed: state.seed,
+    title: state.concept.title || "Untitled",
+    primary: state.primaryStyle, secondary: state.secondaryStyle,
+    bpm: state.bpm, key: keyName(state), score: scorePrompt().total,
+    state: encodeState(state), spark: lastSparkKind+" :: "+lastSpark
+  };
+  ideaBook.push(entry);
+  if(ideaBook.length>40) ideaBook = ideaBook.slice(-40);
+  try{ localStorage.setItem("neon_idea_book", JSON.stringify(ideaBook)); }catch(e){ toast("localStorage unavailable"); return; }
+  renderIdeaBook(); toast("📌 Idea saved: "+(entry.title||"#"+ideaBook.length));
+  return entry;
+}
+function loadIdea(){
+  loadIdeaBook();
+  if(!ideaBook.length){ toast("Idea Book is empty — save one first"); return; }
+  const entry = ideaBook[Math.floor(rng()*ideaBook.length)];
+  const s = decodeState(entry.state);
+  if(!s){ toast("Saved idea unreadable"); return; }
+  commit(); state = s; rng = mulberry32(state.seed); afterChange();
+  toast("📖 Loaded idea: "+(entry.title||"Untitled"));
+  return entry.title;
+}
+function clearIdeas(){
+  ideaBook = [];
+  try{ localStorage.removeItem("neon_idea_book"); }catch(e){}
+  renderIdeaBook(); toast("🧹 Idea Book cleared");
+  return true;
+}
+function copyFullPack(){
+  const style = buildStylePrompt(), brief = buildFullBrief(), kit = buildKit(), eng = buildEngineer();
+  const pack = "NEON FORGE FULL PACK" +
+    "\n\n================================" +
+    "\nSTYLE PROMPT\n================================" +
+    "\n" + style +
+    "\n\n================================" +
+    "\nFULL BRIEF\n================================" +
+    "\n" + brief +
+    "\n\n================================" +
+    "\nSUNO KIT\n================================" +
+    "\n" + kit +
+    "\n\n================================" +
+    "\nENGINEER NOTES\n================================" +
+    "\n" + eng;
+  copyText(pack, "Full Pack");
+  return pack.length;
+}
+async function doMaxEverything(){
+  if(maxRollRunning){ toast("⏳ Already running"); return; }
+  maxRollRunning = true; commit();
+  let best = snapshot(), bestScore = scoreFor(best).total;
+  const originalLocks = JSON.parse(JSON.stringify(best.locks||{}));
+  const originalHidden = JSON.parse(JSON.stringify(best.hidden||{}));
+  const originalLayers = JSON.parse(JSON.stringify(best.layers||{}));
+  setMaxStatus("💪 Max EVERYTHING (incl. styles): starting " + bestScore);
+  toast("💪 Max EVERYTHING: 60 tries…");
+  for(let i=0;i<60;i++){
+    await yieldUI();
+    const v = snapshot();
+    for(const k in ROLL_FN) v.locks[k]=false;
+    v.locks.primary=false; v.locks.secondary=false;
+    v.seed = newSeed(); rng = mulberry32(v.seed); rollAllInto(v); v.variations=[];
+    const sc = scoreFor(v).total;
+    if(sc > bestScore){
+      best = v; bestScore = sc;
+      setMaxStatus("💪 best " + bestScore + " ("+(i+1)+"/60)");
+    }
+  }
+  try{ best.locks = JSON.parse(JSON.stringify(originalLocks)); best.hidden = JSON.parse(JSON.stringify(originalHidden)); best.layers = JSON.parse(JSON.stringify(originalLayers)); }catch(e){}
+  state = best; rng = mulberry32(state.seed); afterChange();
+  setMaxStatus("💪 Max EVERYTHING → " + bestScore + "/100 · " + state.primaryStyle);
+  toast("💪 Max EVERYTHING → " + bestScore + " /100");
+  maxRollRunning = false;
+  return bestScore;
+}
+
 /* ==================================================================
    COMMAND PALETTE + SHORTCUTS
    Every action in the app reachable from the keyboard in two keystrokes.
@@ -10353,6 +11067,15 @@ const COMMANDS = [
   {icon:"🧠", name:"Random Focus (random maximized category)", key:"", run:()=>randomFocus()},
   {icon:"📋", name:"Copy session as JSON", key:"", run:()=>copySessionJson()},
   {icon:"🎯", name:"Go for 100 (auto-max perfect)", key:"", run:()=>goPerfect()},
+  {icon:"💪", name:"Max EVERYTHING including styles", key:"", run:()=>doMaxEverything()},
+  {icon:"📌", name:"Save idea to Idea Book", key:"", run:()=>saveIdea()},
+  {icon:"📖", name:"Load random Idea Book entry", key:"", run:()=>loadIdea()},
+  {icon:"🧹", name:"Clear Idea Book", key:"", run:()=>clearIdeas()},
+  {icon:"📦", name:"Copy Full Pack (style+brief+kit+engineer)", key:"", run:()=>copyFullPack()},
+  {icon:"🎲", name:"Random Roulette (genre/drums/bass/etc)", key:"", run:()=>roulette()},
+  {icon:"🎚", name:"Random Layers", key:"", run:()=>randomLayers()},
+  {icon:"🔮", name:"Fate Roll", key:"", run:()=>fateRoll()},
+  {icon:"🎲", name:"Roll mega spark pool", key:"", run:()=>sparkShowMega()},
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
 let cmdSel = 0, cmdFiltered = COMMANDS.slice();
@@ -10622,6 +11345,14 @@ if($("timeMachineBtn")) $("timeMachineBtn").addEventListener("click", timeMachin
 if($("chaosGridBtn")) $("chaosGridBtn").addEventListener("click", chaosGrid);
 if($("randomFocusBtn")) $("randomFocusBtn").addEventListener("click", randomFocus);
 if($("copySessionBtn")) $("copySessionBtn").addEventListener("click", copySessionJson);
+if($("maxEverythingBtn")) $("maxEverythingBtn").addEventListener("click", doMaxEverything);
+if($("saveIdeaBtn")) $("saveIdeaBtn").addEventListener("click", saveIdea);
+if($("loadIdeaBtn")) $("loadIdeaBtn").addEventListener("click", loadIdea);
+if($("clearIdeasBtn")) $("clearIdeasBtn").addEventListener("click", clearIdeas);
+if($("copyPackBtn")) $("copyPackBtn").addEventListener("click", copyFullPack);
+if($("rouletteBtn")) $("rouletteBtn").addEventListener("click", roulette);
+if($("randomLayerBtn")) $("randomLayerBtn").addEventListener("click", randomLayers);
+if($("fateRollBtn")) $("fateRollBtn").addEventListener("click", fateRoll);
 if($("goPerfectBtn")) $("goPerfectBtn").addEventListener("click", goPerfect);
 if($("sparkApplyChallengeBtn")) $("sparkApplyChallengeBtn").addEventListener("click", sparkApplyChallenge);
 if($("maxConceptAnthemBtn")) $("maxConceptAnthemBtn").addEventListener("click", ()=>doMaxConceptAnthem(16));
@@ -10809,7 +11540,9 @@ window.NF = {
   FILTER_CUTOFF_TYPES, FILTER_RESONANCE_TYPES, REVERB_SIZE_TYPES, REVERB_DECAY_TYPES, DELAY_TIME_TYPES, DELAY_FEEDBACK_TYPES,
   SATURATION_TYPES, COMPRESSION_TYPES, EQ_TYPES, SIDECHAIN_CURVE_TYPES, STEREO_ENHANCE_TYPES,
   SPARK_IDEAS, SPARK_TITLES, SPARK_MASHUPS, SPARK_CONSTRAINTS, SPARK_TIPS, SPARK_VIBES, SPARK_PLACES,
+  SPARK_TITLES2,SPARK_HOOKS,SPARK_OPENERS,SPARK_SECTION_SPARKS,SPARK_STYLE_STUNTS,SPARK_GENRE_SCRAMBLES,SPARK_BASSLINES,SPARK_DRUM_LINES,SPARK_MELODY_PHRASES,SPARK_CONCEPT_TWISTS,SPARK_ARRANGEMENT_PACKS,SPARK_MIX_PUNCH,SPARK_MASTER_HEART,SPARK_SUNO_CUES,SPARK_DJ_NOTES,SPARK_MORE_MAGIC_2,
   SPARK_WEATHER, SPARK_LIGHT, SPARK_SOUNDS, SPARK_FUTURES, SPARK_ANTHEM_NAMES, EXTRA_SPARK_KINDS,
+  EXTRA_SPARK_KINDS2, sparkShowMega, updateMegaCount, roulette, randomLayers, fateRoll, saveIdea, loadIdea, clearIdeas, copyFullPack, doMaxEverything,
   SPARK_THINGS, SPARK_TRANSFORMS, SPARK_CHALLENGES, SPARK_MEGA_LINES, sparkShow, sparkMega, sparkCopy,
   FOCUS_CATEGORIES, randomFocus, luckyDip, timeMachine, chaosGrid, copySessionJson, goPerfect,
   sparkShowExtra, anthemIdea, maxAnthemIdea, doMaxConceptAnthem, sparkApplyChallenge,
@@ -10929,6 +11662,9 @@ function init(){
   try{ slotB = localStorage.getItem("tetech_slotb") || null; }catch(e){ slotB = null; }
   renderKeyTable();
   updateSparkCount();
+  updateMegaCount();
+  loadIdeaBook();
+  renderIdeaBook();
   render();
   renderHistory();
   updateURL();

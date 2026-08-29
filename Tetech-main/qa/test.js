@@ -402,5 +402,40 @@ t("more magic commands registered", ()=>{
   return names.some(n=>/Lucky Dip/.test(n)) && names.some(n=>/Time Machine/.test(n)) && names.some(n=>/Chaos Grid/.test(n)) && names.some(n=>/Random Focus/.test(n)) && names.some(n=>/Copy session as JSON/.test(n)) && names.some(n=>/Go for 100/.test(n)) || "missing magic commands";
 });
 
+console.log("\n== MEGA BATCH FEATURES ==\n");
+t("mega spark pools are huge", ()=>{
+  const names=['SPARK_TITLES2','SPARK_HOOKS','SPARK_OPENERS','SPARK_SECTION_SPARKS','SPARK_STYLE_STUNTS','SPARK_GENRE_SCRAMBLES','SPARK_BASSLINES','SPARK_DRUM_LINES','SPARK_MELODY_PHRASES','SPARK_CONCEPT_TWISTS','SPARK_ARRANGEMENT_PACKS','SPARK_MIX_PUNCH','SPARK_MASTER_HEART','SPARK_SUNO_CUES','SPARK_DJ_NOTES','SPARK_MORE_MAGIC_2'];
+  const n=names.reduce((a,n)=>a+w.NF[n].length,0);
+  return n>=450 || n;
+});
+t("mega batch buttons exist", ()=>{
+  const ids=["maxEverythingBtn","saveIdeaBtn","loadIdeaBtn","clearIdeasBtn","copyPackBtn","rouletteBtn","randomLayerBtn","fateRollBtn"];
+  const missing=ids.filter(id=>!d.getElementById(id));
+  return missing.length===0 || missing.join(",");
+});
+t("roulette + random layers + fate roll run", ()=>{
+  const r=w.NF.roulette(); const lay=w.NF.randomLayers(); const f=w.NF.fateRoll();
+  return (typeof r==="string" && Array.isArray(lay) && typeof f==="string" && f.length>5) || ("r="+r+" lay="+JSON.stringify(lay)+" f="+f);
+});
+t("idea book save/load/clear round-trips", ()=>{
+  w.NF.clearIdeas();
+  w.NF.saveIdea();
+  const loaded=w.NF.loadIdea();
+  const clear=w.NF.clearIdeas();
+  return (typeof loaded==="string" && loaded.length>0 && clear===true) || ("loaded="+loaded+" clear="+clear);
+});
+t("copy full pack returns large payload", ()=>{
+  const n=w.NF.copyFullPack();
+  return typeof n==="number" && n>5000 || n;
+});
+t("mega batch commands registered", ()=>{
+  const names=w.NF.COMMANDS.map(c=>c.name);
+  return names.some(n=>/Max EVERYTHING/.test(n)) && names.some(n=>/Idea Book/.test(n)) && names.some(n=>/Full Pack/.test(n)) && names.some(n=>/Fate Roll/.test(n)) && names.some(n=>/mega spark pool/.test(n)) || "missing mega commands";
+});
+t("total spark count grew massively", ()=>{
+  const num=parseInt(d.getElementById("sparkCount").textContent.replace(/\D/g,""),10);
+  return num>900 || ("only "+num);
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);
