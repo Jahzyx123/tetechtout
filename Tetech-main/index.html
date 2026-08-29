@@ -471,7 +471,8 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini listbtn" data-pick="key">📜 Key List</button>
           </div>
           <div class="cluster" style="margin-top:6px">
-            <button class="sm power" id="maxTempoBtn" title="Try 25 BPM/Key combos and keep best score (keeps styles)">🏆 Max Tempo (BPM+Key)</button>
+            <button class="sm power" id="maxTempoBtn" title="Try 15 BPM/Key combos and keep best score (keeps styles)">🏆 Max Tempo</button>
+            <button class="sm power" id="maxTempoLabBtn" title="Try 15 Tempo+Lab combos (BPM+Key+Drive/Acid/Texture/Rave/Industrial) and keep best score">🏆 Max Tempo Lab</button>
           </div>
           <div class="row" id="keyRow"><span class="lbl">Key</span>
             <select id="rootSel" title="Root note"></select>
@@ -712,6 +713,24 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm ghost" id="swapABBtn" disabled>🔄 Swap A ⇄ B</button>
             <button class="sm power" id="maxScoreBtn" title="Reroll everything except Primary/Secondary to maximize Prompt Score — tries 50 combos and keeps the best">🏆 Max Score (keep styles)</button>
           </div>
+        </div>
+      </div>
+
+      <div class="card" id="maxRollLabCard">
+        <h2><span class="dot"></span>🏆 Max Roll Lab — keep styles<span class="spacer"></span><button class="hidebtn" data-hide="maxRollLabCard">👁</button></h2>
+        <div class="cardbody">
+          <div class="row"><span class="val dim" style="font-family:var(--sans)">Fast async search — each button tries 15 combos for that section and keeps the highest Prompt Score. Primary/Secondary styles stay locked. Never blocks UI.</span></div>
+          <div class="cluster">
+            <button class="power" id="maxAllBtn" title="20 tries, everything except styles">🏆 Max ALL (keep styles)</button>
+            <button class="sm power" id="maxMelodyBtn2" title="Max Melody">🏆 Max Melody</button>
+            <button class="sm power" id="maxBassBtn2" title="Max Bass">🏆 Max Bass</button>
+            <button class="sm power" id="maxDrumsBtn2" title="Max Drums">🏆 Max Drums</button>
+            <button class="sm power" id="maxTempoBtn2" title="Max Tempo">🏆 Max Tempo</button>
+            <button class="sm power" id="maxTempoLabBtn2" title="Max Tempo Lab (BPM+Key+TechnoLab)">🏆 Max Tempo Lab</button>
+            <button class="sm power" id="maxConceptBtn2" title="Max Concept">🏆 Max Concept</button>
+            <button class="sm power" id="maxArrangementBtn2" title="Max Arrangement">🏆 Max Arrangement</button>
+          </div>
+          <div class="row"><span class="readout" id="maxRollStatus">Idle — click any max button. Scores 0-100.</span></div>
         </div>
       </div>
 
@@ -3438,6 +3457,7 @@ function defaultHidden(){
   return { bpm:false, key:false, styleCard:false, feelCard:false, bassCard:false, drumsCard:false, technoLabCard:false,
            conceptCard:false, arrangementCard:false, modeCard:false, layersCard:false,
            engineerCard:false, auditionCard:false, scoreCard:false,
+           maxRollLabCard:false,
            variationsCard:false, presetsCard:false, historyCard:false };
 }
 function defaultState(){
@@ -3500,28 +3520,28 @@ function generateVariations(){
   }
   state.variations = vars;
 }
+
+let maxRollRunning = false;
+function yieldUI(){ return new Promise(r=>setTimeout(r, 16)); }
 function scoreFor(s){
   const saved = state; state = s;
   const out = scorePrompt();
   state = saved;
   return out;
 }
-let maxRollRunning = false;
 async function doMaxScoreRoll(attempts){
-  if(maxRollRunning){ toast("⏳ Max roll already running…"); return; }
-  attempts = attempts || 30;
+  if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
+  attempts = attempts || 20;
   maxRollRunning = true;
   commit();
   const bestStart = snapshot();
   let best = bestStart;
   let bestScore = scoreFor(bestStart).total;
-  let bestPrompt = "";
-  try{ bestPrompt = buildStylePromptFor(bestStart); }catch(e){ bestPrompt = ""; }
-  const btns = ["maxScoreBtn","maxScoreHeaderBtn"].map(id=>$(id)).filter(Boolean);
+  const btns = ["maxScoreBtn","maxScoreHeaderBtn","maxAllBtn"].map(id=>$(id)).filter(Boolean);
   btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
-  toast("🏆 Searching "+attempts+" combos… kept "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary"));
+  toast("🏆 Searching "+attempts+" combos — styles locked: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"));
   for(let i=0;i<attempts;i++){
-    if(i%5===0){ await new Promise(r=>setTimeout(r, 0)); }
+    await yieldUI();
     const v = snapshot();
     if(!v.locks) v.locks = defaultLocks();
     v.locks.primary = true;
@@ -3532,39 +3552,38 @@ async function doMaxScoreRoll(attempts){
     rollAllInto(v);
     v.variations = [];
     const sc = scoreFor(v);
-    let curLen = 0; try{ curLen = buildStylePromptFor(v).length; }catch(e){}
-    if(sc.total > bestScore || (sc.total===bestScore && curLen > bestPrompt.length)){
+    if(sc.total > bestScore){
       best = v;
       bestScore = sc.total;
-      bestPrompt = buildStylePromptFor(v);
-      btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore; });
+      btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore+" ("+(i+1)+"/"+attempts+")"; });
     }
-    if(i%10===0) toast("🏆 "+(i+1)+"/"+attempts+" → best "+bestScore);
+    if(i%5===0){ const el=$("scoreTotal"); if(el) el.textContent = bestScore+"…"; }
   }
   state = best;
   rng = mulberry32(state.seed);
   afterChange();
   flash($("scoreCard"));
-  btns.forEach(b=>{ if(b){ b.disabled=false; b.textContent=b.id==="maxScoreHeaderBtn"?"🏆 Max Score":"🏆 Max Score (keep styles)"; }});
-  toast("🏆 Best score "+bestScore+" /100 kept "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+attempts+" tries");
+  btns.forEach(b=>{ if(b){ b.disabled=false; if(b.id==="maxScoreHeaderBtn") b.textContent="🏆 Max Score"; else if(b.id==="maxAllBtn") b.textContent="🏆 Max ALL (keep styles)"; else b.textContent="🏆 Max Score (keep styles)"; }});
+  toast("🏆 Best score "+bestScore+" /100 — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+attempts+" tries");
   maxRollRunning = false;
   return bestScore;
 }
 async function doMaxScoreRollSection(sectionKeys, attempts, label){
-  if(maxRollRunning){ toast("⏳ Max roll already running…"); return; }
+  if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
   maxRollRunning = true;
-  attempts = attempts || 25;
+  attempts = attempts || 15;
   commit();
   const keepPrimary = !sectionKeys.includes("primary") && !sectionKeys.includes("secondary");
   const bestStart = snapshot();
   let best = bestStart;
   let bestScore = scoreFor(bestStart).total;
   const btnId = "max"+label.replace(/\s+/g,"")+"Btn";
-  const btn = $(btnId);
-  if(btn){ btn.disabled=true; const orig=btn.textContent; btn.dataset.orig=orig; btn.textContent="⏳ "+bestScore; }
-  toast("🏆 Max "+label+": searching "+attempts+" combos…");
+  const btns = [$(btnId), $("max"+label+"HeaderBtn")].filter(Boolean);
+  const origTexts = btns.map(b=>b.textContent);
+  btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
+  toast("🏆 Max "+label+": "+attempts+" tries…");
   for(let i=0;i<attempts;i++){
-    if(i%4===0){ await new Promise(r=>setTimeout(r, 0)); }
+    await yieldUI();
     const v = snapshot();
     if(!v.locks) v.locks = defaultLocks();
     for(const k in ROLL_FN){ v.locks[k]=true; }
@@ -3578,21 +3597,23 @@ async function doMaxScoreRollSection(sectionKeys, attempts, label){
     if(sc.total > bestScore){
       best = v;
       bestScore = sc.total;
-      if(btn) btn.textContent="⏳ "+bestScore;
+      btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore+" ("+(i+1)+"/"+attempts+")"; });
     }
   }
   state = best;
   rng = mulberry32(state.seed);
   afterChange();
-  if(label.toLowerCase().includes("melody")) flash($("feelCard"));
-  else if(label.toLowerCase().includes("bass")) flash($("bassCard"));
-  else if(label.toLowerCase().includes("tempo")) flash($("styleCard"));
-  else if(label.toLowerCase().includes("techno")) flash($("technoLabCard"));
-  else if(label.toLowerCase().includes("concept")) flash($("conceptCard"));
-  else if(label.toLowerCase().includes("arrange")) flash($("arrangementCard"));
+  const l = label.toLowerCase();
+  if(l.includes("melody")) flash($("feelCard"));
+  else if(l.includes("bass")) flash($("bassCard"));
+  else if(l.includes("tempo")||l.includes("bpm")||l.includes("key")) flash($("styleCard"));
+  else if(l.includes("techno")||l.includes("lab")) flash($("technoLabCard"));
+  else if(l.includes("concept")) flash($("conceptCard"));
+  else if(l.includes("arrange")) flash($("arrangementCard"));
+  else if(l.includes("drum")) flash($("drumsCard"));
   else flash($("scoreCard"));
-  if(btn){ btn.disabled=false; btn.textContent=btn.dataset.orig||("🏆 Max "+label); }
-  toast("🏆 Best "+label+" → score "+bestScore+" /100 after "+attempts+" tries");
+  btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||("🏆 Max "+label); });
+  toast("🏆 Best "+label+" → "+bestScore+" /100 after "+attempts+" tries");
   maxRollRunning = false;
   return bestScore;
 }
@@ -4016,7 +4037,7 @@ function render(){
   });
   // hidden cards
   ["styleCard","feelCard","bassCard","drumsCard","technoLabCard","conceptCard","arrangementCard","modeCard","layersCard",
-   "auditionCard","scoreCard","variationsCard","presetsCard","historyCard"].forEach(id=>{
+   "auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard"].forEach(id=>{
     const card = $(id);
     if(card) card.classList.toggle("hidden", state.hidden[id]);
   });
@@ -5420,15 +5441,26 @@ document.addEventListener("click", e=>{
 });
 
 $("powerRollBtn").addEventListener("click", ()=>doRoll("power"));
-$("maxScoreBtn").addEventListener("click", ()=>doMaxScoreRoll(30));
-$("maxScoreHeaderBtn").addEventListener("click", ()=>doMaxScoreRoll(30));
-if($("maxMelodyBtn")) $("maxMelodyBtn").addEventListener("click", ()=>doMaxScoreRollSection(["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"], 25, "Melody"));
-if($("maxBassBtn")) $("maxBassBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"], 25, "Bass"));
-if($("maxTempoBtn")) $("maxTempoBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId"], 25, "Tempo"));
-if($("maxTechnoLabBtn")) $("maxTechnoLabBtn").addEventListener("click", ()=>doMaxScoreRollSection(["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"], 25, "TechnoLab"));
-if($("maxConceptBtn")) $("maxConceptBtn").addEventListener("click", ()=>doMaxScoreRollSection(["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"], 25, "Concept"));
-if($("maxArrangementBtn")) $("maxArrangementBtn").addEventListener("click", ()=>doMaxScoreRollSection(["arrangement"], 25, "Arrangement"));
-if($("maxDrumsBtn")) $("maxDrumsBtn").addEventListener("click", ()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"], 25, "Drums"));
+$("maxScoreBtn").addEventListener("click", ()=>doMaxScoreRoll(20));
+$("maxScoreHeaderBtn").addEventListener("click", ()=>doMaxScoreRoll(20));
+if($("maxAllBtn")) $("maxAllBtn").addEventListener("click", ()=>doMaxScoreRoll(20));
+if($("maxMelodyBtn")) $("maxMelodyBtn").addEventListener("click", ()=>doMaxScoreRollSection(["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"], 15, "Melody"));
+if($("maxBassBtn")) $("maxBassBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"], 15, "Bass"));
+if($("maxTempoBtn")) $("maxTempoBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId"], 15, "Tempo"));
+if($("maxTempoLabBtn")) $("maxTempoLabBtn").addEventListener("click", ()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId","technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"], 15, "TempoLab"));
+if($("maxTechnoLabBtn")) $("maxTechnoLabBtn").addEventListener("click", ()=>doMaxScoreRollSection(["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"], 15, "TechnoLab"));
+if($("maxConceptBtn")) $("maxConceptBtn").addEventListener("click", ()=>doMaxScoreRollSection(["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"], 15, "Concept"));
+if($("maxArrangementBtn")) $("maxArrangementBtn").addEventListener("click", ()=>doMaxScoreRollSection(["arrangement"], 15, "Arrangement"));
+if($("maxDrumsBtn")) $("maxDrumsBtn").addEventListener("click", ()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"], 15, "Drums"));
+// duplicate buttons in Max Roll Lab card
+if($("maxMelodyBtn2")) $("maxMelodyBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["feeling","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","flavor"], 15, "Melody"));
+if($("maxBassBtn2")) $("maxBassBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"], 15, "Bass"));
+if($("maxDrumsBtn2")) $("maxDrumsBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"], 15, "Drums"));
+if($("maxTempoBtn2")) $("maxTempoBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId"], 15, "Tempo"));
+if($("maxTempoLabBtn2")) $("maxTempoLabBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["bpm","key","rootPc","scaleId","technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"], 15, "TempoLab"));
+if($("maxConceptBtn2")) $("maxConceptBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform"], 15, "Concept"));
+if($("maxArrangementBtn2")) $("maxArrangementBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["arrangement"], 15, "Arrangement"));
+
 
 $("undoBtn").addEventListener("click", undo);
 $("redoBtn").addEventListener("click", redo);
