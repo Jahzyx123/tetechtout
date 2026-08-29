@@ -749,6 +749,84 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
       </div>
 
 
+      
+      <!-- MIX & MASTER LAB -->
+      <div class="card" id="mixMasterCard">
+        <h2><span class="dot"></span>Mix & Master Lab — Density · Energy · Drive<span class="spacer"></span><button class="hidebtn" data-hide="mixMasterCard">👁</button></h2>
+        <div class="cardbody">
+          <div class="row"><span class="val dim" style="font-family:var(--sans)">Ultra-dense mixing and mastering controls — density, energy, space, glue, punch, drive, loudness, color, chain, filter cutoff/resonance, EQ, compression, saturation, sidechain curve. All feed the prompt.</span></div>
+          <div id="mixMasterRows"></div>
+          <div class="cluster">
+            <button class="push" data-roll="mixMaster">⚙️ Roll Mix & Master</button>
+            <button class="sm" data-roll="mix">🎛 Roll Mix</button>
+            <button class="sm" data-roll="master">🔊 Roll Master</button>
+            <button class="sm power" id="maxMixMasterBtn" title="Try 20 MixMaster combos">🏆 Max MixMaster</button>
+            <button class="sm ghost" data-pick="mixDensity">📜 Density</button>
+            <button class="sm ghost" data-pick="mixEnergy">📜 Energy</button>
+            <button class="sm ghost" data-pick="masterDrive">📜 Drive</button>
+            <button class="sm ghost" data-pick="filterCutoff">📜 Cutoff</button>
+            <button class="sm ghost" data-pick="eqType">📜 EQ</button>
+            <button class="sm ghost" data-pick="compressionType">📜 Comp</button>
+          </div>
+          <div class="row"><span class="readout" id="mixMasterStatus">Mix & Master — 15 parameters</span></div>
+        </div>
+      </div>
+
+      <!-- SPATIAL & MOD LAB -->
+      <div class="card" id="spatialModCard">
+        <h2><span class="dot"></span>Spatial & Mod Lab — Stereo · Depth · Mod · Texture<span class="spacer"></span><button class="hidebtn" data-hide="spatialModCard">👁</button></h2>
+        <div class="cardbody">
+          <div class="row"><span class="val dim" style="font-family:var(--sans)">Spatial imaging, depth, movement, modulation sources/destinations/rates/depths, texture layers, grain, shimmer, atmosphere, reverb size/decay, stereo enhance.</span></div>
+          <div id="spatialModRows"></div>
+          <div class="cluster">
+            <button class="push" data-roll="spatialMod">🌌 Roll Spatial & Mod</button>
+            <button class="sm" data-roll="spatial">🎧 Roll Spatial</button>
+            <button class="sm" data-roll="mod">🌀 Roll Mod</button>
+            <button class="sm" data-roll="texture">✨ Roll Texture</button>
+            <button class="sm power" id="maxSpatialModBtn">🏆 Max SpatialMod</button>
+            <button class="sm ghost" data-pick="stereoImage">📜 Image</button>
+            <button class="sm ghost" data-pick="modSource">📜 ModSrc</button>
+            <button class="sm ghost" data-pick="textureLayer">📜 Texture</button>
+          </div>
+          <div class="row"><span class="readout" id="spatialModStatus">Spatial & Mod — 15 parameters</span></div>
+        </div>
+      </div>
+
+      <!-- GROOVE & MELODIC LAB -->
+      <div class="card" id="grooveMelodicCard">
+        <h2><span class="dot"></span>Groove & Melodic Lab — Ghost · Humanize · Ornament · Voicing<span class="spacer"></span><button class="hidebtn" data-hide="grooveMelodicCard">👁</button></h2>
+        <div class="cardbody">
+          <div class="row"><span class="val dim" style="font-family:var(--sans)">Extra groove and melodic detail — ghost notes, humanize, pocket, ornament, vibrato, portamento, scale runs, interval leaps, voicing, inversion, tension, resolution, delay time/feedback, section density.</span></div>
+          <div id="grooveMelodicRows"></div>
+          <div class="cluster">
+            <button class="push" data-roll="grooveMelodic">🎼 Roll Groove & Melodic</button>
+            <button class="sm" data-roll="grooveExtra">🥁 Roll Groove Extra</button>
+            <button class="sm" data-roll="melodicExtra">🎹 Roll Melodic Extra</button>
+            <button class="sm" data-roll="harmonicExtra">🎶 Roll Harmonic Extra</button>
+            <button class="sm power" id="maxGrooveMelodicBtn">🏆 Max GrooveMelodic</button>
+          </div>
+          <div class="row"><span class="readout" id="grooveMelodicStatus">Groove & Melodic — 15 parameters</span></div>
+        </div>
+      </div>
+
+      <!-- TEXTURE & FX LAB -->
+      <div class="card" id="textureFxCard">
+        <h2><span class="dot"></span>Texture & FX Lab — Ride · Crash · FX · Build · Drop<span class="spacer"></span><button class="hidebtn" data-hide="textureFxCard">👁</button></h2>
+        <div class="cardbody">
+          <div class="row"><span class="val dim" style="font-family:var(--sans)">Percussion extras, FX, transitions, risers, impacts, energy curves, build/drop types, chops.</span></div>
+          <div id="textureFxRows"></div>
+          <div class="cluster">
+            <button class="push" data-roll="textureFx">💥 Roll Texture & FX</button>
+            <button class="sm" data-roll="percExtra">🥁 Roll Perc Extra</button>
+            <button class="sm" data-roll="fxExtra">⚗️ Roll FX Extra</button>
+            <button class="sm" data-roll="arrangementExtra">🎛 Roll Arr Extra</button>
+            <button class="sm power" id="maxTextureFxBtn">🏆 Max TextureFX</button>
+          </div>
+          <div class="row"><span class="readout" id="textureFxStatus">Texture & FX — 12 parameters</span></div>
+        </div>
+      </div>
+
+
       <!-- CONCEPT -->
       <div class="card" id="conceptCard">
         <h2><span class="dot"></span>Concept<span class="spacer"></span><button class="hidebtn" data-hide="conceptCard">👁</button></h2>
@@ -881,6 +959,10 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm power" id="maxRhythmBtn2" title="Max Rhythm">🥁 Max Rhythm</button>
             <button class="sm power" id="maxHarmonyBtn2" title="Max Harmony">🎼 Max Harmony</button>
             <button class="sm power" id="maxSoundDesignBtn2" title="Max Sound Design">⚗️ Max Sound Design</button>
+            <button class="sm power" id="maxMixMasterBtn2" title="Max MixMaster">🎛 Max MixMaster</button>
+            <button class="sm power" id="maxSpatialModBtn2" title="Max SpatialMod">🌌 Max SpatialMod</button>
+            <button class="sm power" id="maxGrooveMelodicBtn2" title="Max GrooveMelodic">🎼 Max GrooveMelodic</button>
+            <button class="sm power" id="maxTextureFxBtn2" title="Max TextureFX">💥 Max TextureFX</button>
           </div>
           <div class="cluster">
             <span class="readout" style="width:100%;font-weight:900;letter-spacing:1px;color:var(--violet)">GENETIC & QUANTUM MAX</span>
@@ -919,6 +1001,29 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini" data-max-atom="feeling">Max Feeling</button>
             <button class="mini" data-max-atom="contour">Max Contour</button>
             <button class="mini" data-max-atom="filterType">Max Filter</button>
+            <button class="mini" data-max-atom="mixDensity">Max MixDens</button>
+            <button class="mini" data-max-atom="mixEnergy">Max MixEng</button>
+            <button class="mini" data-max-atom="masterDrive">Max MDrive</button>
+            <button class="mini" data-max-atom="stereoImage">Max StereoImg</button>
+            <button class="mini" data-max-atom="spatialDepth">Max Depth</button>
+            <button class="mini" data-max-atom="modSource">Max ModSrc</button>
+            <button class="mini" data-max-atom="textureLayer">Max Tex</button>
+            <button class="mini" data-max-atom="ghostNotes">Max Ghost</button>
+            <button class="mini" data-max-atom="ornamentType">Max Ornament</button>
+            <button class="mini" data-max-atom="voicingType">Max Voicing</button>
+            <button class="mini" data-max-atom="tensionType">Max Tension</button>
+            <button class="mini" data-max-atom="rideType">Max Ride</button>
+            <button class="mini" data-max-atom="fxType">Max FX</button>
+            <button class="mini" data-max-atom="riserType">Max Riser</button>
+            <button class="mini" data-max-atom="energyCurve">Max EnergyCurve</button>
+            <button class="mini" data-max-atom="buildType">Max Build</button>
+            <button class="mini" data-max-atom="dropType">Max Drop</button>
+            <button class="mini" data-max-atom="filterCutoff">Max Cutoff</button>
+            <button class="mini" data-max-atom="reverbSize">Max VerbSize</button>
+            <button class="mini" data-max-atom="delayTime">Max DelayTime</button>
+            <button class="mini" data-max-atom="saturationType">Max Sat</button>
+            <button class="mini" data-max-atom="eqType">Max EQ</button>
+            <button class="mini" data-max-atom="sidechainCurve">Max SideCurve</button>
             <button class="mini" data-max-atom="envelopeType">Max Env</button>
             <button class="mini" data-max-atom="lfoType">Max LFO</button>
             <button class="mini" data-max-atom="distortionType">Max Dist</button>
@@ -3444,6 +3549,1489 @@ const SOUND_INTENSITIES = [
 
 
 /* ---------------------------- OPTIONAL LAYERS ---------------------------- */
+const MIX_DENSITY = [
+  "maximum density",
+  "relentless layering",
+  "explosive stack",
+  "ferocious wall",
+  "crushing mass",
+  "slamming body",
+  "pounding weight",
+  "thunderous thickness",
+  "euphoric heft",
+  "driving bulk",
+  "overdriven density drive",
+  "hyper-driven layering drive",
+  "turbo-charged stack drive",
+  "supercharged wall drive",
+  "reactor-fueled mass drive",
+  "voltage-spiked body drive",
+  "circuit-bent weight drive",
+  "modular-patched thickness drive",
+  "warehouse-powered heft drive",
+  "bunker-born bulk drive",
+  "peak-time density pressure",
+  "hardgroove-locked layering pressure",
+  "acid-drenched stack pressure",
+  "rave-charged wall pressure"
+];
+const MIX_ENERGY = [
+  "maximum energy",
+  "relentless power",
+  "explosive charge",
+  "ferocious current",
+  "crushing flux",
+  "slamming surge",
+  "pounding blast",
+  "thunderous thrust",
+  "euphoric drive",
+  "driving momentum",
+  "overdriven energy drive",
+  "hyper-driven power drive",
+  "turbo-charged charge drive",
+  "supercharged current drive",
+  "reactor-fueled flux drive",
+  "voltage-spiked surge drive",
+  "circuit-bent blast drive",
+  "modular-patched thrust drive",
+  "warehouse-powered drive drive",
+  "bunker-born momentum drive",
+  "peak-time energy pressure",
+  "hardgroove-locked power pressure",
+  "acid-drenched charge pressure",
+  "rave-charged current pressure"
+];
+const MIX_SPACE = [
+  "maximum space",
+  "relentless room",
+  "explosive air",
+  "ferocious dimension",
+  "crushing field",
+  "slamming stage",
+  "pounding arena",
+  "thunderous chamber",
+  "euphoric hall",
+  "driving environment",
+  "overdriven space drive",
+  "hyper-driven room drive",
+  "turbo-charged air drive",
+  "supercharged dimension drive",
+  "reactor-fueled field drive",
+  "voltage-spiked stage drive",
+  "circuit-bent arena drive",
+  "modular-patched chamber drive",
+  "warehouse-powered hall drive",
+  "bunker-born environment drive",
+  "peak-time space pressure",
+  "hardgroove-locked room pressure",
+  "acid-drenched air pressure",
+  "rave-charged dimension pressure"
+];
+const MIX_GLUE = [
+  "maximum glue",
+  "relentless cohesion",
+  "explosive bond",
+  "ferocious unity",
+  "crushing fusion",
+  "slamming knit",
+  "pounding lock",
+  "thunderous seal",
+  "euphoric merge",
+  "driving clamp",
+  "overdriven glue drive",
+  "hyper-driven cohesion drive",
+  "turbo-charged bond drive",
+  "supercharged unity drive",
+  "reactor-fueled fusion drive",
+  "voltage-spiked knit drive",
+  "circuit-bent lock drive",
+  "modular-patched seal drive",
+  "warehouse-powered merge drive",
+  "bunker-born clamp drive",
+  "peak-time glue pressure",
+  "hardgroove-locked cohesion pressure",
+  "acid-drenched bond pressure",
+  "rave-charged unity pressure"
+];
+const MIX_PUNCH = [
+  "maximum punch",
+  "relentless impact",
+  "explosive hit",
+  "ferocious slam",
+  "crushing smack",
+  "slamming strike",
+  "pounding knock",
+  "thunderous thump",
+  "euphoric snap",
+  "driving crack",
+  "overdriven punch drive",
+  "hyper-driven impact drive",
+  "turbo-charged hit drive",
+  "supercharged slam drive",
+  "reactor-fueled smack drive",
+  "voltage-spiked strike drive",
+  "circuit-bent knock drive",
+  "modular-patched thump drive",
+  "warehouse-powered snap drive",
+  "bunker-born crack drive",
+  "peak-time punch pressure",
+  "hardgroove-locked impact pressure",
+  "acid-drenched hit pressure",
+  "rave-charged slam pressure"
+];
+const MASTER_DRIVE = [
+  "maximum master drive",
+  "relentless master push",
+  "explosive master saturation",
+  "ferocious master overdrive",
+  "crushing master gain",
+  "slamming master heat",
+  "pounding master fire",
+  "thunderous master intensity",
+  "euphoric master drive drive",
+  "driving master push drive",
+  "overdriven master saturation drive",
+  "hyper-driven master overdrive drive",
+  "turbo-charged master gain drive",
+  "supercharged master heat drive",
+  "reactor-fueled master fire drive",
+  "voltage-spiked master intensity drive",
+  "circuit-bent master drive pressure",
+  "modular-patched master push pressure",
+  "warehouse-powered master saturation pressure",
+  "bunker-born master overdrive pressure",
+  "peak-time master gain pressure",
+  "hardgroove-locked master heat pressure",
+  "acid-drenched master fire pressure",
+  "rave-charged master intensity pressure"
+];
+const MASTER_LOUDNESS = [
+  "maximum loudness",
+  "relentless volume",
+  "explosive level",
+  "ferocious ceiling",
+  "crushing headroom push",
+  "slamming peak",
+  "pounding limit",
+  "thunderous clipping drive",
+  "euphoric loudness drive",
+  "driving volume drive",
+  "overdriven level drive",
+  "hyper-driven ceiling drive",
+  "turbo-charged headroom push drive",
+  "supercharged peak drive",
+  "reactor-fueled limit drive",
+  "voltage-spiked clipping drive drive",
+  "circuit-bent loudness pressure",
+  "modular-patched volume pressure",
+  "warehouse-powered level pressure",
+  "bunker-born ceiling pressure",
+  "peak-time headroom push pressure",
+  "hardgroove-locked peak pressure",
+  "acid-drenched limit pressure",
+  "rave-charged clipping drive pressure"
+];
+const MASTER_COLOR = [
+  "maximum analog color",
+  "relentless digital color",
+  "explosive tape color",
+  "ferocious tube color",
+  "crushing solid-state color",
+  "slamming transformer color",
+  "pounding console color",
+  "thunderous circuit color",
+  "euphoric analog color drive",
+  "driving digital color drive",
+  "overdriven tape color drive",
+  "hyper-driven tube color drive",
+  "turbo-charged solid-state color drive",
+  "supercharged transformer color drive",
+  "reactor-fueled console color drive",
+  "voltage-spiked circuit color drive",
+  "circuit-bent analog color pressure",
+  "modular-patched digital color pressure",
+  "warehouse-powered tape color pressure",
+  "bunker-born tube color pressure",
+  "peak-time solid-state color pressure",
+  "hardgroove-locked transformer color pressure",
+  "acid-drenched console color pressure",
+  "rave-charged circuit color pressure"
+];
+const MASTER_CHAIN = [
+  "maximum master chain",
+  "relentless master buss",
+  "explosive master pipeline",
+  "ferocious master path",
+  "crushing master route",
+  "slamming master flow",
+  "pounding master chain drive",
+  "thunderous master buss drive",
+  "euphoric master pipeline drive",
+  "driving master path drive",
+  "overdriven master route drive",
+  "hyper-driven master flow drive",
+  "turbo-charged master chain pressure",
+  "supercharged master buss pressure",
+  "reactor-fueled master pipeline pressure",
+  "voltage-spiked master path pressure",
+  "circuit-bent master route pressure",
+  "modular-patched master flow pressure",
+  "warehouse-powered master chain force",
+  "bunker-born master buss force",
+  "peak-time master pipeline force",
+  "hardgroove-locked master path force",
+  "acid-drenched master route force",
+  "rave-charged master flow force"
+];
+const STEREO_IMAGE = [
+  "maximum stereo image",
+  "relentless stereo picture",
+  "explosive stereo panorama",
+  "ferocious stereo spread",
+  "crushing stereo placement",
+  "slamming stereo image drive",
+  "pounding stereo picture drive",
+  "thunderous stereo panorama drive",
+  "euphoric stereo spread drive",
+  "driving stereo placement drive",
+  "overdriven stereo image pressure",
+  "hyper-driven stereo picture pressure",
+  "turbo-charged stereo panorama pressure",
+  "supercharged stereo spread pressure",
+  "reactor-fueled stereo placement pressure",
+  "voltage-spiked stereo image force",
+  "circuit-bent stereo picture force",
+  "modular-patched stereo panorama force",
+  "warehouse-powered stereo spread force",
+  "bunker-born stereo placement force",
+  "peak-time stereo image",
+  "hardgroove-locked stereo picture",
+  "acid-drenched stereo panorama",
+  "rave-charged stereo spread"
+];
+const STEREO_WIDTH = [
+  "maximum stereo width",
+  "relentless stereo breadth",
+  "explosive stereo span",
+  "ferocious stereo reach",
+  "crushing stereo expanse",
+  "slamming stereo width drive",
+  "pounding stereo breadth drive",
+  "thunderous stereo span drive",
+  "euphoric stereo reach drive",
+  "driving stereo expanse drive",
+  "overdriven stereo width pressure",
+  "hyper-driven stereo breadth pressure",
+  "turbo-charged stereo span pressure",
+  "supercharged stereo reach pressure",
+  "reactor-fueled stereo expanse pressure",
+  "voltage-spiked stereo width force",
+  "circuit-bent stereo breadth force",
+  "modular-patched stereo span force",
+  "warehouse-powered stereo reach force",
+  "bunker-born stereo expanse force",
+  "peak-time stereo width",
+  "hardgroove-locked stereo breadth",
+  "acid-drenched stereo span",
+  "rave-charged stereo reach"
+];
+const SPATIAL_DEPTH = [
+  "maximum depth",
+  "relentless deepness",
+  "explosive dimension",
+  "ferocious distance",
+  "crushing perspective",
+  "slamming immersion",
+  "pounding abyss",
+  "thunderous void",
+  "euphoric depth drive",
+  "driving deepness drive",
+  "overdriven dimension drive",
+  "hyper-driven distance drive",
+  "turbo-charged perspective drive",
+  "supercharged immersion drive",
+  "reactor-fueled abyss drive",
+  "voltage-spiked void drive",
+  "circuit-bent depth pressure",
+  "modular-patched deepness pressure",
+  "warehouse-powered dimension pressure",
+  "bunker-born distance pressure",
+  "peak-time perspective pressure",
+  "hardgroove-locked immersion pressure",
+  "acid-drenched abyss pressure",
+  "rave-charged void pressure"
+];
+const SPATIAL_MOVEMENT = [
+  "maximum spatial movement",
+  "relentless pan movement",
+  "explosive orbit",
+  "ferocious rotation",
+  "crushing sweep",
+  "slamming drift",
+  "pounding travel",
+  "thunderous glide",
+  "euphoric spatial movement drive",
+  "driving pan movement drive",
+  "overdriven orbit drive",
+  "hyper-driven rotation drive",
+  "turbo-charged sweep drive",
+  "supercharged drift drive",
+  "reactor-fueled travel drive",
+  "voltage-spiked glide drive",
+  "circuit-bent spatial movement pressure",
+  "modular-patched pan movement pressure",
+  "warehouse-powered orbit pressure",
+  "bunker-born rotation pressure",
+  "peak-time sweep pressure",
+  "hardgroove-locked drift pressure",
+  "acid-drenched travel pressure",
+  "rave-charged glide pressure"
+];
+const MOD_SOURCE = [
+  "maximum LFO source",
+  "relentless envelope source",
+  "explosive random source",
+  "ferocious sequencer source",
+  "crushing mod matrix source",
+  "slamming macro source",
+  "pounding LFO source drive",
+  "thunderous envelope source drive",
+  "euphoric random source drive",
+  "driving sequencer source drive",
+  "overdriven mod matrix source drive",
+  "hyper-driven macro source drive",
+  "turbo-charged LFO source pressure",
+  "supercharged envelope source pressure",
+  "reactor-fueled random source pressure",
+  "voltage-spiked sequencer source pressure",
+  "circuit-bent mod matrix source pressure",
+  "modular-patched macro source pressure",
+  "warehouse-powered LFO source force",
+  "bunker-born envelope source force",
+  "peak-time random source force",
+  "hardgroove-locked sequencer source force",
+  "acid-drenched mod matrix source force",
+  "rave-charged macro source force"
+];
+const MOD_DEST = [
+  "maximum filter destination",
+  "relentless pitch destination",
+  "explosive amp destination",
+  "ferocious pan destination",
+  "crushing drive destination",
+  "slamming resonance destination",
+  "pounding filter destination drive",
+  "thunderous pitch destination drive",
+  "euphoric amp destination drive",
+  "driving pan destination drive",
+  "overdriven drive destination drive",
+  "hyper-driven resonance destination drive",
+  "turbo-charged filter destination pressure",
+  "supercharged pitch destination pressure",
+  "reactor-fueled amp destination pressure",
+  "voltage-spiked pan destination pressure",
+  "circuit-bent drive destination pressure",
+  "modular-patched resonance destination pressure",
+  "warehouse-powered filter destination force",
+  "bunker-born pitch destination force",
+  "peak-time amp destination force",
+  "hardgroove-locked pan destination force",
+  "acid-drenched drive destination force",
+  "rave-charged resonance destination force"
+];
+const MOD_RATE = [
+  "maximum slow rate",
+  "relentless mid rate",
+  "explosive fast rate",
+  "ferocious syncopated rate",
+  "crushing triplet rate",
+  "slamming dotted rate",
+  "pounding ramped rate",
+  "thunderous slow rate drive",
+  "euphoric mid rate drive",
+  "driving fast rate drive",
+  "overdriven syncopated rate drive",
+  "hyper-driven triplet rate drive",
+  "turbo-charged dotted rate drive",
+  "supercharged ramped rate drive",
+  "reactor-fueled slow rate pressure",
+  "voltage-spiked mid rate pressure",
+  "circuit-bent fast rate pressure",
+  "modular-patched syncopated rate pressure",
+  "warehouse-powered triplet rate pressure",
+  "bunker-born dotted rate pressure",
+  "peak-time ramped rate pressure",
+  "hardgroove-locked slow rate force",
+  "acid-drenched mid rate force",
+  "rave-charged fast rate force"
+];
+const MOD_DEPTH = [
+  "maximum subtle depth",
+  "relentless mid depth",
+  "explosive deep depth",
+  "ferocious extreme depth",
+  "crushing modulated depth",
+  "slamming shifting depth",
+  "pounding subtle depth drive",
+  "thunderous mid depth drive",
+  "euphoric deep depth drive",
+  "driving extreme depth drive",
+  "overdriven modulated depth drive",
+  "hyper-driven shifting depth drive",
+  "turbo-charged subtle depth pressure",
+  "supercharged mid depth pressure",
+  "reactor-fueled deep depth pressure",
+  "voltage-spiked extreme depth pressure",
+  "circuit-bent modulated depth pressure",
+  "modular-patched shifting depth pressure",
+  "warehouse-powered subtle depth force",
+  "bunker-born mid depth force",
+  "peak-time deep depth force",
+  "hardgroove-locked extreme depth force",
+  "acid-drenched modulated depth force",
+  "rave-charged shifting depth force"
+];
+const TEXTURE_LAYER = [
+  "maximum texture layer",
+  "relentless grain layer",
+  "explosive dust layer",
+  "ferocious grit layer",
+  "crushing haze layer",
+  "slamming fog layer",
+  "pounding smoke layer",
+  "thunderous texture layer drive",
+  "euphoric grain layer drive",
+  "driving dust layer drive",
+  "overdriven grit layer drive",
+  "hyper-driven haze layer drive",
+  "turbo-charged fog layer drive",
+  "supercharged smoke layer drive",
+  "reactor-fueled texture layer pressure",
+  "voltage-spiked grain layer pressure",
+  "circuit-bent dust layer pressure",
+  "modular-patched grit layer pressure",
+  "warehouse-powered haze layer pressure",
+  "bunker-born fog layer pressure",
+  "peak-time smoke layer pressure",
+  "hardgroove-locked texture layer force",
+  "acid-drenched grain layer force",
+  "rave-charged dust layer force"
+];
+const GRAIN_TYPE = [
+  "maximum granular grain",
+  "relentless tape grain",
+  "explosive digital grain",
+  "ferocious analog grain",
+  "crushing crushed grain",
+  "slamming stretched grain",
+  "pounding granular grain drive",
+  "thunderous tape grain drive",
+  "euphoric digital grain drive",
+  "driving analog grain drive",
+  "overdriven crushed grain drive",
+  "hyper-driven stretched grain drive",
+  "turbo-charged granular grain pressure",
+  "supercharged tape grain pressure",
+  "reactor-fueled digital grain pressure",
+  "voltage-spiked analog grain pressure",
+  "circuit-bent crushed grain pressure",
+  "modular-patched stretched grain pressure",
+  "warehouse-powered granular grain force",
+  "bunker-born tape grain force",
+  "peak-time digital grain force",
+  "hardgroove-locked analog grain force",
+  "acid-drenched crushed grain force",
+  "rave-charged stretched grain force"
+];
+const SHIMMER_TYPE = [
+  "maximum shimmer",
+  "relentless sparkle",
+  "explosive glow",
+  "ferocious gleam",
+  "crushing glimmer",
+  "slamming glitter",
+  "pounding flash",
+  "thunderous shimmer drive",
+  "euphoric sparkle drive",
+  "driving glow drive",
+  "overdriven gleam drive",
+  "hyper-driven glimmer drive",
+  "turbo-charged glitter drive",
+  "supercharged flash drive",
+  "reactor-fueled shimmer pressure",
+  "voltage-spiked sparkle pressure",
+  "circuit-bent glow pressure",
+  "modular-patched gleam pressure",
+  "warehouse-powered glimmer pressure",
+  "bunker-born glitter pressure",
+  "peak-time flash pressure",
+  "hardgroove-locked shimmer force",
+  "acid-drenched sparkle force",
+  "rave-charged glow force"
+];
+const ATMOSPHERE_TYPE = [
+  "maximum atmosphere",
+  "relentless aura",
+  "explosive ambience",
+  "ferocious ether",
+  "crushing mist",
+  "slamming vapor",
+  "pounding steam",
+  "thunderous atmosphere drive",
+  "euphoric aura drive",
+  "driving ambience drive",
+  "overdriven ether drive",
+  "hyper-driven mist drive",
+  "turbo-charged vapor drive",
+  "supercharged steam drive",
+  "reactor-fueled atmosphere pressure",
+  "voltage-spiked aura pressure",
+  "circuit-bent ambience pressure",
+  "modular-patched ether pressure",
+  "warehouse-powered mist pressure",
+  "bunker-born vapor pressure",
+  "peak-time steam pressure",
+  "hardgroove-locked atmosphere force",
+  "acid-drenched aura force",
+  "rave-charged ambience force"
+];
+const GHOST_NOTES = [
+  "maximum ghost notes",
+  "relentless ghost hits",
+  "explosive ghost strokes",
+  "ferocious ghost taps",
+  "crushing ghost flicks",
+  "slamming ghost accents",
+  "pounding ghost notes drive",
+  "thunderous ghost hits drive",
+  "euphoric ghost strokes drive",
+  "driving ghost taps drive",
+  "overdriven ghost flicks drive",
+  "hyper-driven ghost accents drive",
+  "turbo-charged ghost notes pressure",
+  "supercharged ghost hits pressure",
+  "reactor-fueled ghost strokes pressure",
+  "voltage-spiked ghost taps pressure",
+  "circuit-bent ghost flicks pressure",
+  "modular-patched ghost accents pressure",
+  "warehouse-powered ghost notes force",
+  "bunker-born ghost hits force",
+  "peak-time ghost strokes force",
+  "hardgroove-locked ghost taps force",
+  "acid-drenched ghost flicks force",
+  "rave-charged ghost accents force"
+];
+const HUMANIZE_TYPES = [
+  "maximum humanize",
+  "relentless human feel",
+  "explosive organic timing",
+  "ferocious loose timing",
+  "crushing tight timing",
+  "slamming mechanical timing",
+  "pounding humanize drive",
+  "thunderous human feel drive",
+  "euphoric organic timing drive",
+  "driving loose timing drive",
+  "overdriven tight timing drive",
+  "hyper-driven mechanical timing drive",
+  "turbo-charged humanize pressure",
+  "supercharged human feel pressure",
+  "reactor-fueled organic timing pressure",
+  "voltage-spiked loose timing pressure",
+  "circuit-bent tight timing pressure",
+  "modular-patched mechanical timing pressure",
+  "warehouse-powered humanize force",
+  "bunker-born human feel force",
+  "peak-time organic timing force",
+  "hardgroove-locked loose timing force",
+  "acid-drenched tight timing force",
+  "rave-charged mechanical timing force"
+];
+const POCKET_TYPES = [
+  "maximum pocket",
+  "relentless groove pocket",
+  "explosive rhythm pocket",
+  "ferocious time pocket",
+  "crushing feel pocket",
+  "slamming pocket drive",
+  "pounding groove pocket drive",
+  "thunderous rhythm pocket drive",
+  "euphoric time pocket drive",
+  "driving feel pocket drive",
+  "overdriven pocket pressure",
+  "hyper-driven groove pocket pressure",
+  "turbo-charged rhythm pocket pressure",
+  "supercharged time pocket pressure",
+  "reactor-fueled feel pocket pressure",
+  "voltage-spiked pocket force",
+  "circuit-bent groove pocket force",
+  "modular-patched rhythm pocket force",
+  "warehouse-powered time pocket force",
+  "bunker-born feel pocket force",
+  "peak-time pocket",
+  "hardgroove-locked groove pocket",
+  "acid-drenched rhythm pocket",
+  "rave-charged time pocket"
+];
+const ORNAMENT_TYPES = [
+  "maximum ornament",
+  "relentless trill",
+  "explosive mordent",
+  "ferocious grace note",
+  "crushing turn",
+  "slamming slide ornament",
+  "pounding bend ornament",
+  "thunderous ornament drive",
+  "euphoric trill drive",
+  "driving mordent drive",
+  "overdriven grace note drive",
+  "hyper-driven turn drive",
+  "turbo-charged slide ornament drive",
+  "supercharged bend ornament drive",
+  "reactor-fueled ornament pressure",
+  "voltage-spiked trill pressure",
+  "circuit-bent mordent pressure",
+  "modular-patched grace note pressure",
+  "warehouse-powered turn pressure",
+  "bunker-born slide ornament pressure",
+  "peak-time bend ornament pressure",
+  "hardgroove-locked ornament force",
+  "acid-drenched trill force",
+  "rave-charged mordent force"
+];
+const VIBRATO_TYPES = [
+  "maximum vibrato",
+  "relentless wide vibrato",
+  "explosive fast vibrato",
+  "ferocious slow vibrato",
+  "crushing shallow vibrato",
+  "slamming deep vibrato",
+  "pounding vibrato drive",
+  "thunderous wide vibrato drive",
+  "euphoric fast vibrato drive",
+  "driving slow vibrato drive",
+  "overdriven shallow vibrato drive",
+  "hyper-driven deep vibrato drive",
+  "turbo-charged vibrato pressure",
+  "supercharged wide vibrato pressure",
+  "reactor-fueled fast vibrato pressure",
+  "voltage-spiked slow vibrato pressure",
+  "circuit-bent shallow vibrato pressure",
+  "modular-patched deep vibrato pressure",
+  "warehouse-powered vibrato force",
+  "bunker-born wide vibrato force",
+  "peak-time fast vibrato force",
+  "hardgroove-locked slow vibrato force",
+  "acid-drenched shallow vibrato force",
+  "rave-charged deep vibrato force"
+];
+const PORTAMENTO_TYPES = [
+  "maximum portamento",
+  "relentless glide",
+  "explosive slide",
+  "ferocious legato glide",
+  "crushing exponential glide",
+  "slamming linear glide",
+  "pounding portamento drive",
+  "thunderous glide drive",
+  "euphoric slide drive",
+  "driving legato glide drive",
+  "overdriven exponential glide drive",
+  "hyper-driven linear glide drive",
+  "turbo-charged portamento pressure",
+  "supercharged glide pressure",
+  "reactor-fueled slide pressure",
+  "voltage-spiked legato glide pressure",
+  "circuit-bent exponential glide pressure",
+  "modular-patched linear glide pressure",
+  "warehouse-powered portamento force",
+  "bunker-born glide force",
+  "peak-time slide force",
+  "hardgroove-locked legato glide force",
+  "acid-drenched exponential glide force",
+  "rave-charged linear glide force"
+];
+const SCALE_RUNS = [
+  "maximum scale run",
+  "relentless arpeggio run",
+  "explosive chromatic run",
+  "ferocious diatonic run",
+  "crushing pentatonic run",
+  "slamming octave run",
+  "pounding scale run drive",
+  "thunderous arpeggio run drive",
+  "euphoric chromatic run drive",
+  "driving diatonic run drive",
+  "overdriven pentatonic run drive",
+  "hyper-driven octave run drive",
+  "turbo-charged scale run pressure",
+  "supercharged arpeggio run pressure",
+  "reactor-fueled chromatic run pressure",
+  "voltage-spiked diatonic run pressure",
+  "circuit-bent pentatonic run pressure",
+  "modular-patched octave run pressure",
+  "warehouse-powered scale run force",
+  "bunker-born arpeggio run force",
+  "peak-time chromatic run force",
+  "hardgroove-locked diatonic run force",
+  "acid-drenched pentatonic run force",
+  "rave-charged octave run force"
+];
+const INTERVAL_LEAPS = [
+  "maximum octave leap",
+  "relentless fifth leap",
+  "explosive fourth leap",
+  "ferocious seventh leap",
+  "crushing ninth leap",
+  "slamming wide leap",
+  "pounding octave leap drive",
+  "thunderous fifth leap drive",
+  "euphoric fourth leap drive",
+  "driving seventh leap drive",
+  "overdriven ninth leap drive",
+  "hyper-driven wide leap drive",
+  "turbo-charged octave leap pressure",
+  "supercharged fifth leap pressure",
+  "reactor-fueled fourth leap pressure",
+  "voltage-spiked seventh leap pressure",
+  "circuit-bent ninth leap pressure",
+  "modular-patched wide leap pressure",
+  "warehouse-powered octave leap force",
+  "bunker-born fifth leap force",
+  "peak-time fourth leap force",
+  "hardgroove-locked seventh leap force",
+  "acid-drenched ninth leap force",
+  "rave-charged wide leap force"
+];
+const VOICING_TYPES = [
+  "maximum close voicing",
+  "relentless open voicing",
+  "explosive drop-2 voicing",
+  "ferocious drop-3 voicing",
+  "crushing cluster voicing",
+  "slamming spread voicing",
+  "pounding close voicing drive",
+  "thunderous open voicing drive",
+  "euphoric drop-2 voicing drive",
+  "driving drop-3 voicing drive",
+  "overdriven cluster voicing drive",
+  "hyper-driven spread voicing drive",
+  "turbo-charged close voicing pressure",
+  "supercharged open voicing pressure",
+  "reactor-fueled drop-2 voicing pressure",
+  "voltage-spiked drop-3 voicing pressure",
+  "circuit-bent cluster voicing pressure",
+  "modular-patched spread voicing pressure",
+  "warehouse-powered close voicing force",
+  "bunker-born open voicing force",
+  "peak-time drop-2 voicing force",
+  "hardgroove-locked drop-3 voicing force",
+  "acid-drenched cluster voicing force",
+  "rave-charged spread voicing force"
+];
+const INVERSION_TYPES = [
+  "maximum root inversion",
+  "relentless first inversion",
+  "explosive second inversion",
+  "ferocious third inversion",
+  "crushing open inversion",
+  "slamming root inversion drive",
+  "pounding first inversion drive",
+  "thunderous second inversion drive",
+  "euphoric third inversion drive",
+  "driving open inversion drive",
+  "overdriven root inversion pressure",
+  "hyper-driven first inversion pressure",
+  "turbo-charged second inversion pressure",
+  "supercharged third inversion pressure",
+  "reactor-fueled open inversion pressure",
+  "voltage-spiked root inversion force",
+  "circuit-bent first inversion force",
+  "modular-patched second inversion force",
+  "warehouse-powered third inversion force",
+  "bunker-born open inversion force",
+  "peak-time root inversion",
+  "hardgroove-locked first inversion",
+  "acid-drenched second inversion",
+  "rave-charged third inversion"
+];
+const TENSION_TYPES = [
+  "maximum tension",
+  "relentless dissonance",
+  "explosive rub",
+  "ferocious crunch",
+  "crushing bite",
+  "slamming edge",
+  "pounding grit",
+  "thunderous tension drive",
+  "euphoric dissonance drive",
+  "driving rub drive",
+  "overdriven crunch drive",
+  "hyper-driven bite drive",
+  "turbo-charged edge drive",
+  "supercharged grit drive",
+  "reactor-fueled tension pressure",
+  "voltage-spiked dissonance pressure",
+  "circuit-bent rub pressure",
+  "modular-patched crunch pressure",
+  "warehouse-powered bite pressure",
+  "bunker-born edge pressure",
+  "peak-time grit pressure",
+  "hardgroove-locked tension force",
+  "acid-drenched dissonance force",
+  "rave-charged rub force"
+];
+const RESOLUTION_TYPES = [
+  "maximum resolution",
+  "relentless release",
+  "explosive settle",
+  "ferocious land",
+  "crushing resolve",
+  "slamming cadence",
+  "pounding resolution drive",
+  "thunderous release drive",
+  "euphoric settle drive",
+  "driving land drive",
+  "overdriven resolve drive",
+  "hyper-driven cadence drive",
+  "turbo-charged resolution pressure",
+  "supercharged release pressure",
+  "reactor-fueled settle pressure",
+  "voltage-spiked land pressure",
+  "circuit-bent resolve pressure",
+  "modular-patched cadence pressure",
+  "warehouse-powered resolution force",
+  "bunker-born release force",
+  "peak-time settle force",
+  "hardgroove-locked land force",
+  "acid-drenched resolve force",
+  "rave-charged cadence force"
+];
+const RIDE_TYPES = [
+  "maximum ride",
+  "relentless ride cymbal",
+  "explosive ride pattern",
+  "ferocious ride groove",
+  "crushing ride pulse",
+  "slamming ride drive",
+  "pounding ride cymbal drive",
+  "thunderous ride pattern drive",
+  "euphoric ride groove drive",
+  "driving ride pulse drive",
+  "overdriven ride pressure",
+  "hyper-driven ride cymbal pressure",
+  "turbo-charged ride pattern pressure",
+  "supercharged ride groove pressure",
+  "reactor-fueled ride pulse pressure",
+  "voltage-spiked ride force",
+  "circuit-bent ride cymbal force",
+  "modular-patched ride pattern force",
+  "warehouse-powered ride groove force",
+  "bunker-born ride pulse force",
+  "peak-time ride",
+  "hardgroove-locked ride cymbal",
+  "acid-drenched ride pattern",
+  "rave-charged ride groove"
+];
+const CRASH_TYPES = [
+  "maximum crash",
+  "relentless crash cymbal",
+  "explosive crash accent",
+  "ferocious crash hit",
+  "crushing crash explosion",
+  "slamming crash drive",
+  "pounding crash cymbal drive",
+  "thunderous crash accent drive",
+  "euphoric crash hit drive",
+  "driving crash explosion drive",
+  "overdriven crash pressure",
+  "hyper-driven crash cymbal pressure",
+  "turbo-charged crash accent pressure",
+  "supercharged crash hit pressure",
+  "reactor-fueled crash explosion pressure",
+  "voltage-spiked crash force",
+  "circuit-bent crash cymbal force",
+  "modular-patched crash accent force",
+  "warehouse-powered crash hit force",
+  "bunker-born crash explosion force",
+  "peak-time crash",
+  "hardgroove-locked crash cymbal",
+  "acid-drenched crash accent",
+  "rave-charged crash hit"
+];
+const CLAP_LAYERS = [
+  "maximum clap layer",
+  "relentless clap stack",
+  "explosive clap double",
+  "ferocious clap tail",
+  "crushing clap room",
+  "slamming clap layer drive",
+  "pounding clap stack drive",
+  "thunderous clap double drive",
+  "euphoric clap tail drive",
+  "driving clap room drive",
+  "overdriven clap layer pressure",
+  "hyper-driven clap stack pressure",
+  "turbo-charged clap double pressure",
+  "supercharged clap tail pressure",
+  "reactor-fueled clap room pressure",
+  "voltage-spiked clap layer force",
+  "circuit-bent clap stack force",
+  "modular-patched clap double force",
+  "warehouse-powered clap tail force",
+  "bunker-born clap room force",
+  "peak-time clap layer",
+  "hardgroove-locked clap stack",
+  "acid-drenched clap double",
+  "rave-charged clap tail"
+];
+const PERC_FILLS = [
+  "maximum perc fill",
+  "relentless drum fill",
+  "explosive tom fill",
+  "ferocious perc break",
+  "crushing drum break",
+  "slamming perc roll",
+  "pounding perc fill drive",
+  "thunderous drum fill drive",
+  "euphoric tom fill drive",
+  "driving perc break drive",
+  "overdriven drum break drive",
+  "hyper-driven perc roll drive",
+  "turbo-charged perc fill pressure",
+  "supercharged drum fill pressure",
+  "reactor-fueled tom fill pressure",
+  "voltage-spiked perc break pressure",
+  "circuit-bent drum break pressure",
+  "modular-patched perc roll pressure",
+  "warehouse-powered perc fill force",
+  "bunker-born drum fill force",
+  "peak-time tom fill force",
+  "hardgroove-locked perc break force",
+  "acid-drenched drum break force",
+  "rave-charged perc roll force"
+];
+const FX_TYPES = [
+  "maximum FX hit",
+  "relentless FX sweep",
+  "explosive FX stab",
+  "ferocious FX texture",
+  "crushing FX bed",
+  "slamming FX drone",
+  "pounding FX hit drive",
+  "thunderous FX sweep drive",
+  "euphoric FX stab drive",
+  "driving FX texture drive",
+  "overdriven FX bed drive",
+  "hyper-driven FX drone drive",
+  "turbo-charged FX hit pressure",
+  "supercharged FX sweep pressure",
+  "reactor-fueled FX stab pressure",
+  "voltage-spiked FX texture pressure",
+  "circuit-bent FX bed pressure",
+  "modular-patched FX drone pressure",
+  "warehouse-powered FX hit force",
+  "bunker-born FX sweep force",
+  "peak-time FX stab force",
+  "hardgroove-locked FX texture force",
+  "acid-drenched FX bed force",
+  "rave-charged FX drone force"
+];
+const TRANSITION_TYPES = [
+  "maximum transition",
+  "relentless switch",
+  "explosive cut",
+  "ferocious morph",
+  "crushing blend",
+  "slamming crossfade",
+  "pounding transition drive",
+  "thunderous switch drive",
+  "euphoric cut drive",
+  "driving morph drive",
+  "overdriven blend drive",
+  "hyper-driven crossfade drive",
+  "turbo-charged transition pressure",
+  "supercharged switch pressure",
+  "reactor-fueled cut pressure",
+  "voltage-spiked morph pressure",
+  "circuit-bent blend pressure",
+  "modular-patched crossfade pressure",
+  "warehouse-powered transition force",
+  "bunker-born switch force",
+  "peak-time cut force",
+  "hardgroove-locked morph force",
+  "acid-drenched blend force",
+  "rave-charged crossfade force"
+];
+const RISER_TYPES = [
+  "maximum riser",
+  "relentless uplifter",
+  "explosive build riser",
+  "ferocious tension riser",
+  "crushing energy riser",
+  "slamming drive riser",
+  "pounding riser drive",
+  "thunderous uplifter drive",
+  "euphoric build riser drive",
+  "driving tension riser drive",
+  "overdriven energy riser drive",
+  "hyper-driven drive riser drive",
+  "turbo-charged riser pressure",
+  "supercharged uplifter pressure",
+  "reactor-fueled build riser pressure",
+  "voltage-spiked tension riser pressure",
+  "circuit-bent energy riser pressure",
+  "modular-patched drive riser pressure",
+  "warehouse-powered riser force",
+  "bunker-born uplifter force",
+  "peak-time build riser force",
+  "hardgroove-locked tension riser force",
+  "acid-drenched energy riser force",
+  "rave-charged drive riser force"
+];
+const IMPACT_TYPES = [
+  "maximum impact",
+  "relentless downbeat impact",
+  "explosive drop impact",
+  "ferocious slam impact",
+  "crushing boom impact",
+  "slamming hit impact",
+  "pounding impact drive",
+  "thunderous downbeat impact drive",
+  "euphoric drop impact drive",
+  "driving slam impact drive",
+  "overdriven boom impact drive",
+  "hyper-driven hit impact drive",
+  "turbo-charged impact pressure",
+  "supercharged downbeat impact pressure",
+  "reactor-fueled drop impact pressure",
+  "voltage-spiked slam impact pressure",
+  "circuit-bent boom impact pressure",
+  "modular-patched hit impact pressure",
+  "warehouse-powered impact force",
+  "bunker-born downbeat impact force",
+  "peak-time drop impact force",
+  "hardgroove-locked slam impact force",
+  "acid-drenched boom impact force",
+  "rave-charged hit impact force"
+];
+const SECTION_DENSITY_TYPES = [
+  "maximum section density",
+  "relentless part density",
+  "explosive segment density",
+  "ferocious block density",
+  "crushing section density drive",
+  "slamming part density drive",
+  "pounding segment density drive",
+  "thunderous block density drive",
+  "euphoric section density pressure",
+  "driving part density pressure",
+  "overdriven segment density pressure",
+  "hyper-driven block density pressure",
+  "turbo-charged section density force",
+  "supercharged part density force",
+  "reactor-fueled segment density force",
+  "voltage-spiked block density force",
+  "circuit-bent section density",
+  "modular-patched part density",
+  "warehouse-powered segment density",
+  "bunker-born block density",
+  "peak-time section density drive",
+  "hardgroove-locked part density drive",
+  "acid-drenched segment density drive",
+  "rave-charged block density drive"
+];
+const ENERGY_CURVE_TYPES = [
+  "maximum energy curve",
+  "relentless power curve",
+  "explosive drive curve",
+  "ferocious intensity curve",
+  "crushing force curve",
+  "slamming energy curve drive",
+  "pounding power curve drive",
+  "thunderous drive curve drive",
+  "euphoric intensity curve drive",
+  "driving force curve drive",
+  "overdriven energy curve pressure",
+  "hyper-driven power curve pressure",
+  "turbo-charged drive curve pressure",
+  "supercharged intensity curve pressure",
+  "reactor-fueled force curve pressure",
+  "voltage-spiked energy curve force",
+  "circuit-bent power curve force",
+  "modular-patched drive curve force",
+  "warehouse-powered intensity curve force",
+  "bunker-born force curve force",
+  "peak-time energy curve",
+  "hardgroove-locked power curve",
+  "acid-drenched drive curve",
+  "rave-charged intensity curve"
+];
+const BUILD_TYPES = [
+  "maximum build",
+  "relentless build-up",
+  "explosive tension build",
+  "ferocious energy build",
+  "crushing drive build",
+  "slamming build drive",
+  "pounding build-up drive",
+  "thunderous tension build drive",
+  "euphoric energy build drive",
+  "driving drive build drive",
+  "overdriven build pressure",
+  "hyper-driven build-up pressure",
+  "turbo-charged tension build pressure",
+  "supercharged energy build pressure",
+  "reactor-fueled drive build pressure",
+  "voltage-spiked build force",
+  "circuit-bent build-up force",
+  "modular-patched tension build force",
+  "warehouse-powered energy build force",
+  "bunker-born drive build force",
+  "peak-time build",
+  "hardgroove-locked build-up",
+  "acid-drenched tension build",
+  "rave-charged energy build"
+];
+const DROP_TYPES = [
+  "maximum drop",
+  "relentless main drop",
+  "explosive second drop",
+  "ferocious final drop",
+  "crushing peak drop",
+  "slamming anthem drop",
+  "pounding drop drive",
+  "thunderous main drop drive",
+  "euphoric second drop drive",
+  "driving final drop drive",
+  "overdriven peak drop drive",
+  "hyper-driven anthem drop drive",
+  "turbo-charged drop pressure",
+  "supercharged main drop pressure",
+  "reactor-fueled second drop pressure",
+  "voltage-spiked final drop pressure",
+  "circuit-bent peak drop pressure",
+  "modular-patched anthem drop pressure",
+  "warehouse-powered drop force",
+  "bunker-born main drop force",
+  "peak-time second drop force",
+  "hardgroove-locked final drop force",
+  "acid-drenched peak drop force",
+  "rave-charged anthem drop force"
+];
+const CHOP_TYPES = [
+  "maximum chop",
+  "relentless cut",
+  "explosive slice",
+  "ferocious edit",
+  "crushing stutter",
+  "slamming repeat chop",
+  "pounding chop drive",
+  "thunderous cut drive",
+  "euphoric slice drive",
+  "driving edit drive",
+  "overdriven stutter drive",
+  "hyper-driven repeat chop drive",
+  "turbo-charged chop pressure",
+  "supercharged cut pressure",
+  "reactor-fueled slice pressure",
+  "voltage-spiked edit pressure",
+  "circuit-bent stutter pressure",
+  "modular-patched repeat chop pressure",
+  "warehouse-powered chop force",
+  "bunker-born cut force",
+  "peak-time slice force",
+  "hardgroove-locked edit force",
+  "acid-drenched stutter force",
+  "rave-charged repeat chop force"
+];
+const FILTER_CUTOFF_TYPES = [
+  "maximum filter cutoff",
+  "relentless low-pass cutoff",
+  "explosive high-pass cutoff",
+  "ferocious band-pass cutoff",
+  "crushing cutoff sweep",
+  "slamming filter cutoff drive",
+  "pounding low-pass cutoff drive",
+  "thunderous high-pass cutoff drive",
+  "euphoric band-pass cutoff drive",
+  "driving cutoff sweep drive",
+  "overdriven filter cutoff pressure",
+  "hyper-driven low-pass cutoff pressure",
+  "turbo-charged high-pass cutoff pressure",
+  "supercharged band-pass cutoff pressure",
+  "reactor-fueled cutoff sweep pressure",
+  "voltage-spiked filter cutoff force",
+  "circuit-bent low-pass cutoff force",
+  "modular-patched high-pass cutoff force",
+  "warehouse-powered band-pass cutoff force",
+  "bunker-born cutoff sweep force",
+  "peak-time filter cutoff",
+  "hardgroove-locked low-pass cutoff",
+  "acid-drenched high-pass cutoff",
+  "rave-charged band-pass cutoff"
+];
+const FILTER_RESONANCE_TYPES = [
+  "maximum filter resonance",
+  "relentless filter Q",
+  "explosive filter peak",
+  "ferocious filter emphasis",
+  "crushing filter drive",
+  "slamming filter resonance drive",
+  "pounding filter Q drive",
+  "thunderous filter peak drive",
+  "euphoric filter emphasis drive",
+  "driving filter drive drive",
+  "overdriven filter resonance pressure",
+  "hyper-driven filter Q pressure",
+  "turbo-charged filter peak pressure",
+  "supercharged filter emphasis pressure",
+  "reactor-fueled filter drive pressure",
+  "voltage-spiked filter resonance force",
+  "circuit-bent filter Q force",
+  "modular-patched filter peak force",
+  "warehouse-powered filter emphasis force",
+  "bunker-born filter drive force",
+  "peak-time filter resonance",
+  "hardgroove-locked filter Q",
+  "acid-drenched filter peak",
+  "rave-charged filter emphasis"
+];
+const REVERB_SIZE_TYPES = [
+  "maximum reverb size",
+  "relentless room size",
+  "explosive hall size",
+  "ferocious chamber size",
+  "crushing cathedral size",
+  "slamming reverb size drive",
+  "pounding room size drive",
+  "thunderous hall size drive",
+  "euphoric chamber size drive",
+  "driving cathedral size drive",
+  "overdriven reverb size pressure",
+  "hyper-driven room size pressure",
+  "turbo-charged hall size pressure",
+  "supercharged chamber size pressure",
+  "reactor-fueled cathedral size pressure",
+  "voltage-spiked reverb size force",
+  "circuit-bent room size force",
+  "modular-patched hall size force",
+  "warehouse-powered chamber size force",
+  "bunker-born cathedral size force",
+  "peak-time reverb size",
+  "hardgroove-locked room size",
+  "acid-drenched hall size",
+  "rave-charged chamber size"
+];
+const REVERB_DECAY_TYPES = [
+  "maximum reverb decay",
+  "relentless reverb tail",
+  "explosive reverb time",
+  "ferocious reverb release",
+  "crushing reverb fade",
+  "slamming reverb decay drive",
+  "pounding reverb tail drive",
+  "thunderous reverb time drive",
+  "euphoric reverb release drive",
+  "driving reverb fade drive",
+  "overdriven reverb decay pressure",
+  "hyper-driven reverb tail pressure",
+  "turbo-charged reverb time pressure",
+  "supercharged reverb release pressure",
+  "reactor-fueled reverb fade pressure",
+  "voltage-spiked reverb decay force",
+  "circuit-bent reverb tail force",
+  "modular-patched reverb time force",
+  "warehouse-powered reverb release force",
+  "bunker-born reverb fade force",
+  "peak-time reverb decay",
+  "hardgroove-locked reverb tail",
+  "acid-drenched reverb time",
+  "rave-charged reverb release"
+];
+const DELAY_TIME_TYPES = [
+  "maximum delay time",
+  "relentless echo time",
+  "explosive repeat time",
+  "ferocious feedback time",
+  "crushing bounce time",
+  "slamming delay time drive",
+  "pounding echo time drive",
+  "thunderous repeat time drive",
+  "euphoric feedback time drive",
+  "driving bounce time drive",
+  "overdriven delay time pressure",
+  "hyper-driven echo time pressure",
+  "turbo-charged repeat time pressure",
+  "supercharged feedback time pressure",
+  "reactor-fueled bounce time pressure",
+  "voltage-spiked delay time force",
+  "circuit-bent echo time force",
+  "modular-patched repeat time force",
+  "warehouse-powered feedback time force",
+  "bunker-born bounce time force",
+  "peak-time delay time",
+  "hardgroove-locked echo time",
+  "acid-drenched repeat time",
+  "rave-charged feedback time"
+];
+const DELAY_FEEDBACK_TYPES = [
+  "maximum delay feedback",
+  "relentless echo feedback",
+  "explosive repeat feedback",
+  "ferocious regeneration",
+  "crushing feedback drive",
+  "slamming delay feedback drive",
+  "pounding echo feedback drive",
+  "thunderous repeat feedback drive",
+  "euphoric regeneration drive",
+  "driving feedback drive drive",
+  "overdriven delay feedback pressure",
+  "hyper-driven echo feedback pressure",
+  "turbo-charged repeat feedback pressure",
+  "supercharged regeneration pressure",
+  "reactor-fueled feedback drive pressure",
+  "voltage-spiked delay feedback force",
+  "circuit-bent echo feedback force",
+  "modular-patched repeat feedback force",
+  "warehouse-powered regeneration force",
+  "bunker-born feedback drive force",
+  "peak-time delay feedback",
+  "hardgroove-locked echo feedback",
+  "acid-drenched repeat feedback",
+  "rave-charged regeneration"
+];
+const SATURATION_TYPES = [
+  "maximum saturation",
+  "relentless tape saturation",
+  "explosive tube saturation",
+  "ferocious transistor saturation",
+  "crushing diode saturation",
+  "slamming transformer saturation",
+  "pounding saturation drive",
+  "thunderous tape saturation drive",
+  "euphoric tube saturation drive",
+  "driving transistor saturation drive",
+  "overdriven diode saturation drive",
+  "hyper-driven transformer saturation drive",
+  "turbo-charged saturation pressure",
+  "supercharged tape saturation pressure",
+  "reactor-fueled tube saturation pressure",
+  "voltage-spiked transistor saturation pressure",
+  "circuit-bent diode saturation pressure",
+  "modular-patched transformer saturation pressure",
+  "warehouse-powered saturation force",
+  "bunker-born tape saturation force",
+  "peak-time tube saturation force",
+  "hardgroove-locked transistor saturation force",
+  "acid-drenched diode saturation force",
+  "rave-charged transformer saturation force"
+];
+const COMPRESSION_TYPES = [
+  "maximum compression",
+  "relentless glue compression",
+  "explosive punch compression",
+  "ferocious buss compression",
+  "crushing parallel compression",
+  "slamming peak compression",
+  "pounding compression drive",
+  "thunderous glue compression drive",
+  "euphoric punch compression drive",
+  "driving buss compression drive",
+  "overdriven parallel compression drive",
+  "hyper-driven peak compression drive",
+  "turbo-charged compression pressure",
+  "supercharged glue compression pressure",
+  "reactor-fueled punch compression pressure",
+  "voltage-spiked buss compression pressure",
+  "circuit-bent parallel compression pressure",
+  "modular-patched peak compression pressure",
+  "warehouse-powered compression force",
+  "bunker-born glue compression force",
+  "peak-time punch compression force",
+  "hardgroove-locked buss compression force",
+  "acid-drenched parallel compression force",
+  "rave-charged peak compression force"
+];
+const EQ_TYPES = [
+  "maximum EQ",
+  "relentless parametric EQ",
+  "explosive shelving EQ",
+  "ferocious tilt EQ",
+  "crushing air EQ",
+  "slamming punch EQ",
+  "pounding EQ drive",
+  "thunderous parametric EQ drive",
+  "euphoric shelving EQ drive",
+  "driving tilt EQ drive",
+  "overdriven air EQ drive",
+  "hyper-driven punch EQ drive",
+  "turbo-charged EQ pressure",
+  "supercharged parametric EQ pressure",
+  "reactor-fueled shelving EQ pressure",
+  "voltage-spiked tilt EQ pressure",
+  "circuit-bent air EQ pressure",
+  "modular-patched punch EQ pressure",
+  "warehouse-powered EQ force",
+  "bunker-born parametric EQ force",
+  "peak-time shelving EQ force",
+  "hardgroove-locked tilt EQ force",
+  "acid-drenched air EQ force",
+  "rave-charged punch EQ force"
+];
+const SIDECHAIN_CURVE_TYPES = [
+  "maximum sidechain curve",
+  "relentless ducking curve",
+  "explosive pump curve",
+  "ferocious breathing curve",
+  "crushing pulsing curve",
+  "slamming sidechain curve drive",
+  "pounding ducking curve drive",
+  "thunderous pump curve drive",
+  "euphoric breathing curve drive",
+  "driving pulsing curve drive",
+  "overdriven sidechain curve pressure",
+  "hyper-driven ducking curve pressure",
+  "turbo-charged pump curve pressure",
+  "supercharged breathing curve pressure",
+  "reactor-fueled pulsing curve pressure",
+  "voltage-spiked sidechain curve force",
+  "circuit-bent ducking curve force",
+  "modular-patched pump curve force",
+  "warehouse-powered breathing curve force",
+  "bunker-born pulsing curve force",
+  "peak-time sidechain curve",
+  "hardgroove-locked ducking curve",
+  "acid-drenched pump curve",
+  "rave-charged breathing curve"
+];
+const STEREO_ENHANCE_TYPES = [
+  "maximum stereo enhance",
+  "relentless stereo widen",
+  "explosive stereo spread",
+  "ferocious stereo bloom",
+  "crushing stereo expansion",
+  "slamming stereo enhance drive",
+  "pounding stereo widen drive",
+  "thunderous stereo spread drive",
+  "euphoric stereo bloom drive",
+  "driving stereo expansion drive",
+  "overdriven stereo enhance pressure",
+  "hyper-driven stereo widen pressure",
+  "turbo-charged stereo spread pressure",
+  "supercharged stereo bloom pressure",
+  "reactor-fueled stereo expansion pressure",
+  "voltage-spiked stereo enhance force",
+  "circuit-bent stereo widen force",
+  "modular-patched stereo spread force",
+  "warehouse-powered stereo bloom force",
+  "bunker-born stereo expansion force",
+  "peak-time stereo enhance",
+  "hardgroove-locked stereo widen",
+  "acid-drenched stereo spread",
+  "rave-charged stereo bloom"
+];
+
 const LAYERS = [
   {id:"texture",label:"Texture",phrase:"layered analog texture"},
   {id:"fx",label:"FX",phrase:"cinematic FX swells and risers"},
@@ -3652,6 +5240,7 @@ const ATOMS = [
   {key:"technoTexture",card:"technoLabCard",  field:"technoTexture", label:"Texture"},
   {key:"technoRave",   card:"technoLabCard",  field:"technoRave",    label:"Rave"},
   {key:"technoIndustrial",card:"technoLabCard",field:"technoIndustrial",label:"Industrial"},
+
   {key:"filterType", card:"soundDesignCard", field:"filterType", label:"Filter"},
   {key:"envelopeType", card:"soundDesignCard", field:"envelopeType", label:"Env"},
   {key:"lfoType", card:"soundDesignCard", field:"lfoType", label:"LFO"},
@@ -3663,7 +5252,65 @@ const ATOMS = [
   {key:"fxChain", card:"soundDesignCard", field:"fxChain", label:"FX Chain"},
   {key:"chordProg", card:"harmonyLabCard", field:"chordProg", label:"Chord Prog"},
   {key:"rhythmPattern", card:"rhythmLabCard", field:"rhythmPattern", label:"Rhythm Pat"},
-  {key:"soundIntensity", card:"soundDesignCard", field:"soundIntensity", label:"Intensity"}
+  {key:"soundIntensity", card:"soundDesignCard", field:"soundIntensity", label:"Intensity"},
+  {key:"mixDensity", card:"mixMasterCard", field:"mixDensity", label:"Mix Density"},
+  {key:"mixEnergy", card:"mixMasterCard", field:"mixEnergy", label:"Mix Energy"},
+  {key:"mixSpace", card:"mixMasterCard", field:"mixSpace", label:"Mix Space"},
+  {key:"mixGlue", card:"mixMasterCard", field:"mixGlue", label:"Mix Glue"},
+  {key:"mixPunch", card:"mixMasterCard", field:"mixPunch", label:"Mix Punch"},
+  {key:"masterDrive", card:"mixMasterCard", field:"masterDrive", label:"Master Drive"},
+  {key:"masterLoudness", card:"mixMasterCard", field:"masterLoudness", label:"Master Loud"},
+  {key:"masterColor", card:"mixMasterCard", field:"masterColor", label:"Master Color"},
+  {key:"masterChain", card:"mixMasterCard", field:"masterChain", label:"Master Chain"},
+  {key:"filterCutoff", card:"mixMasterCard", field:"filterCutoff", label:"Filter Cutoff"},
+  {key:"filterResonance", card:"mixMasterCard", field:"filterResonance", label:"Filter Res"},
+  {key:"eqType", card:"mixMasterCard", field:"eqType", label:"EQ"},
+  {key:"compressionType", card:"mixMasterCard", field:"compressionType", label:"Comp"},
+  {key:"saturationType", card:"mixMasterCard", field:"saturationType", label:"Sat"},
+  {key:"sidechainCurve", card:"mixMasterCard", field:"sidechainCurve", label:"Sidechain Curve"},
+  {key:"stereoImage", card:"spatialModCard", field:"stereoImage", label:"Stereo Image"},
+  {key:"stereoWidth", card:"spatialModCard", field:"stereoWidth", label:"Stereo Width"},
+  {key:"spatialDepth", card:"spatialModCard", field:"spatialDepth", label:"Spatial Depth"},
+  {key:"spatialMovement", card:"spatialModCard", field:"spatialMovement", label:"Spatial Move"},
+  {key:"modSource", card:"spatialModCard", field:"modSource", label:"Mod Source"},
+  {key:"modDest", card:"spatialModCard", field:"modDest", label:"Mod Dest"},
+  {key:"modRate", card:"spatialModCard", field:"modRate", label:"Mod Rate"},
+  {key:"modDepth", card:"spatialModCard", field:"modDepth", label:"Mod Depth"},
+  {key:"textureLayer", card:"spatialModCard", field:"textureLayer", label:"Texture Layer"},
+  {key:"grainType", card:"spatialModCard", field:"grainType", label:"Grain"},
+  {key:"shimmerType", card:"spatialModCard", field:"shimmerType", label:"Shimmer"},
+  {key:"atmosphereType", card:"spatialModCard", field:"atmosphereType", label:"Atmosphere"},
+  {key:"reverbSize", card:"spatialModCard", field:"reverbSize", label:"Reverb Size"},
+  {key:"reverbDecay", card:"spatialModCard", field:"reverbDecay", label:"Reverb Decay"},
+  {key:"stereoEnhance", card:"spatialModCard", field:"stereoEnhance", label:"Stereo Enhance"},
+  {key:"ghostNotes", card:"grooveMelodicCard", field:"ghostNotes", label:"Ghost Notes"},
+  {key:"humanizeType", card:"grooveMelodicCard", field:"humanizeType", label:"Humanize"},
+  {key:"pocketType", card:"grooveMelodicCard", field:"pocketType", label:"Pocket"},
+  {key:"ornamentType", card:"grooveMelodicCard", field:"ornamentType", label:"Ornament"},
+  {key:"vibratoType", card:"grooveMelodicCard", field:"vibratoType", label:"Vibrato"},
+  {key:"portamentoType", card:"grooveMelodicCard", field:"portamentoType", label:"Portamento"},
+  {key:"scaleRun", card:"grooveMelodicCard", field:"scaleRun", label:"Scale Run"},
+  {key:"intervalLeap", card:"grooveMelodicCard", field:"intervalLeap", label:"Interval Leap"},
+  {key:"voicingType", card:"grooveMelodicCard", field:"voicingType", label:"Voicing"},
+  {key:"inversionType", card:"grooveMelodicCard", field:"inversionType", label:"Inversion"},
+  {key:"tensionType", card:"grooveMelodicCard", field:"tensionType", label:"Tension"},
+  {key:"resolutionType", card:"grooveMelodicCard", field:"resolutionType", label:"Resolution"},
+  {key:"delayTime", card:"grooveMelodicCard", field:"delayTime", label:"Delay Time"},
+  {key:"delayFeedback", card:"grooveMelodicCard", field:"delayFeedback", label:"Delay FB"},
+  {key:"sectionDensity", card:"grooveMelodicCard", field:"sectionDensity", label:"Section Density"},
+  {key:"rideType", card:"textureFxCard", field:"rideType", label:"Ride"},
+  {key:"crashType", card:"textureFxCard", field:"crashType", label:"Crash"},
+  {key:"clapLayer", card:"textureFxCard", field:"clapLayer", label:"Clap Layer"},
+  {key:"percFill", card:"textureFxCard", field:"percFill", label:"Perc Fill"},
+  {key:"fxType", card:"textureFxCard", field:"fxType", label:"FX Type"},
+  {key:"transitionType", card:"textureFxCard", field:"transitionType", label:"Transition"},
+  {key:"riserType", card:"textureFxCard", field:"riserType", label:"Riser"},
+  {key:"impactType", card:"textureFxCard", field:"impactType", label:"Impact"},
+  {key:"energyCurve", card:"textureFxCard", field:"energyCurve", label:"Energy Curve"},
+  {key:"buildType", card:"textureFxCard", field:"buildType", label:"Build"},
+  {key:"dropType", card:"textureFxCard", field:"dropType", label:"Drop"},
+  {key:"chopType", card:"textureFxCard", field:"chopType", label:"Chop"},
+
 ];
 const ATOM_BY_KEY = {}; ATOMS.forEach(a=>ATOM_BY_KEY[a.key]=a);
 
@@ -3745,6 +5392,7 @@ const ROLL_FN = {
   technoTexture: s=>{ s.technoTexture = pick(TECHNO_TEXTURES); },
   technoRave: s=>{ s.technoRave = pick(TECHNO_RAVES); },
   technoIndustrial: s=>{ s.technoIndustrial = pick(TECHNO_INDUSTRIALS); },
+
   filterType: s=>{ s.filterType=pick(FILTER_TYPES); },
   envelopeType: s=>{ s.envelopeType=pick(ENVELOPE_TYPES); },
   lfoType: s=>{ s.lfoType=pick(LFO_TYPES); },
@@ -3756,12 +5404,69 @@ const ROLL_FN = {
   fxChain: s=>{ s.fxChain=pick(FX_CHAINS); },
   chordProg: s=>{ s.chordProg=pick(CHORD_PROGS); },
   rhythmPattern: s=>{ s.rhythmPattern=pick(RHYTHM_PATTERNS); },
-  soundIntensity: s=>{ s.soundIntensity=pick(SOUND_INTENSITIES); }
+  soundIntensity: s=>{ s.soundIntensity=pick(SOUND_INTENSITIES); },
+  mixDensity: s=>{ s.mixDensity=pick(MIX_DENSITY); },
+  mixEnergy: s=>{ s.mixEnergy=pick(MIX_ENERGY); },
+  mixSpace: s=>{ s.mixSpace=pick(MIX_SPACE); },
+  mixGlue: s=>{ s.mixGlue=pick(MIX_GLUE); },
+  mixPunch: s=>{ s.mixPunch=pick(MIX_PUNCH); },
+  masterDrive: s=>{ s.masterDrive=pick(MASTER_DRIVE); },
+  masterLoudness: s=>{ s.masterLoudness=pick(MASTER_LOUDNESS); },
+  masterColor: s=>{ s.masterColor=pick(MASTER_COLOR); },
+  masterChain: s=>{ s.masterChain=pick(MASTER_CHAIN); },
+  filterCutoff: s=>{ s.filterCutoff=pick(FILTER_CUTOFF_TYPES); },
+  filterResonance: s=>{ s.filterResonance=pick(FILTER_RESONANCE_TYPES); },
+  eqType: s=>{ s.eqType=pick(EQ_TYPES); },
+  compressionType: s=>{ s.compressionType=pick(COMPRESSION_TYPES); },
+  saturationType: s=>{ s.saturationType=pick(SATURATION_TYPES); },
+  sidechainCurve: s=>{ s.sidechainCurve=pick(SIDECHAIN_CURVE_TYPES); },
+  stereoImage: s=>{ s.stereoImage=pick(STEREO_IMAGE); },
+  stereoWidth: s=>{ s.stereoWidth=pick(STEREO_WIDTH); },
+  spatialDepth: s=>{ s.spatialDepth=pick(SPATIAL_DEPTH); },
+  spatialMovement: s=>{ s.spatialMovement=pick(SPATIAL_MOVEMENT); },
+  modSource: s=>{ s.modSource=pick(MOD_SOURCE); },
+  modDest: s=>{ s.modDest=pick(MOD_DEST); },
+  modRate: s=>{ s.modRate=pick(MOD_RATE); },
+  modDepth: s=>{ s.modDepth=pick(MOD_DEPTH); },
+  textureLayer: s=>{ s.textureLayer=pick(TEXTURE_LAYER); },
+  grainType: s=>{ s.grainType=pick(GRAIN_TYPE); },
+  shimmerType: s=>{ s.shimmerType=pick(SHIMMER_TYPE); },
+  atmosphereType: s=>{ s.atmosphereType=pick(ATMOSPHERE_TYPE); },
+  reverbSize: s=>{ s.reverbSize=pick(REVERB_SIZE_TYPES); },
+  reverbDecay: s=>{ s.reverbDecay=pick(REVERB_DECAY_TYPES); },
+  stereoEnhance: s=>{ s.stereoEnhance=pick(STEREO_ENHANCE_TYPES); },
+  ghostNotes: s=>{ s.ghostNotes=pick(GHOST_NOTES); },
+  humanizeType: s=>{ s.humanizeType=pick(HUMANIZE_TYPES); },
+  pocketType: s=>{ s.pocketType=pick(POCKET_TYPES); },
+  ornamentType: s=>{ s.ornamentType=pick(ORNAMENT_TYPES); },
+  vibratoType: s=>{ s.vibratoType=pick(VIBRATO_TYPES); },
+  portamentoType: s=>{ s.portamentoType=pick(PORTAMENTO_TYPES); },
+  scaleRun: s=>{ s.scaleRun=pick(SCALE_RUNS); },
+  intervalLeap: s=>{ s.intervalLeap=pick(INTERVAL_LEAPS); },
+  voicingType: s=>{ s.voicingType=pick(VOICING_TYPES); },
+  inversionType: s=>{ s.inversionType=pick(INVERSION_TYPES); },
+  tensionType: s=>{ s.tensionType=pick(TENSION_TYPES); },
+  resolutionType: s=>{ s.resolutionType=pick(RESOLUTION_TYPES); },
+  delayTime: s=>{ s.delayTime=pick(DELAY_TIME_TYPES); },
+  delayFeedback: s=>{ s.delayFeedback=pick(DELAY_FEEDBACK_TYPES); },
+  sectionDensity: s=>{ s.sectionDensity=pick(SECTION_DENSITY_TYPES); },
+  rideType: s=>{ s.rideType=pick(RIDE_TYPES); },
+  crashType: s=>{ s.crashType=pick(CRASH_TYPES); },
+  clapLayer: s=>{ s.clapLayer=pick(CLAP_LAYERS); },
+  percFill: s=>{ s.percFill=pick(PERC_FILLS); },
+  fxType: s=>{ s.fxType=pick(FX_TYPES); },
+  transitionType: s=>{ s.transitionType=pick(TRANSITION_TYPES); },
+  riserType: s=>{ s.riserType=pick(RISER_TYPES); },
+  impactType: s=>{ s.impactType=pick(IMPACT_TYPES); },
+  energyCurve: s=>{ s.energyCurve=pick(ENERGY_CURVE_TYPES); },
+  buildType: s=>{ s.buildType=pick(BUILD_TYPES); },
+  dropType: s=>{ s.dropType=pick(DROP_TYPES); },
+  chopType: s=>{ s.chopType=pick(CHOP_TYPES); },
+
 };
 
 /* roll groups referenced by the cluster buttons (data-roll) */
-const GROUPS = {
-  "primary":["primary"], "secondary":["secondary"], "bpm":["bpm"], "key":["key"], "feeling":["feeling"],
+const GROUPS = { "primary":["primary"], "secondary":["secondary"], "bpm":["bpm"], "key":["key"], "feeling":["feeling"],
   "feel-melody":["feeling","melodyConcept","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm"],
   "melody":["direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm"],
   "concept-melody":["melodyConcept"],
@@ -3772,8 +5477,21 @@ const GROUPS = {
   "rhythm":["rhythm","rhythmPattern"],
   "harmony":["harmony","chordColor","chordProg"],
   "soundDesign":["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity"],
-  "genetic":["feeling","leadVoice","bassVoice","groove","technoDrive","technoAcid","filterType","chordProg","rhythmPattern"],
-  "batch":["primary","secondary","bpm","key","feeling","bassVoice","kick","groove","technoDrive","filterType","chordProg"],
+  "mixMaster":["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain","filterCutoff","filterResonance","eqType","compressionType","saturationType","sidechainCurve"],
+  "spatialMod":["stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer","grainType","shimmerType","atmosphereType","reverbSize","reverbDecay","stereoEnhance"],
+  "grooveMelodic":["ghostNotes","humanizeType","pocketType","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType","delayTime","delayFeedback","sectionDensity"],
+  "textureFx":["rideType","crashType","clapLayer","percFill","fxType","transitionType","riserType","impactType","energyCurve","buildType","dropType","chopType"],
+  "mix":["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch"],
+  "master":["masterDrive","masterLoudness","masterColor","masterChain"],
+  "spatial":["stereoImage","stereoWidth","spatialDepth","spatialMovement","stereoEnhance"],
+  "mod":["modSource","modDest","modRate","modDepth"],
+  "texture":["textureLayer","grainType","shimmerType","atmosphereType"],
+  "grooveExtra":["ghostNotes","humanizeType","pocketType"],
+  "melodicExtra":["ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap"],
+  "harmonicExtra":["voicingType","inversionType","tensionType","resolutionType"],
+  "percExtra":["rideType","crashType","clapLayer","percFill"],
+  "fxExtra":["fxType","transitionType","riserType","impactType"],
+  "arrangementExtra":["sectionDensity","energyCurve","buildType","dropType"],
   "filter":["filterType"],
   "envelope":["envelopeType"],
   "lfo":["lfoType"],
@@ -3785,10 +5503,11 @@ const GROUPS = {
   "fx":["fxChain"],
   "chord":["chordProg"],
   "rhythmPattern":["rhythmPattern"],
+  "genetic":["feeling","leadVoice","bassVoice","groove","technoDrive","technoAcid","filterType","chordProg","rhythmPattern"],
+  "batch":["primary","secondary","bpm","key","feeling","bassVoice","kick","groove","technoDrive","filterType","chordProg"],
   "power":Object.keys(ROLL_FN)
 };
-/* which cards hold dynamically-generated rows */
-const DYNAMIC_CARDS = { feelCard:"feelRows", bassCard:"bassRows", drumsCard:"drumsRows", technoLabCard:"technoLabRows", geneticLabCard:"geneticLabRows", rhythmLabCard:"rhythmLabRows", harmonyLabCard:"harmonyLabRows", soundDesignCard:"soundDesignRows" };
+const DYNAMIC_CARDS = { feelCard:"feelRows", bassCard:"bassRows", drumsCard:"drumsRows", technoLabCard:"technoLabRows", geneticLabCard:"geneticLabRows", rhythmLabCard:"rhythmLabRows", harmonyLabCard:"harmonyLabRows", soundDesignCard:"soundDesignRows", mixMasterCard:"mixMasterRows", spatialModCard:"spatialModRows", grooveMelodicCard:"grooveMelodicRows", textureFxCard:"textureFxRows" };
 
 function rollBpmValue(){
   const r = rng();
@@ -3807,6 +5526,7 @@ function defaultLocks(){
 function defaultHidden(){
   return { bpm:false, key:false, styleCard:false, feelCard:false, bassCard:false, drumsCard:false, technoLabCard:false,
            geneticLabCard:false, rhythmLabCard:false, harmonyLabCard:false, soundDesignCard:false, batchLabCard:false, statsLabCard:false,
+           mixMasterCard:false, spatialModCard:false, grooveMelodicCard:false, textureFxCard:false,
            conceptCard:false, arrangementCard:false, modeCard:false, layersCard:false,
            engineerCard:false, auditionCard:false, scoreCard:false,
            maxRollLabCard:false,
@@ -3826,6 +5546,18 @@ function defaultState(){
     kick:"", hats:"", snare:"", perc:"", toms:"", groove:"", swing:"", sync:"", intensity:"",
     technoDrive:"", technoAcid:"", technoTexture:"", technoRave:"", technoIndustrial:"",
     filterType:"", envelopeType:"", lfoType:"", distortionType:"", reverbType:"", delayType:"", sidechainType:"", stereoType:"", fxChain:"", chordProg:"", rhythmPattern:"", soundIntensity:"",
+    mixDensity:"", mixEnergy:"", mixSpace:"", mixGlue:"", mixPunch:"", masterDrive:"", masterLoudness:"", masterColor:"", masterChain:"",
+    stereoImage:"", stereoWidth:"", spatialDepth:"", spatialMovement:"",
+    modSource:"", modDest:"", modRate:"", modDepth:"",
+    textureLayer:"", grainType:"", shimmerType:"", atmosphereType:"",
+    ghostNotes:"", humanizeType:"", pocketType:"",
+    ornamentType:"", vibratoType:"", portamentoType:"", scaleRun:"", intervalLeap:"",
+    voicingType:"", inversionType:"", tensionType:"", resolutionType:"",
+    rideType:"", crashType:"", clapLayer:"", percFill:"",
+    fxType:"", transitionType:"", riserType:"", impactType:"",
+    sectionDensity:"", energyCurve:"", buildType:"", dropType:"", chopType:"",
+    filterCutoff:"", filterResonance:"", reverbSize:"", reverbDecay:"", delayTime:"", delayFeedback:"",
+    saturationType:"", compressionType:"", eqType:"", sidechainCurve:"", stereoEnhance:"",
     rhythmGrid:Array.from({length:16},()=>false),
     batchPool:[],
     stats:{rolls:0, maxScores:0, breeds:0, mutates:0, bestScore:0, totalScore:0, avgScore:0, history:[]},
@@ -4301,7 +6033,7 @@ async function doInfiniteMax(){
   }catch(e){ toast("Infinite error: "+e.message); }finally{ maxRollRunning=false; }
 }
 function stopInfiniteMax(){ infiniteStop=true; state.infiniteRunning=false; maxRollRunning=false; toast("⏹ Stopping infinite…"); }
-function resetMaxState(){ maxRollRunning=false; infiniteStop=true; const btns=document.querySelectorAll('#maxRollLabCard button, #geneticLabCard button, #rhythmLabCard button, #harmonyLabCard button, #soundDesignCard button, #batchLabCard button'); btns.forEach(b=>b.disabled=false); setMaxStatus("Reset — all max locks cleared"); toast("🔓 Max state reset — you can roll again"); }
+function resetMaxState(){ maxRollRunning=false; infiniteStop=true; const btns=document.querySelectorAll('#maxRollLabCard button, #geneticLabCard button, #rhythmLabCard button, #harmonyLabCard button, #soundDesignCard button, #batchLabCard button, #mixMasterCard button, #spatialModCard button, #grooveMelodicCard button, #textureFxCard button'); btns.forEach(b=>b.disabled=false); setMaxStatus("Reset — all max locks cleared"); toast("🔓 Max state reset — you can roll again"); }
 function renderRhythmGrid(){
   if(typeof navigator!=="undefined" && /jsdom/.test(navigator.userAgent)) return;
   const grid=$("rhythmGrid"); if(!grid) return;
@@ -4470,6 +6202,77 @@ function resetStats(){ commit(); state.stats={rolls:0,maxScores:0,breeds:0,mutat
 
 
 /* ---------------------------- PROMPT ASSEMBLY ---------------------------- */
+
+function mixMasterLine(compact){
+  const parts=[];
+  if(state.mixDensity) parts.push(state.mixDensity);
+  if(state.mixEnergy) parts.push(state.mixEnergy);
+  if(state.mixSpace) parts.push(state.mixSpace);
+  if(state.mixGlue) parts.push(state.mixGlue);
+  if(state.mixPunch) parts.push(state.mixPunch);
+  if(state.masterDrive) parts.push(state.masterDrive);
+  if(state.masterLoudness) parts.push(state.masterLoudness);
+  if(state.masterColor) parts.push(state.masterColor);
+  if(state.masterChain) parts.push(state.masterChain);
+  if(!parts.length) return "";
+  if(compact) return "Mix/Master: " + parts.slice(0,3).join(", ");
+  return "Mix/Master: " + parts.join(", ") + (state.filterCutoff ? ", cutoff "+state.filterCutoff : "") + (state.filterResonance ? ", resonance "+state.filterResonance : "") + (state.eqType ? ", EQ "+state.eqType : "") + (state.compressionType ? ", comp "+state.compressionType : "") + (state.saturationType ? ", sat "+state.saturationType : "") + (state.sidechainCurve ? ", sidechain "+state.sidechainCurve : "");
+}
+function spatialModLine(compact){
+  const parts=[];
+  if(state.stereoImage) parts.push(state.stereoImage);
+  if(state.stereoWidth) parts.push(state.stereoWidth);
+  if(state.spatialDepth) parts.push(state.spatialDepth);
+  if(state.spatialMovement) parts.push(state.spatialMovement);
+  if(state.modSource) parts.push(state.modSource+"→"+state.modDest);
+  if(state.modRate) parts.push(state.modRate);
+  if(state.modDepth) parts.push(state.modDepth);
+  if(state.textureLayer) parts.push(state.textureLayer);
+  if(state.grainType) parts.push(state.grainType);
+  if(state.shimmerType) parts.push(state.shimmerType);
+  if(state.atmosphereType) parts.push(state.atmosphereType);
+  if(!parts.length) return "";
+  if(compact) return "Spatial/Mod: " + parts.slice(0,3).join(", ");
+  return "Spatial/Mod: " + parts.join(", ") + (state.reverbSize ? ", verb size "+state.reverbSize : "") + (state.reverbDecay ? ", decay "+state.reverbDecay : "") + (state.stereoEnhance ? ", enhance "+state.stereoEnhance : "");
+}
+function grooveMelodicLine(compact){
+  const parts=[];
+  if(state.ghostNotes) parts.push(state.ghostNotes);
+  if(state.humanizeType) parts.push(state.humanizeType);
+  if(state.pocketType) parts.push(state.pocketType);
+  if(state.ornamentType) parts.push(state.ornamentType);
+  if(state.vibratoType) parts.push(state.vibratoType);
+  if(state.portamentoType) parts.push(state.portamentoType);
+  if(state.scaleRun) parts.push(state.scaleRun);
+  if(state.intervalLeap) parts.push(state.intervalLeap);
+  if(state.voicingType) parts.push(state.voicingType);
+  if(state.inversionType) parts.push(state.inversionType);
+  if(state.tensionType) parts.push(state.tensionType);
+  if(state.resolutionType) parts.push(state.resolutionType);
+  if(!parts.length) return "";
+  if(compact) return "Groove/Melodic: " + parts.slice(0,3).join(", ");
+  return "Groove/Melodic: " + parts.join(", ") + (state.delayTime ? ", delay "+state.delayTime : "") + (state.delayFeedback ? ", fb "+state.delayFeedback : "") + (state.sectionDensity ? ", density "+state.sectionDensity : "");
+}
+function textureFxLine(compact){
+  const parts=[];
+  if(state.rideType) parts.push(state.rideType);
+  if(state.crashType) parts.push(state.crashType);
+  if(state.clapLayer) parts.push(state.clapLayer);
+  if(state.percFill) parts.push(state.percFill);
+  if(state.fxType) parts.push(state.fxType);
+  if(state.transitionType) parts.push(state.transitionType);
+  if(state.riserType) parts.push(state.riserType);
+  if(state.impactType) parts.push(state.impactType);
+  if(state.energyCurve) parts.push(state.energyCurve);
+  if(state.buildType) parts.push(state.buildType);
+  if(state.dropType) parts.push(state.dropType);
+  if(state.chopType) parts.push(state.chopType);
+  if(!parts.length) return "";
+  if(compact) return "Texture/FX: " + parts.slice(0,3).join(", ");
+  return "Texture/FX: " + parts.join(", ");
+}
+
+
 function styleLine(){
   let s = state.primaryStyle;
   if(state.secondaryStyle){
@@ -4681,6 +6484,22 @@ function buildStylePrompt(){
     const rpl = rhythmPatternLine();
     if(rpl) blocks.push({t: rpl, compact: "Rhythm: "+(state.rhythmPattern||"").split(" ")[0], required:false, priority:5.8});
   }
+  if(!state.hidden.mixMasterCard){
+    const mml = mixMasterLine(false);
+    if(mml) blocks.push({t: mml, compact: mixMasterLine(true), required:false, priority:5.82});
+  }
+  if(!state.hidden.spatialModCard){
+    const sml = spatialModLine(false);
+    if(sml) blocks.push({t: sml, compact: spatialModLine(true), required:false, priority:5.84});
+  }
+  if(!state.hidden.grooveMelodicCard){
+    const gml = grooveMelodicLine(false);
+    if(gml) blocks.push({t: gml, compact: grooveMelodicLine(true), required:false, priority:5.86});
+  }
+  if(!state.hidden.textureFxCard){
+    const tfl = textureFxLine(false);
+    if(tfl) blocks.push({t: tfl, compact: textureFxLine(true), required:false, priority:5.88});
+  }
   if(!state.hidden.conceptCard) blocks.push({t: conceptLine(false), compact: conceptLine(true), required:true, priority:6});
   if(!state.hidden.arrangementCard) blocks.push({t: arrangementLine(), compact: "Arrangement: " + (state.arrangement ? state.arrangement.split(",")[0] : ""), required:false, priority:7});
   blocks.push({t: layerLine(), required:false, priority:8});
@@ -4747,6 +6566,22 @@ function buildFullBrief(){
     if(state.envelopeType) sec.push("ENVELOPE: " + state.envelopeType + ".");
     if(state.lfoType) sec.push("LFO: " + state.lfoType + ".");
     if(state.fxChain) sec.push("FX CHAIN: " + state.fxChain + ".");
+  }
+  if(!state.hidden.mixMasterCard){
+    const mml = mixMasterLine(false);
+    if(mml) sec.push(mml.toUpperCase() + ".");
+  }
+  if(!state.hidden.spatialModCard){
+    const sml = spatialModLine(false);
+    if(sml) sec.push(sml.toUpperCase() + ".");
+  }
+  if(!state.hidden.grooveMelodicCard){
+    const gml = grooveMelodicLine(false);
+    if(gml) sec.push(gml.toUpperCase() + ".");
+  }
+  if(!state.hidden.textureFxCard){
+    const tfl = textureFxLine(false);
+    if(tfl) sec.push(tfl.toUpperCase() + ".");
   }
   if(!state.hidden.arrangementCard){
     sec.push("ARRANGEMENT: " + state.arrangement);
@@ -4922,7 +6757,7 @@ function render(){
   });
   // hidden cards
   ["styleCard","feelCard","bassCard","drumsCard","technoLabCard","conceptCard","arrangementCard","modeCard","layersCard",
-   "auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard"].forEach(id=>{
+   "auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard","geneticLabCard","rhythmLabCard","harmonyLabCard","soundDesignCard","batchLabCard","statsLabCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard"].forEach(id=>{
     const card = $(id);
     if(card) card.classList.toggle("hidden", state.hidden[id]);
   });
@@ -5158,6 +6993,63 @@ const PICKER_POOLS = {
   chordProg:{label:"Chord Progression", arr:()=>CHORD_PROGS, field:"chordProg"},
   rhythmPattern:{label:"Rhythm Pattern", arr:()=>RHYTHM_PATTERNS, field:"rhythmPattern"},
   soundIntensity:{label:"Sound Intensity", arr:()=>SOUND_INTENSITIES, field:"soundIntensity"},
+  mixDensity:{label:"Mix Density", arr:()=>MIX_DENSITY, field:"mixDensity"},
+  mixEnergy:{label:"Mix Energy", arr:()=>MIX_ENERGY, field:"mixEnergy"},
+  mixSpace:{label:"Mix Space", arr:()=>MIX_SPACE, field:"mixSpace"},
+  mixGlue:{label:"Mix Glue", arr:()=>MIX_GLUE, field:"mixGlue"},
+  mixPunch:{label:"Mix Punch", arr:()=>MIX_PUNCH, field:"mixPunch"},
+  masterDrive:{label:"Master Drive", arr:()=>MASTER_DRIVE, field:"masterDrive"},
+  masterLoudness:{label:"Master Loudness", arr:()=>MASTER_LOUDNESS, field:"masterLoudness"},
+  masterColor:{label:"Master Color", arr:()=>MASTER_COLOR, field:"masterColor"},
+  masterChain:{label:"Master Chain", arr:()=>MASTER_CHAIN, field:"masterChain"},
+  stereoImage:{label:"Stereo Image", arr:()=>STEREO_IMAGE, field:"stereoImage"},
+  stereoWidth:{label:"Stereo Width", arr:()=>STEREO_WIDTH, field:"stereoWidth"},
+  spatialDepth:{label:"Spatial Depth", arr:()=>SPATIAL_DEPTH, field:"spatialDepth"},
+  spatialMovement:{label:"Spatial Movement", arr:()=>SPATIAL_MOVEMENT, field:"spatialMovement"},
+  modSource:{label:"Mod Source", arr:()=>MOD_SOURCE, field:"modSource"},
+  modDest:{label:"Mod Dest", arr:()=>MOD_DEST, field:"modDest"},
+  modRate:{label:"Mod Rate", arr:()=>MOD_RATE, field:"modRate"},
+  modDepth:{label:"Mod Depth", arr:()=>MOD_DEPTH, field:"modDepth"},
+  textureLayer:{label:"Texture Layer", arr:()=>TEXTURE_LAYER, field:"textureLayer"},
+  grainType:{label:"Grain Type", arr:()=>GRAIN_TYPE, field:"grainType"},
+  shimmerType:{label:"Shimmer Type", arr:()=>SHIMMER_TYPE, field:"shimmerType"},
+  atmosphereType:{label:"Atmosphere Type", arr:()=>ATMOSPHERE_TYPE, field:"atmosphereType"},
+  ghostNotes:{label:"Ghost Notes", arr:()=>GHOST_NOTES, field:"ghostNotes"},
+  humanizeType:{label:"Humanize Type", arr:()=>HUMANIZE_TYPES, field:"humanizeType"},
+  pocketType:{label:"Pocket Type", arr:()=>POCKET_TYPES, field:"pocketType"},
+  ornamentType:{label:"Ornament Type", arr:()=>ORNAMENT_TYPES, field:"ornamentType"},
+  vibratoType:{label:"Vibrato Type", arr:()=>VIBRATO_TYPES, field:"vibratoType"},
+  portamentoType:{label:"Portamento Type", arr:()=>PORTAMENTO_TYPES, field:"portamentoType"},
+  scaleRun:{label:"Scale Run", arr:()=>SCALE_RUNS, field:"scaleRun"},
+  intervalLeap:{label:"Interval Leap", arr:()=>INTERVAL_LEAPS, field:"intervalLeap"},
+  voicingType:{label:"Voicing Type", arr:()=>VOICING_TYPES, field:"voicingType"},
+  inversionType:{label:"Inversion Type", arr:()=>INVERSION_TYPES, field:"inversionType"},
+  tensionType:{label:"Tension Type", arr:()=>TENSION_TYPES, field:"tensionType"},
+  resolutionType:{label:"Resolution Type", arr:()=>RESOLUTION_TYPES, field:"resolutionType"},
+  rideType:{label:"Ride Type", arr:()=>RIDE_TYPES, field:"rideType"},
+  crashType:{label:"Crash Type", arr:()=>CRASH_TYPES, field:"crashType"},
+  clapLayer:{label:"Clap Layer", arr:()=>CLAP_LAYERS, field:"clapLayer"},
+  percFill:{label:"Perc Fill", arr:()=>PERC_FILLS, field:"percFill"},
+  fxType:{label:"Fx Type", arr:()=>FX_TYPES, field:"fxType"},
+  transitionType:{label:"Transition Type", arr:()=>TRANSITION_TYPES, field:"transitionType"},
+  riserType:{label:"Riser Type", arr:()=>RISER_TYPES, field:"riserType"},
+  impactType:{label:"Impact Type", arr:()=>IMPACT_TYPES, field:"impactType"},
+  sectionDensity:{label:"Section Density", arr:()=>SECTION_DENSITY_TYPES, field:"sectionDensity"},
+  energyCurve:{label:"Energy Curve", arr:()=>ENERGY_CURVE_TYPES, field:"energyCurve"},
+  buildType:{label:"Build Type", arr:()=>BUILD_TYPES, field:"buildType"},
+  dropType:{label:"Drop Type", arr:()=>DROP_TYPES, field:"dropType"},
+  chopType:{label:"Chop Type", arr:()=>CHOP_TYPES, field:"chopType"},
+  filterCutoff:{label:"Filter Cutoff", arr:()=>FILTER_CUTOFF_TYPES, field:"filterCutoff"},
+  filterResonance:{label:"Filter Resonance", arr:()=>FILTER_RESONANCE_TYPES, field:"filterResonance"},
+  reverbSize:{label:"Reverb Size", arr:()=>REVERB_SIZE_TYPES, field:"reverbSize"},
+  reverbDecay:{label:"Reverb Decay", arr:()=>REVERB_DECAY_TYPES, field:"reverbDecay"},
+  delayTime:{label:"Delay Time", arr:()=>DELAY_TIME_TYPES, field:"delayTime"},
+  delayFeedback:{label:"Delay Feedback", arr:()=>DELAY_FEEDBACK_TYPES, field:"delayFeedback"},
+  saturationType:{label:"Saturation Type", arr:()=>SATURATION_TYPES, field:"saturationType"},
+  compressionType:{label:"Compression Type", arr:()=>COMPRESSION_TYPES, field:"compressionType"},
+  eqType:{label:"Eq Type", arr:()=>EQ_TYPES, field:"eqType"},
+  sidechainCurve:{label:"Sidechain Curve", arr:()=>SIDECHAIN_CURVE_TYPES, field:"sidechainCurve"},
+  stereoEnhance:{label:"Stereo Enhance", arr:()=>STEREO_ENHANCE_TYPES, field:"stereoEnhance"},
 };
 let pickerTarget = "primary";
 function openPicker(target){
@@ -5474,7 +7366,20 @@ function encodeState(s){
     sn:s.snare, pc:s.perc, tm:s.toms, gr:s.groove, sw:s.swing, sy:s.sync, it:s.intensity,
     arng:s.arrangement, td:s.technoDrive, ta:s.technoAcid, tt:s.technoTexture, tr:s.technoRave, ti:s.technoIndustrial, aa:s.acidAmt, da:s.driveAmt, mm:s.microMelody, mb:s.microBass, im:s.instrumental, vm:s.vocalMode, w:s.weirdness, inf:s.influence,
     dur:s.duration, mf:s.melodicForce, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden,
-    ft:s.filterType, et:s.envelopeType, lt:s.lfoType, dt:s.distortionType, rt:s.reverbType, dlt:s.delayType, sct:s.sidechainType, stt:s.stereoType, fx:s.fxChain, cprog:s.chordProg, rpat:s.rhythmPattern, sint:s.soundIntensity, rg:s.rhythmGrid
+    ft:s.filterType, et:s.envelopeType, lt:s.lfoType, dt:s.distortionType, rt:s.reverbType, dlt:s.delayType, sct:s.sidechainType, stt:s.stereoType, fx:s.fxChain, cprog:s.chordProg, rpat:s.rhythmPattern, sint:s.soundIntensity, rg:s.rhythmGrid,
+    mixDensity:s.mixDensity, mixEnergy:s.mixEnergy, mixSpace:s.mixSpace, mixGlue:s.mixGlue, mixPunch:s.mixPunch,
+    masterDrive:s.masterDrive, masterLoudness:s.masterLoudness, masterColor:s.masterColor, masterChain:s.masterChain,
+    stereoImage:s.stereoImage, stereoWidth:s.stereoWidth, spatialDepth:s.spatialDepth, spatialMovement:s.spatialMovement,
+    modSource:s.modSource, modDest:s.modDest, modRate:s.modRate, modDepth:s.modDepth,
+    textureLayer:s.textureLayer, grainType:s.grainType, shimmerType:s.shimmerType, atmosphereType:s.atmosphereType,
+    ghostNotes:s.ghostNotes, humanizeType:s.humanizeType, pocketType:s.pocketType,
+    ornamentType:s.ornamentType, vibratoType:s.vibratoType, portamentoType:s.portamentoType, scaleRun:s.scaleRun, intervalLeap:s.intervalLeap,
+    voicingType:s.voicingType, inversionType:s.inversionType, tensionType:s.tensionType, resolutionType:s.resolutionType,
+    rideType:s.rideType, crashType:s.crashType, clapLayer:s.clapLayer, percFill:s.percFill,
+    fxType:s.fxType, transitionType:s.transitionType, riserType:s.riserType, impactType:s.impactType,
+    sectionDensity:s.sectionDensity, energyCurve:s.energyCurve, buildType:s.buildType, dropType:s.dropType, chopType:s.chopType,
+    filterCutoff:s.filterCutoff, filterResonance:s.filterResonance, reverbSize:s.reverbSize, reverbDecay:s.reverbDecay, delayTime:s.delayTime, delayFeedback:s.delayFeedback,
+    saturationType:s.saturationType, compressionType:s.compressionType, eqType:s.eqType, sidechainCurve:s.sidechainCurve, stereoEnhance:s.stereoEnhance
   };
   const json = JSON.stringify(m);
   return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -5492,7 +7397,20 @@ function decodeState(str){
       ar:"arpeggio", bv:"bassVoice", bm:"bassMovement", br:"bassRel", k:"kick", ha:"hats",
       sn:"snare", pc:"perc", tm:"toms", gr:"groove", sw:"swing", sy:"sync", it:"intensity",
       arng:"arrangement", td:"technoDrive", ta:"technoAcid", tt:"technoTexture", tr:"technoRave", ti:"technoIndustrial", aa:"acidAmt", da:"driveAmt", mm:"microMelody", mb:"microBass", im:"instrumental", vm:"vocalMode", w:"weirdness", inf:"influence", dur:"duration", mf:"melodicForce",
-      ft:"filterType", et:"envelopeType", lt:"lfoType", dt:"distortionType", rt:"reverbType", dlt:"delayType", sct:"sidechainType", stt:"stereoType", fx:"fxChain", cprog:"chordProg", rpat:"rhythmPattern", sint:"soundIntensity", rg:"rhythmGrid"};
+      ft:"filterType", et:"envelopeType", lt:"lfoType", dt:"distortionType", rt:"reverbType", dlt:"delayType", sct:"sidechainType", stt:"stereoType", fx:"fxChain", cprog:"chordProg", rpat:"rhythmPattern", sint:"soundIntensity", rg:"rhythmGrid",
+      mixDensity:"mixDensity", mixEnergy:"mixEnergy", mixSpace:"mixSpace", mixGlue:"mixGlue", mixPunch:"mixPunch",
+      masterDrive:"masterDrive", masterLoudness:"masterLoudness", masterColor:"masterColor", masterChain:"masterChain",
+      stereoImage:"stereoImage", stereoWidth:"stereoWidth", spatialDepth:"spatialDepth", spatialMovement:"spatialMovement",
+      modSource:"modSource", modDest:"modDest", modRate:"modRate", modDepth:"modDepth",
+      textureLayer:"textureLayer", grainType:"grainType", shimmerType:"shimmerType", atmosphereType:"atmosphereType",
+      ghostNotes:"ghostNotes", humanizeType:"humanizeType", pocketType:"pocketType",
+      ornamentType:"ornamentType", vibratoType:"vibratoType", portamentoType:"portamentoType", scaleRun:"scaleRun", intervalLeap:"intervalLeap",
+      voicingType:"voicingType", inversionType:"inversionType", tensionType:"tensionType", resolutionType:"resolutionType",
+      rideType:"rideType", crashType:"crashType", clapLayer:"clapLayer", percFill:"percFill",
+      fxType:"fxType", transitionType:"transitionType", riserType:"riserType", impactType:"impactType",
+      sectionDensity:"sectionDensity", energyCurve:"energyCurve", buildType:"buildType", dropType:"dropType", chopType:"chopType",
+      filterCutoff:"filterCutoff", filterResonance:"filterResonance", reverbSize:"reverbSize", reverbDecay:"reverbDecay", delayTime:"delayTime", delayFeedback:"delayFeedback",
+      saturationType:"saturationType", compressionType:"compressionType", eqType:"eqType", sidechainCurve:"sidechainCurve", stereoEnhance:"stereoEnhance"};
     for(const short in map){ if(m[short]!==undefined) s[map[short]] = m[short]; }
     if(m.cp) s.concept = m.cp;
     if(m.mc) s.melodyConcept = m.mc;
@@ -6378,6 +8296,15 @@ if($("maxArrangementBtn2")) $("maxArrangementBtn2").addEventListener("click", ()
 if($("maxTechnoLabBtn2")) $("maxTechnoLabBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"], 15, "TechnoLab"));
 
 if($("maxRhythmBtn2")) $("maxRhythmBtn2").addEventListener("click", ()=>doRhythmMax(20));
+if($("maxMixMasterBtn")) $("maxMixMasterBtn").addEventListener("click", ()=>doMaxScoreRollSection(["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain","filterCutoff","filterResonance","eqType","compressionType","saturationType","sidechainCurve"], 15, "MixMaster"));
+if($("maxSpatialModBtn")) $("maxSpatialModBtn").addEventListener("click", ()=>doMaxScoreRollSection(["stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer","grainType","shimmerType","atmosphereType","reverbSize","reverbDecay","stereoEnhance"], 15, "SpatialMod"));
+if($("maxGrooveMelodicBtn")) $("maxGrooveMelodicBtn").addEventListener("click", ()=>doMaxScoreRollSection(["ghostNotes","humanizeType","pocketType","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType","delayTime","delayFeedback","sectionDensity"], 15, "GrooveMelodic"));
+if($("maxTextureFxBtn")) $("maxTextureFxBtn").addEventListener("click", ()=>doMaxScoreRollSection(["rideType","crashType","clapLayer","percFill","fxType","transitionType","riserType","impactType","energyCurve","buildType","dropType","chopType"], 15, "TextureFx"));
+if($("maxMixMasterBtn2")) $("maxMixMasterBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain","filterCutoff","filterResonance","eqType","compressionType","saturationType","sidechainCurve"], 15, "MixMaster"));
+if($("maxSpatialModBtn2")) $("maxSpatialModBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer","grainType","shimmerType","atmosphereType","reverbSize","reverbDecay","stereoEnhance"], 15, "SpatialMod"));
+if($("maxGrooveMelodicBtn2")) $("maxGrooveMelodicBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["ghostNotes","humanizeType","pocketType","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType","delayTime","delayFeedback","sectionDensity"], 15, "GrooveMelodic"));
+if($("maxTextureFxBtn2")) $("maxTextureFxBtn2").addEventListener("click", ()=>doMaxScoreRollSection(["rideType","crashType","clapLayer","percFill","fxType","transitionType","riserType","impactType","energyCurve","buildType","dropType","chopType"], 15, "TextureFx"));
+
 if($("maxHarmonyBtn2")) $("maxHarmonyBtn2").addEventListener("click", ()=>doHarmonyMax(20));
 if($("maxSoundDesignBtn2")) $("maxSoundDesignBtn2").addEventListener("click", ()=>doSoundDesignMax(20));
 if($("breedBtn2")) $("breedBtn2").addEventListener("click", doGeneticBreed);
@@ -6623,6 +8550,14 @@ window.NF = {
   STYLES, GENRES, ATOMS, ROLL_FN, GROUPS, SCALES, LAYERS, CONCEPT, MELODY_CONCEPT, MELODY_FORCE, COMMANDS,
   FEELINGS, FLAVORS, DIRECTIONS, LEADS, PERFS, HARMONIES, ARPS, CONTOURS, RHYTHMS, BASS_VOICES, BASS_MOVES, BASS_RELS, KICKS, HATS, SNARES, PERCS, TOMS, GROOVES, SWINGS, SYNCS, INTENSITIES, ARRANGEMENTS, TECHNO_DRIVES, TECHNO_ACIDS, TECHNO_TEXTURES, TECHNO_RAVES, TECHNO_INDUSTRIALS,
   FILTER_TYPES, ENVELOPE_TYPES, LFO_TYPES, DISTORTION_TYPES, REVERB_TYPES, DELAY_TYPES, SIDECHAIN_TYPES, STEREO_TYPES, CHORD_PROGS, RHYTHM_PATTERNS, FX_CHAINS, SOUND_INTENSITIES,
+  MIX_DENSITY, MIX_ENERGY, MIX_SPACE, MIX_GLUE, MIX_PUNCH, MASTER_DRIVE, MASTER_LOUDNESS, MASTER_COLOR, MASTER_CHAIN,
+  STEREO_IMAGE, STEREO_WIDTH, SPATIAL_DEPTH, SPATIAL_MOVEMENT, MOD_SOURCE, MOD_DEST, MOD_RATE, MOD_DEPTH,
+  TEXTURE_LAYER, GRAIN_TYPE, SHIMMER_TYPE, ATMOSPHERE_TYPE, GHOST_NOTES, HUMANIZE_TYPES, POCKET_TYPES,
+  ORNAMENT_TYPES, VIBRATO_TYPES, PORTAMENTO_TYPES, SCALE_RUNS, INTERVAL_LEAPS, VOICING_TYPES, INVERSION_TYPES, TENSION_TYPES, RESOLUTION_TYPES,
+  RIDE_TYPES, CRASH_TYPES, CLAP_LAYERS, PERC_FILLS, FX_TYPES, TRANSITION_TYPES, RISER_TYPES, IMPACT_TYPES,
+  SECTION_DENSITY_TYPES, ENERGY_CURVE_TYPES, BUILD_TYPES, DROP_TYPES, CHOP_TYPES,
+  FILTER_CUTOFF_TYPES, FILTER_RESONANCE_TYPES, REVERB_SIZE_TYPES, REVERB_DECAY_TYPES, DELAY_TIME_TYPES, DELAY_FEEDBACK_TYPES,
+  SATURATION_TYPES, COMPRESSION_TYPES, EQ_TYPES, SIDECHAIN_CURVE_TYPES, STEREO_ENHANCE_TYPES,
   NOTE_NAMES, PICKER_POOLS,
   tempoForGenre, genreOfStyle,
   melodyConceptLine,
@@ -6646,8 +8581,8 @@ function openMasterLib(){
 let masterCat = "all";
 function renderMasterCats(filter){
   const wrap=$("masterCats"); wrap.innerHTML="";
-  const cats=["all","style","melody","bass","drums","techno","concept","key","arrangement","sound","rhythm","harmony","genetic","batch","stats"];
-  const labels={all:"All",style:"Style",melody:"Feeling & Melody",bass:"Bass",drums:"Drums",techno:"Techno Lab",concept:"Concept",key:"Key & BPM",arrangement:"Arrangement",sound:"Sound Design",rhythm:"Rhythm",harmony:"Harmony",genetic:"Genetic",batch:"Batch",stats:"Stats"};
+  const cats=["all","style","melody","bass","drums","techno","concept","key","arrangement","sound","rhythm","harmony","genetic","batch","stats","mixMaster","spatialMod","grooveMelodic","textureFx"];
+  const labels={all:"All",style:"Style",melody:"Feeling & Melody",bass:"Bass",drums:"Drums",techno:"Techno Lab",concept:"Concept",key:"Key & BPM",arrangement:"Arrangement",sound:"Sound Design",rhythm:"Rhythm",harmony:"Harmony",genetic:"Genetic",batch:"Batch",stats:"Stats",mixMaster:"Mix & Master",spatialMod:"Spatial & Mod",grooveMelodic:"Groove & Melodic",textureFx:"Texture & FX"};
   cats.forEach(c=>{
     const el=document.createElement("span");
     el.className="toggle"+(masterCat===c?" on":"");
@@ -6658,16 +8593,15 @@ function renderMasterCats(filter){
 }
 function poolCategory(key){
   if(["primary","secondary","genre"].includes(key)) return "style";
-  if(["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation"].includes(key)) return "melody";
+  if(["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType","chordProg","chord","sectionDensity","energyCurve","buildType","dropType","ghostNotes","humanizeType","pocketType"].includes(key)) return "melody";
   if(["bassVoice","bassMovement","bassRel","voice-concept","voice-relation"].includes(key)) return "bass";
-  if(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"].includes(key)) return "drums";
+  if(["kick","hats","snare","perc","toms","groove","swing","sync","intensity","rideType","crashType","clapLayer","percFill","rhythm","rhythmPattern","grooveExtra","percExtra"].includes(key)) return "drums";
   if(key.startsWith("concept")) return "concept";
   if(["bpm","rootPc","scaleId","key"].includes(key)) return "key";
   if(["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial","technoLab"].includes(key)) return "techno";
-  if(["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity","soundDesign"].includes(key)) return "techno";
-  if(["chordProg","chord"].includes(key)) return "melody";
-  if(["rhythmPattern","rhythm"].includes(key)) return "drums";
+  if(["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity","soundDesign","filterCutoff","filterResonance","reverbSize","reverbDecay","delayTime","delayFeedback","saturationType","compressionType","eqType","sidechainCurve","stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer","grainType","shimmerType","atmosphereType","stereoEnhance","fxType","transitionType","riserType","impactType","chopType","mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain"].includes(key)) return "sound";
   if(key==="arrangement") return "arrangement";
+  if(["mixMaster","spatialMod","grooveMelodic","textureFx","mix","master","spatial","mod","texture","fxExtra","arrangementExtra","filter","envelope","lfo","distortion","reverb","delay","sidechain","stereo","fx"].includes(key)) return "sound";
   return "all";
 }
 function renderMasterGrid(query, cat){
