@@ -409,6 +409,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
       <button id="masterLibBtn" class="ghost" title="Browse every list — manual selection for all rolls">📚 Master List</button>
       <button id="cmdBtn" class="ghost" title="Command palette (Ctrl/Cmd+K)">⌘ Commands</button>
       <button id="helpBtn" class="ghost" title="Keyboard shortcuts (?)">⌨</button>
+      <button id="maxScoreHeaderBtn" class="ghost" title="Reroll everything except Primary/Secondary to maximize Prompt Score">🏆 Max Score</button>
       <button id="powerRollBtn" class="power">⚡ Power roll</button>
     </div>
   </header>
@@ -702,6 +703,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
           <div class="cluster">
             <button class="sm" id="stashBBtn">📌 Stash to B</button>
             <button class="sm ghost" id="swapABBtn" disabled>🔄 Swap A ⇄ B</button>
+            <button class="sm power" id="maxScoreBtn" title="Reroll everything except Primary/Secondary to maximize Prompt Score — tries 50 combos and keeps the best">🏆 Max Score (keep styles)</button>
           </div>
         </div>
       </div>
@@ -3491,6 +3493,55 @@ function generateVariations(){
   }
   state.variations = vars;
 }
+function scoreFor(s){
+  const saved = state; state = s;
+  const out = scorePrompt();
+  state = saved;
+  return out;
+}
+function doMaxScoreRoll(attempts){
+  attempts = attempts || 50;
+  commit();
+  // keep primary/secondary exactly as they are — lock them for this search
+  const bestStart = snapshot();
+  let best = bestStart;
+  let bestScore = scoreFor(bestStart).total;
+  let bestPrompt = "";
+  try{ bestPrompt = buildStylePromptFor(bestStart); }catch(e){ bestPrompt = ""; }
+  let tries = 0;
+  for(let i=0;i<attempts;i++){
+    const v = snapshot();
+    // force primary/secondary to stay — lock them
+    if(!v.locks) v.locks = defaultLocks();
+    v.locks.primary = true;
+    v.locks.secondary = true;
+    // for max score we want to reroll everything else regardless of user locks,
+    // except we keep primary/secondary. So unlock all other ROLL_FN keys.
+    for(const k in ROLL_FN){
+      if(k==="primary"||k==="secondary") continue;
+      v.locks[k]=false;
+    }
+    // new seed for each try so rng is different
+    v.seed = newSeed();
+    rng = mulberry32(v.seed);
+    rollAllInto(v);
+    v.variations = [];
+    const sc = scoreFor(v);
+    if(sc.total > bestScore || (sc.total===bestScore && (buildStylePromptFor(v).length > bestPrompt.length))){
+      best = v;
+      bestScore = sc.total;
+      try{ bestPrompt = buildStylePromptFor(v); }catch(e){}
+    }
+    tries++;
+  }
+  // apply best
+  state = best;
+  rng = mulberry32(state.seed);
+  afterChange();
+  flash($("scoreCard"));
+  toast("🏆 Best score "+bestScore+" /100 kept "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+tries+" tries");
+  return bestScore;
+}
 
 /* ---------------------------- PROMPT ASSEMBLY ---------------------------- */
 function styleLine(){
@@ -5168,6 +5219,7 @@ const COMMANDS = [
   {icon:"📌", name:"Stash current idea to slot B",  key:"",      run:()=>stashB()},
   {icon:"🔄", name:"Swap A ⇄ B",                   key:"",      run:()=>swapAB()},
   {icon:"🏷", name:"Copy arrangement section tags", key:"",      run:()=>copyText(arcTags(),"Section tags")},
+  {icon:"🏆", name:"Max score roll (keep primary/secondary)", key:"M", run:()=>doMaxScoreRoll(50)},
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
 let cmdSel = 0, cmdFiltered = COMMANDS.slice();
@@ -5306,6 +5358,8 @@ document.addEventListener("click", e=>{
 });
 
 $("powerRollBtn").addEventListener("click", ()=>doRoll("power"));
+$("maxScoreBtn").addEventListener("click", ()=>doMaxScoreRoll(50));
+$("maxScoreHeaderBtn").addEventListener("click", ()=>doMaxScoreRoll(50));
 $("undoBtn").addEventListener("click", undo);
 $("redoBtn").addEventListener("click", redo);
 $("shareBtn").addEventListener("click", shareURL);
@@ -5454,7 +5508,8 @@ document.addEventListener("keydown", e=>{
     p:()=>doRoll("power"), v:()=>doRoll("variations"), f:()=>doRoll("feel-melody"),
     m:()=>openMasterLib(), b:()=>doRoll("bass"), d:()=>doRoll("drums"),
     c:()=>doRoll("concept"), a:()=>doRoll("arrangement"), k:()=>doRoll("key"),
-    l:()=>openPicker("primary"), i:()=>toggleInstrumental(), s:()=>shareURL()
+    l:()=>openPicker("primary"), i:()=>toggleInstrumental(), s:()=>shareURL(),
+    h:()=>doMaxScoreRoll(50)
   };
   if(e.key===" "){ e.preventDefault(); Audition.toggle(); return; }
   if(e.key==="?"){ e.preventDefault(); $("helpModal").classList.add("open"); return; }
@@ -5485,7 +5540,7 @@ window.NF = {
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
   encodeState, decodeState, defaultState, doRoll, undo, redo, render, renderOutput,
   engineerLines, djLines, Audition, openCmd, closeCmd, renderCmd, runCmd,
-  energyArc, arcLine, arcTags, scorePrompt, stashB, swapAB, exportSession,
+  energyArc, arcLine, arcTags, scorePrompt, stashB, swapAB, exportSession, doMaxScoreRoll, scoreFor,
   sanitize, isDirty, conceptLine, styleLine,
   get slotB(){ return slotB; },
   get cmdFiltered(){ return cmdFiltered; }
