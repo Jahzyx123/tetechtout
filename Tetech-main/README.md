@@ -104,6 +104,14 @@ python3 -m http.server 8080
 - All three appear in the Feeling & Melody card, the Harmony Lab, the 🏆 Max Roll Lab (second copies) and the ⌘ command palette.
 - **More rolls everywhere**: the Feeling/Melody/Harmony families now carry 238 feelings, 172 flavors, 127 directions, 262 lead voices, 97 performances, 131 harmonies, 94 arps, 72 contours, 75 rhythms and much more, plus new dedicated anthem pool entries (Emotion Anthems, Melody-Dominant Anthems, Harmony Anthems).
 
+### 🔥 Anthem Builder + extra spark pools (another big batch)
+- **💥 Anthem Idea** — one click builds a complete Melody-Dominant Anthem concept: random anthem name → vibe line → transform, applied to the Concept and sets Melodic Force to Dominant.
+- **⚡ Max Anthem Idea** — runs the Melody-Dominant Anthem maximizer, then instantly wraps the winning state in a fresh Anthem concept.
+- **💡 Max Concept Anthem** — maximizes concept + title + transform + melody/harmony and locks Melody-Dominant.
+- **🎲 More spark** — five new spark pools: Weather, Light, Sound Source, Future Scene, Anthem Names (250+ new entries).
+- **🎯 Apply challenge** — pushes a rolled challenge straight into the Concept narrative.
+- All of these are also in the ⌘ command palette. Every new entry passes the instrumental-only sanitizer and maximum-energy filter.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed

@@ -338,5 +338,34 @@ t("anthem commands registered", ()=>{
   return names.some(n=>/Max Emotion-Led Melody/.test(n)) && names.some(n=>/Max Melody-Dominant Anthem/.test(n)) && names.some(n=>/Max Harmony Anthem/.test(n)) || "missing anthem commands";
 });
 
+console.log("\n== MORE THINGS / ANTHEM BUILDER ==\n");
+t("new extra spark pools are loaded", ()=>{
+  const ok = w.NF.SPARK_WEATHER && w.NF.SPARK_LIGHT && w.NF.SPARK_SOUNDS && w.NF.SPARK_FUTURES && w.NF.SPARK_ANTHEM_NAMES;
+  const n = (w.NF.SPARK_WEATHER?.length||0)+(w.NF.SPARK_LIGHT?.length||0)+(w.NF.SPARK_SOUNDS?.length||0)+(w.NF.SPARK_FUTURES?.length||0)+(w.NF.SPARK_ANTHEM_NAMES?.length||0);
+  return ok && n>=220 || n;
+});
+t("more spark rolls into visible card", ()=>{
+  const text=w.NF.sparkShowExtra(); const shown=d.getElementById("v-spark").textContent;
+  return text && shown===text || (text+" vs "+shown);
+});
+t("anthem idea builds a full dominant concept", ()=>{
+  const out=w.NF.anthemIdea();
+  return (typeof out==="string" && out.length>10 && S().melodicForce==="dominant" && !!S().concept.title && !!S().concept.transform) || JSON.stringify({out,title:S().concept.title,transform:S().concept.transform,dirty:!!S().locks["concept-title"]});
+});
+t("max anthem idea + concept anthem hooks/keys exist", ()=>{
+  const has = typeof w.NF.maxAnthemIdea==="function" && typeof w.NF.doMaxConceptAnthem==="function";
+  const keys = w.NF.CONCEPT_ANTHEM_KEYS && w.NF.CONCEPT_ANTHEM_KEYS.includes("concept-title") && w.NF.CONCEPT_ANTHEM_KEYS.includes("concept-transform") && w.NF.CONCEPT_ANTHEM_KEYS.includes("melodyConcept");
+  return has && keys || ("has="+has+" keys="+keys);
+});
+t("new anthem builder buttons exist", ()=>{
+  const ids=["anthemIdeaBtn","maxAnthemIdeaBtn","sparkMoreBtn","sparkApplyChallengeBtn","maxConceptAnthemBtn"];
+  const missing=ids.filter(id=>!d.getElementById(id));
+  return missing.length===0 || missing.join(",");
+});
+t("anthem builder commands registered", ()=>{
+  const names=w.NF.COMMANDS.map(c=>c.name);
+  return names.some(n=>/Build Melody-Dominant Anthem Idea/i.test(n)) && names.some(n=>/extra spark/i.test(n)) && names.some(n=>/Max Concept Anthem/i.test(n)) || "missing commands";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

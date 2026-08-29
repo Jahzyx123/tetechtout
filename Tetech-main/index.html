@@ -471,6 +471,13 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="sm" id="sparkTransformApplyBtn" title="Put the current transform into the Concept transformation">🪄 Apply transform</button>
             <button class="sm" id="sparkCopyBtn">📋 Copy spark</button>
           </div>
+          <div class="cluster">
+            <span class="readout" style="width:100%;font-weight:900;letter-spacing:1px;color:var(--violet)">ANTHEM BUILDER</span>
+            <button class="sm power" id="anthemIdeaBtn" title="Build a whole Melody-Dominant Anthem idea (title + vibe + transform)">💥 Anthem Idea</button>
+            <button class="sm power" id="maxAnthemIdeaBtn" title="Max the Melody-Dominant Anthem then add a full concept (title + vibe + transform)">⚡ Max Anthem Idea</button>
+            <button class="sm" id="sparkMoreBtn" title="Roll one of the extra spark pools — weather / light / sounds / futures / anthem names">🎲 More spark</button>
+            <button class="sm" id="sparkApplyChallengeBtn" title="Put the current challenge into the Concept narrative">🎯 Apply challenge</button>
+          </div>
           <div class="readout" id="sparkMeta">Hundreds of random sparks are loaded. Roll until one gives you a whole song.</div>
         </div>
       </div>
@@ -869,6 +876,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
             <button class="mini listbtn" data-pick="concept-title">📜 List</button>
             <button class="mini listbtn" data-pick="concept">📜 All Concepts</button>
             <button class="sm power" id="maxConceptBtn" title="Try 25 concept combos and keep best score">🏆 Max Concept</button>
+            <button class="sm power" id="maxConceptAnthemBtn" title="Max the concept + story and lock Melody-Dominant Anthem">💡 Max Concept Anthem</button>
           </div>
           <div class="concept-grid" id="conceptGrid">
             <div class="citem"><div class="clbl">World</div><div class="cval" id="v-cworld">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-world">🎲</button><button class="mini listbtn" data-pick="concept-world">📜</button></div></div>
@@ -5095,7 +5103,7 @@ const SPARK_IDEAS = [
   "start the drop on an unexpected chord",
   "put a different time signature in every section",
   "make the main motif disappear for two bars",
-  "use a whisper of tape hiss as the glue",
+  "use a tape hiss layer as the glue",
   "let the filter close while the crowd opens",
   "balance a drum fill on the offbeat only",
   "make a melody from a doorbell and a dog bark",
@@ -5131,12 +5139,12 @@ const SPARK_IDEAS = [
   "build the drop from a single long riser and a door slam",
   "let a hand saw cut through the background noise",
   "make the hi-hats sound like rain on metal",
-  "drive the track on a slowed-down vocal-free choir pad",
+  "drive the track on a huge analog pad stack",
   "write a melody that sounds antique but hits like a wrecking ball",
   "make the last bar longer than it should be",
   "put a siren in the same key as the lead",
   "let the breakdown breathe with only one tone",
-  "use a tiny music box as the only melodic compass",
+  "use a small music box as the only melodic compass",
   "send the kick into a broken tape delay",
   "build a build that answers itself with a darker chord every time",
   "make the percussion feel like a marching band in a corridor",
@@ -5242,7 +5250,7 @@ const SPARK_MASHUPS = [
   "riddim + opera soprano + broken cassettes",
   "hardstyle + Celtic whistles + slow-building rave",
   "deep house + Indian classical + analog tape",
-  "dubstep + sousaphone + a tiny transistor radio",
+  "dubstep + sousaphone + a compact transistor radio",
   "lo-fi + punk rock + fm bell arps",
   "hardgroove + jazz organ + demolition sounds",
   "psy bass + gamelan bells + tape hiss",
@@ -5252,7 +5260,7 @@ const SPARK_MASHUPS = [
   "hip-hop + tuba + broken piano",
   "breaks + Greek bouzouki + arctic wind",
   "techno + Japanese woodblocks + string quartet",
-  "house + voice-free choir pads + analog drones",
+  "house + analog drone pads + field recordings",
   "eurodance + sitar + warehouse echoes",
   "electronica + tango + vinyl crackle",
   "DnB + mariachi horns + acid lines",
@@ -5261,7 +5269,7 @@ const SPARK_MASHUPS = [
   "mashup of a ballroom waltz and a rave",
   "gamelan + gabber + glass chimes",
   "garage + accordion + airport announcements",
-  "minimalist? no — maximalist techno + circus brass + modular rabbits",
+  "maximalist techno + circus brass + modular rabbits",
   "melodic techno + didgeridoo + film score",
   "dub reggae + techno stabs + a whistle solo",
   "drum and bass + kalimba + broken neon signs",
@@ -5369,7 +5377,7 @@ const SPARK_TIPS = [
   "Break the rhythm with one ghost snare per eight bars.",
   "Use a long feedback delay on a single rising tone.",
   "Turn the hats down when the melody is most active.",
-  "Add a tiny pitch bend to the sub note right before a change.",
+  "Add a small pitch bend to the sub note right before a change.",
   "Let the crowd feel bigger in the last section.",
   "Put the lead on a different reverb than the pad.",
   "Use the drop as the place where everything converges.",
@@ -5383,20 +5391,20 @@ const SPARK_TIPS = [
   "Use a shaker with a short attack in the build.",
   "Send the crash into a delay for a long tail.",
   "Make the final note ring beyond the last bar.",
-  "Add a subtle choir-free pad for the breakdown.",
+  "Add a warm drone pad for the breakdown.",
   "Keep the low-mid clean where the bass and kick collide.",
   "Try a ping-pong delay on the hats for extra movement.",
   "Automate the stereo width only in the second half.",
   "Roll off the top of the riser so the drop hits harder.",
   "Use a short reverse decay on the clap before the drop.",
-  "Put the whole final drop through a gentle highpass first.",
+  "Put the whole final drop through a highpass first.",
   "Add a mono low end and a wide mid to the master.",
   "Print an alternate arrangement without the bridge.",
   "Carve a gap around the lead with a narrow EQ.",
   "Let the kick and bass share the same root for cohesion.",
   "Bring the percussion forward for the last two sections.",
   "Delay the kick one bar into the breakdown for a head-nod.",
-  "Keep a single note humming across the whole track.",
+  "Keep a single note rolling across the whole track.",
   "Use a filter sweep as a transition between refrains.",
   "Automate the distortion on the bass up as the track moves.",
   "Add a soft tape stop to the riser before the drop.",
@@ -5422,7 +5430,7 @@ const SPARK_VIBES = [
   "a lighthouse is the only thing still recording",
   "the moon is a strobe light above the motorway",
   "an abandoned carnival starts playing by itself",
-  "the sky is green and the streets are quiet with motion",
+  "the sky is green and the streets are full of motion",
   "a satellite falls slowly in the key of the track",
   "the whole room is a broken drum",
   "a memory of summer plays through a broken speaker",
@@ -5439,7 +5447,7 @@ const SPARK_VIBES = [
   "a distant train answers every second kick",
   "the roofs are silver and the sky is copper",
   "the building remembers being a forest",
-  "a voice hears itself in the walls",
+  "the walls carry a low hum",
   "the city breathes in sixteenths",
   "an airport plays a loop for the last departing plane",
   "the rain keeps time on a fire escape",
@@ -5715,12 +5723,12 @@ const SPARK_MEGA_LINES = [
   "Everything just changed — check the outputs and audition.",
   "Ruined it? Undo is your friend. Loved it? Copy it fast.",
   "Mega chaos roll complete. The prompt is probably bigger now.",
-  "Random powers activated. The wildcard lab has spoken.",
+  "Random powers activated. The wildcard lab has responded.",
   "New seed, new world. Listen to the difference.",
   "A lot of atoms just moved. Scroll to the score to see what landed.",
   "Chaos is only creative if you keep the best parts.",
   "Try another Mega Chaos Roll until one makes you smile.",
-  "One click, hundreds of tiny possibilities. That is the point.",
+  "One click, hundreds of small possibilities. That is the point.",
   "Now open the outputs and let the prompt surprise you.",
   "Everything is still instrumental-safe. Probably.",
   "Lock the pieces you love before the next chaos roll.",
@@ -6628,7 +6636,7 @@ const EMOTION_ANTHEMS = [
   "a melody-dominant sunset freight train",
   "an emotion-led hardgroove dawn",
   "a room-wide golden hook",
-  "a chorus-free cathedral of one rising line",
+  "a cathedral of one rising line",
   "a hook that opens like a whole stadium",
   "a turnpike anthem with a lit fuse",
   "a stretch of sky held in one melody",
@@ -6650,7 +6658,7 @@ const MELODY_DOMINANT_ANTHEMS = [
   "a melody-dominant sunset freight train",
   "an emotion-led hardgroove dawn",
   "a room-wide golden hook",
-  "a chorus-free cathedral of one rising line",
+  "a cathedral of one rising line",
   "a hook that opens like a whole stadium",
   "a turnpike anthem with a lit fuse",
   "a stretch of sky held in one melody",
@@ -6688,6 +6696,275 @@ const HARMONY_ANTHEMS = [
   "a harmony arc that touches every section",
   "a field of sevenths that the melody crosses",
   "a release that sounds like a held breath",
+];
+
+
+
+/* ============================================================
+   MORE THINGS — extra Idea Engine spark pools + anthem builder
+   ============================================================ */
+const SPARK_WEATHER = [
+  "a storm front arriving without a forecast",
+  "rain rolling like a drum fill",
+  "wind that leans on the roof",
+  "a fog bank with a lock of light in it",
+  "the sky clearing one minute early",
+  "thunder making an entrance late",
+  "rain on metal stairs",
+  "a heat shimmer over a cold lot",
+  "snow falling on a running engine",
+  "a dry wind carrying dust and a warm note",
+  "lightning delayed by one beat",
+  "the ocean holding its breath",
+  "a cold snap that sounds electric",
+  "a warm front meeting a hard wall",
+  "hail on a greenhouse roof",
+  "the smell of rain before it lands",
+  "weather moving in the wrong direction",
+  "a windchime field at midnight",
+  "a green sky taking its time",
+  "dew on a hot radiator",
+  "a hurricane in a parking garage",
+  "frost writing on a window",
+  "steam rising from a frozen street",
+  "a draft through a lit hallway",
+  "a storm passing through without stopping",
+  "sun breaking through a cloud wall",
+  "a low ceiling of gray light",
+  "the first rain after a long dry road",
+  "an air current pulling the mix",
+  "a weather radio with no words",
+  "wind playing a fence line",
+  "a tide coming in during the last drop",
+  "heat lightning far away",
+  "a downpour sharpening the snare",
+  "fog lifting at the end of the bridge",
+  "a dust devil crossing the lot",
+  "the sun leaving a gold stripe",
+  "moonlight on a puddle of oil",
+  "sleet hitting a tin roof",
+  "a breeze turning a hallway cold",
+  "an avalanche far off",
+  "a cold clear morning with one jet",
+  "rain bouncing off parked cars",
+  "damp air carrying smoke a block over",
+  "a static charge in the room",
+  "weather moving at the speed of the track",
+  "a black sky with one warm window",
+  "light rain on a covered stage",
+  "wind through a chain-link gate",
+  "headlights through an early fog",
+];
+const SPARK_LIGHT = [
+  "amber streetlight over wet asphalt",
+  "one window lit in a dark block",
+  "a sodium glow at the end of the road",
+  "cold blue dawn over a warm roof",
+  "headlights crossing a white wall",
+  "a bulb above a late-night counter",
+  "the glow of a train passing",
+  "a lighthouse beam over black water",
+  "neon caught in a puddle",
+  "a paper lantern moving through a room",
+  "tail lights hugging a curve",
+  "a strobe freezing one second",
+  "moon track on the lake",
+  "a screen glow from inside a car",
+  "fireflies in a fenced field",
+  "the red light of a departing bus",
+  "a candle in a standing window",
+  "the green glow of a keypad",
+  "silver light on a wet fence",
+  "a flare behind a hill",
+  "the sun punching through blinds",
+  "a shop sign buzzing in the rain",
+  "a camera flash on a dark dance floor",
+  "candlelight on a radiator",
+  "the window of a late train",
+  "a harbor light blinking slow",
+  "sodium lamps over an empty plaza",
+  "a phone light in a packed room",
+  "frost catching the first sun",
+  "a string of bulbs over a stage",
+  "the steady green pulse of a monitor",
+  "a headlamp bobbing across a field",
+  "a beacon on a distant mast",
+  "the backlight of a city under clouds",
+  "a mirror catching a sunrise",
+  "a row of desk lamps going on",
+  "an oil fire under a cold sky",
+  "a strobe behind a curtain",
+  "one red bulb in a corridor",
+  "moonlight moving across a beamed ceiling",
+  "the gold edge of a closing door",
+  "a light in a window that never sleeps",
+  "halogen wash under a storage gate",
+  "the white of a projector at the end of a room",
+  "the blue glow of a shorting wire",
+  "a campfire no one is tending",
+  "a signal lamp answering a horn",
+  "the last light of the parking garage",
+  "a star over a construction crane",
+  "the iris of a camera widening",
+];
+const SPARK_SOUNDS = [
+  "a glass jar left to ring",
+  "a typewriter keeping time",
+  "a fax machine printing one page",
+  "a metal gate slamming in the wind",
+  "a coin landing on a glass table",
+  "a light switch clicking in another room",
+  "fabric tearing under a fast draw",
+  "a bottle rolling on a wooden floor",
+  "a chain dragging over concrete",
+  "a door hinge that answers the kick",
+  "a register opening after a long hold",
+  "paint mixing on metal",
+  "a skateboard on a rail in an empty hall",
+  "a soft thump from a closed room",
+  "a keyboard returning to its box",
+  "a spring coil snapping back",
+  "a pencil tapping a glass case",
+  "the snap of a towel on a bench",
+  "a broom against a step",
+  "a foghorn counting the bars",
+  "a drill starting far down the block",
+  "a train coupling letting go",
+  "a plate landing on a table",
+  "a heavy book closing",
+  "a rope pulling through a pulley",
+  "a guitar case hitting the floor",
+  "a boot step on a metal bridge",
+  "a stopwatch final click",
+  "a tape reel stopping",
+  "a radio tuning through one station",
+  "air through a window frame",
+  "a hinge swinging on a gate",
+  "tin falling from a shelf",
+  "a bicycle bell under a bridge",
+  "a refrigerator motor turning over",
+  "a water main beating in time",
+  "a hand drum in a stairwell",
+  "a bicycle chain ticking",
+  "a glass block ringing",
+  "an empty room answering a clap",
+  "a boiler ticking down",
+  "a pencil sharpener winding",
+  "a ladder being raised",
+  "a crane turning above",
+  "a vacuum lull on the other floor",
+  "a reel winding backward",
+  "a clock winding in the wall",
+  "a lid being screwed on",
+  "a jarring-free bar of hammering",
+  "a distant mower holding a tone",
+];
+const SPARK_FUTURES = [
+  "the bus arrives but the city keeps moving",
+  "a garden growing under a highway ramp",
+  "a machine that hums only at night",
+  "a station where the trains decide their own route",
+  "a building that learns to breathe",
+  "the harbor taking back the street",
+  "a drone carrying a small light over the water",
+  "the last diner closing and reopening as a club",
+  "a field of antennas bowing to the wind",
+  "a power line in a rainstorm carrying the groove",
+  "a robot repairing a broken music box",
+  "the gym becoming a ballroom for one night",
+  "a market that runs on bicycle bells",
+  "the library switching to candlelight",
+  "a factory becoming a greenhouse over time",
+  "the highway turning into a runway for stars",
+  "a solar panel farm reflecting a sunset",
+  "a ferry carrying a full band across",
+  "a green roof above a night shift",
+  "a vending machine that plays a phrase",
+  "a rooftop windmill turning to the BPM",
+  "a movie theater reopening for one song",
+  "the dock, the crane, and the storm",
+  "an old rail line becoming a footpath of light",
+  "a crosswalk that blinks in time",
+  "a water tower holding one long note",
+  "a skating rink under the freeway",
+  "a bridge light scheduled for the drop",
+  "a parking garage stage after midnight",
+  "a hotel pool fed by rain",
+  "the whole block sharing one generator",
+  "a grain silo with a window of sun",
+  "a radio mast keeping the last frequency",
+  "a city growing a new park on a rooftop",
+  "a bus shelter becoming a monument",
+  "a signal loop passing overhead every minute",
+  "an orbital light crossing the dark",
+  "a train line extended by one long ride",
+  "a bank vault repurposed as a rehearsal room",
+  "a stadium bowl full of grass",
+  "a pier rebuilt with a piano at the end",
+  "a former airfield measuring the summer",
+  "an aqueduct carrying the thunder from the hills",
+  "a greenhouse train traveling the coast",
+  "a race track at dusk used as a track",
+  "a lighthouse turned into a listening room",
+  "a data center cooling with sea air",
+  "a ferry line mapped by the melody",
+  "a falling tower wrapped in string lights",
+  "a direction that points to the sunrise",
+];
+const SPARK_ANTHEM_NAMES = [
+  "Rooftop Machinery",
+  "A Dozen False Dawns",
+  "The Longest Green Light",
+  "Telegraph Bloom",
+  "Neon Greenhouse",
+  "Backbone of the High Line",
+  "Chrome Parade",
+  "Milk and Motorway",
+  "Anthem for an Empty Stadium",
+  "Last Train Cathedral",
+  "Sunrise at the Freight Yard",
+  "Silk and Steam",
+  "The Hymn-Free Engine Room",
+  "Turbine Garden",
+  "Radar Warm",
+  "Glacier Lights",
+  "Static in the Orchard",
+  "The Next Street Over",
+  "Tide of the Parking Lot",
+  "Signal Lantern",
+  "Golden Fuse",
+  "The Sound of Iron Roofs",
+  "Afterimage Road",
+  "Borrowed Skyline",
+  "Elevator to the Roof",
+  "Silver Hour",
+  "Heartbeat of the Block",
+  "Amber Haze",
+  "A Gate Left Open",
+  "Neon Puddles",
+  "Northbound Bloom",
+  "The Station That Hums",
+  "The Brake Lights Ballet",
+  "Cold Front Lines",
+  "Turnpike Moon",
+  "The Farewell Loop",
+  "Blueprint of Rain",
+  "The Last Exit in the Dark",
+  "Concrete Weather",
+  "Strobe on the Waterline",
+  "One More Lap of the Docks",
+  "An Album of Open Doors",
+  "The Green Light District",
+  "Bassline Over the Bay",
+  "Sky Blue Static",
+  "A Year of Second Chances",
+  "Every Road Owes a Return",
+  "The Great Corner Store Anthem",
+  "Glass Elevator",
+  "The Hard Rain Ballet",
+  "Night Shift Bolero",
+  "The Antenna Field",
+  "Wait for the Cue",
 ];
 
 const LAYERS = [
@@ -9839,6 +10116,64 @@ function sparkMega(){
 }
 
 
+
+const EXTRA_SPARK_KINDS = [
+  ["🌦 Random Weather", SPARK_WEATHER, "Weather"],
+  ["🏮 Random Light", SPARK_LIGHT, "Light"],
+  ["🎚 Random Sound Source", SPARK_SOUNDS, "Sound"],
+  ["🔮 Random Future Scene", SPARK_FUTURES, "Future"],
+  ["🎬 Random Anthem Name", SPARK_ANTHEM_NAMES, "Anthem Name"]
+];
+let extraSparkIdx = 0;
+function sparkShowExtra(){
+  const meta = EXTRA_SPARK_KINDS[extraSparkIdx % EXTRA_SPARK_KINDS.length];
+  extraSparkIdx++;
+  const pool = meta[1]; const text = sparkPick(pool);
+  setSpark(text, meta[2], meta[0] + " · " + pool.length + " options · extra pool " + extraSparkIdx + "/" + EXTRA_SPARK_KINDS.length);
+  return text;
+}
+function anthemIdea(){
+  commit(); beginRoll();
+  const name = pick(SPARK_ANTHEM_NAMES);
+  const vibe = pick(SPARK_VIBES);
+  const transform = pick(SPARK_TRANSFORMS);
+  if(!state.locks["concept-title"]) state.concept.title = name;
+  if(!state.locks["concept-narrative"]) state.concept.narrative = vibe;
+  if(!state.locks["concept-transform"]) state.concept.transform = transform;
+  state.melodicForce = "dominant";
+  afterChange();
+  const out = name + " — " + vibe + " → " + transform;
+  setSpark("💥 " + out, "Anthem Idea", "Anthem Builder · Melody-Dominant · score " + scorePrompt().total + "/100");
+  toast("💥 Anthem Idea: " + out);
+  return out;
+}
+async function maxAnthemIdea(attempts){
+  attempts = attempts || 20;
+  const score = await doMaxMelodyDominant(attempts);
+  if(score === undefined || maxRollRunning) return undefined;
+  anthemIdea();
+  setMaxStatus("⚡ Max Anthem Idea → " + score + "/100 · " + state.concept.title);
+  toast("⚡ Max Anthem Idea → " + score + " /100 · " + state.concept.title);
+  return score;
+}
+const CONCEPT_ANTHEM_KEYS = ["concept","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-title","concept-transform","key","leadVoice","leadPerf","harmony","chordColor","melodyConcept"];
+async function doMaxConceptAnthem(attempts){
+  attempts = attempts || 15;
+  const score = await doMaxScoreRollSection(CONCEPT_ANTHEM_KEYS, attempts, "Concept");
+  if(score === undefined || maxRollRunning) return undefined;
+  state.melodicForce = "dominant";
+  state.concept.title = state.concept.title || pick(SPARK_ANTHEM_NAMES);
+  state.concept.transform = state.concept.transform || pick(SPARK_TRANSFORMS);
+  afterChange();
+  const out = "💡 Max Concept Anthem → " + score + "/100 · " + (state.concept.title || "Untitled");
+  setMaxStatus(out); toast(out); flash($("conceptCard"));
+  return score;
+}
+function sparkApplyChallenge(){
+  if(!lastSparkKind || lastSparkKind !== "Challenge"){ toast("Roll a challenge first"); return; }
+  commit(); state.concept.narrative = lastSpark; afterChange(); toast("🎯 Challenge applied: " + lastSpark);
+}
+
 /* ==================================================================
    COMMAND PALETTE + SHORTCUTS
    Every action in the app reachable from the keyboard in two keystrokes.
@@ -9919,6 +10254,11 @@ const COMMANDS = [
   {icon:"🪄", name:"Random transform", key:"", run:()=>sparkShow("Transform")},
   {icon:"🎯", name:"Random challenge", key:"", run:()=>sparkShow("Challenge")},
   {icon:"🔥", name:"Mega Chaos Roll", key:"", run:()=>sparkMega()},
+  {icon:"💥", name:"Build Melody-Dominant Anthem Idea", key:"", run:()=>anthemIdea()},
+  {icon:"⚡", name:"Max Anthem Idea (dominant + concept)", key:"", run:()=>maxAnthemIdea(18)},
+  {icon:"🎲", name:"Roll extra spark (weather/light/sounds)", key:"", run:()=>sparkShowExtra()},
+  {icon:"💡", name:"Max Concept Anthem (dominant)", key:"", run:()=>doMaxConceptAnthem(16)},
+  {icon:"🎯", name:"Apply challenge to concept", key:"", run:()=>sparkApplyChallenge()},
   {icon:"⌨",  name:"Keyboard shortcuts",           key:"?",     run:()=>$("helpModal").classList.add("open")}
 ];
 let cmdSel = 0, cmdFiltered = COMMANDS.slice();
@@ -10180,6 +10520,11 @@ if($("sparkMegaBtn")) $("sparkMegaBtn").addEventListener("click", sparkMega);
 if($("sparkTitleApplyBtn")) $("sparkTitleApplyBtn").addEventListener("click", sparkApplyTitle);
 if($("sparkMashApplyBtn")) $("sparkMashApplyBtn").addEventListener("click", sparkApplyMash);
 if($("sparkTransformApplyBtn")) $("sparkTransformApplyBtn").addEventListener("click", sparkApplyTransform);
+if($("anthemIdeaBtn")) $("anthemIdeaBtn").addEventListener("click", anthemIdea);
+if($("maxAnthemIdeaBtn")) $("maxAnthemIdeaBtn").addEventListener("click", ()=>maxAnthemIdea(18));
+if($("sparkMoreBtn")) $("sparkMoreBtn").addEventListener("click", sparkShowExtra);
+if($("sparkApplyChallengeBtn")) $("sparkApplyChallengeBtn").addEventListener("click", sparkApplyChallenge);
+if($("maxConceptAnthemBtn")) $("maxConceptAnthemBtn").addEventListener("click", ()=>doMaxConceptAnthem(16));
 if($("sparkCopyBtn")) $("sparkCopyBtn").addEventListener("click", sparkCopy);
 $("undoBtn").addEventListener("click", undo);
 $("redoBtn").addEventListener("click", redo);
@@ -10364,11 +10709,13 @@ window.NF = {
   FILTER_CUTOFF_TYPES, FILTER_RESONANCE_TYPES, REVERB_SIZE_TYPES, REVERB_DECAY_TYPES, DELAY_TIME_TYPES, DELAY_FEEDBACK_TYPES,
   SATURATION_TYPES, COMPRESSION_TYPES, EQ_TYPES, SIDECHAIN_CURVE_TYPES, STEREO_ENHANCE_TYPES,
   SPARK_IDEAS, SPARK_TITLES, SPARK_MASHUPS, SPARK_CONSTRAINTS, SPARK_TIPS, SPARK_VIBES, SPARK_PLACES,
+  SPARK_WEATHER, SPARK_LIGHT, SPARK_SOUNDS, SPARK_FUTURES, SPARK_ANTHEM_NAMES, EXTRA_SPARK_KINDS,
   SPARK_THINGS, SPARK_TRANSFORMS, SPARK_CHALLENGES, SPARK_MEGA_LINES, sparkShow, sparkMega, sparkCopy,
+  sparkShowExtra, anthemIdea, maxAnthemIdea, doMaxConceptAnthem, sparkApplyChallenge,
   NOTE_NAMES, PICKER_POOLS,
   tempoForGenre, genreOfStyle,
   EMOTION_ANTHEMS, MELODY_DOMINANT_ANTHEMS, HARMONY_ANTHEMS, EMOTION_MELODY_KEYS, DOMINANT_MELODY_KEYS, HARMONY_ANTHEM_KEYS,
-  doMaxEmotionMelody, doMaxMelodyDominant, doMaxHarmonyAnthem,
+  doMaxEmotionMelody, doMaxMelodyDominant, doMaxHarmonyAnthem, CONCEPT_ANTHEM_KEYS,
   melodyConceptLine,
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
