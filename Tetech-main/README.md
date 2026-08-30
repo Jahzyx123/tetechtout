@@ -75,6 +75,80 @@ python3 -m http.server 8080
 - **24 optional detail layers** (acid, glitch, saturation, sidechain, polyrhythm, …), all OFF
   by default.
 
+### 🚀 Idea Engine — Sparks & Wildcards (massive upgrade)
+- **607 random sparks** across eleven pools: ideas, titles, genre mash-ups,
+  production constraints, tips, vibe lines, scenes, objects, concept
+  transformations, composition challenges and chaos status lines. Roll until
+  one gives you a whole song.
+- **One-click Inspiration card** — 💡 Idea, 🏷 Title, 🧬 Mash-up, ⛓ Constraint,
+  🛠 Tip, 🌊 Vibe, 🗺 Scene, 🔩 Object, 🪄 Transform, 🎯 Challenge.
+- **Apply buttons** — push the current Title, Mash-up or Transform directly
+  into the Concept or Primary style, and **📋 Copy** the spark with the current
+  recipe attached.
+- **🔥 Mega Chaos Roll** — rerolls a huge bundle of atom groups (feeling,
+  melody, bass, drums, harmony, techno lab, sound design, mix, spatial, groove,
+  texture, rhythm, key), maxes drive/acid/duration/melodic force, switches on
+  the detail layers, drops in a random title + transform, then flashes a live
+  score readout. Lock anything you love before you roll.
+- **Huge word-pool expansion** — hundreds of additional entries were pushed
+  into the existing pools: 178 feelings, 120 flavors, 97 directions, 204 lead
+  voices, 169 bass voices, 83 kicks, 77 grooves, 72 hats, and more. All entries
+  pass the instrumental-only sanitizer and maximum-energy filter.
+- **Keyboard/command access** — every spark action appears in the ⌘ command
+  palette, so you can fire one from anywhere.
+
+### 🎼 Anthem-category max buttons + massive roll pool expansion
+- **❤️🔥 Max Emotion-Led Melody** — hunts the best emotion-led melody recipe, then locks **Melodic Force → Dominant** so the style prompt becomes a *Melody-dominant anthem*.
+- **🎤 Max Melody-Dominant Anthem** — same idea but also optimises the concept/title/transform so the whole brief becomes one huge anthemic idea.
+- **🎤🎼 Max Harmony Anthem** — optimises harmony, chord progression, scale, voicing, tension/resolution, lead and arp, then locks Melody-Dominant.
+- All three appear in the Feeling & Melody card, the Harmony Lab, the 🏆 Max Roll Lab (second copies) and the ⌘ command palette.
+- **More rolls everywhere**: the Feeling/Melody/Harmony families now carry 238 feelings, 172 flavors, 127 directions, 262 lead voices, 97 performances, 131 harmonies, 94 arps, 72 contours, 75 rhythms and much more, plus new dedicated anthem pool entries (Emotion Anthems, Melody-Dominant Anthems, Harmony Anthems).
+
+### 🔥 Anthem Builder + extra spark pools (another big batch)
+- **💥 Anthem Idea** — one click builds a complete Melody-Dominant Anthem concept: random anthem name → vibe line → transform, applied to the Concept and sets Melodic Force to Dominant.
+- **⚡ Max Anthem Idea** — runs the Melody-Dominant Anthem maximizer, then instantly wraps the winning state in a fresh Anthem concept.
+- **💡 Max Concept Anthem** — maximizes concept + title + transform + melody/harmony and locks Melody-Dominant.
+- **🎲 More spark** — five new spark pools: Weather, Light, Sound Source, Future Scene, Anthem Names (250+ new entries).
+- **🎯 Apply challenge** — pushes a rolled challenge straight into the Concept narrative.
+- All of these are also in the ⌘ command palette. Every new entry passes the instrumental-only sanitizer and maximum-energy filter.
+
+### 🎰 MORE MAGIC — random + useful one-click tools
+- **🎰 Lucky Dip** — rolls a whole surprise track in one click: styles, mood, melody, bass, drums, harmony, techno, sound design, mix, arrangement, concept + fresh variations. Keeps whatever you locked.
+- **🕰 Time Machine** — randomizes BPM/key/duration/arrangement/energy shape for a fresh temporal mood.
+- **🎛 Chaos Grid** — rolls a brand-new 16-step rhythm grid + pattern.
+- **🧠 Random Focus** — picks a random section (Melody/Bass/Drums/Tempo/TechnoLab/Concept/Arrangement/Sound/Mix/Spatial/Groove/Texture) and runs a 12-try maximizer on it.
+- **📋 Copy session JSON** — copies the entire current session as a shareable JSON snapshot.
+- **🎯 Go for 100** — Auto-Max targeting a perfect 100/100 (keeps styles, up to 200 tries).
+- All six are also available in the ⌘ command palette.
+
+### 💥 MEGA BATCH — huge extra random content + more one-click tools
+- **16 brand-new spark pools** (hundreds more entries): Titles II, Hooks, Openers, Section Sparks, Style Stunts, Genre Scrambles, Basslines, Drum Lines, Melody Phrases, Concept Twists, Arrangement Packs, Mix Punches, Master Hearts, Suno Cues, DJ Notes, Magic II.
+- **🎲 Roulette** — randomly targets one category (genre / drums / bass / melody / concept / arrangement / mix) and rerolls it.
+- **🎚 Random Layers** — randomizes the detail layers on or off.
+- **🔮 Fate Roll** — pulls from a rotating set of the mega pools.
+- **💪 Max EVERYTHING** — the ultimate: 60 tries that unlock *everything including styles* and keep the best score.
+- **📌 Idea Book** — save up to 40 full snapshots locally; **📖 Load Idea** restores a random saved one; **🧹 Clear Ideas** empties it.
+- **📦 Copy Full Pack** — copies Style Prompt + Full Brief + Suno Kit + Engineer notes in one clipboard payload.
+- Everything is available in the ⌘ command palette and passes the instrumental-only sanitizer.
+
+### 🏭 Sub-Techno style expansion + prompt space optimizer
+- **+69 new styles** (838 total): a large **Sub-Techno** family — Sub-Techno, Darker/Deep Sub-Techno, Subfloor, Sub-Bass, Subsonic, Submersion, SubTunnel, SubHarbour, SubTerra, SubStellar + urban/industrial extras (Underpass, Signal-Flare, Echo-Hall, Asphalt-Bloom, Tram-Wire, Guardrail…), spread across core / sub / rare. All unique and sanitizer-safe.
+- **⚙️ Optimize Prompt** — removes throwaway filler, duplicate punctuation, and repeated detail headers; copies the lean Style Prompt and reports how many chars were saved.
+- **🧵 Slim Mode** — toggles compact prompt building (always ≤1000 chars); the optimizer returns whichever of normal/slim is shorter.
+- **Full Brief de-duplicated** — FILTER / ENVELOPE / LFO / FX CHAIN were already inside the Sound Design line, so those separate lines are gone (frees ~100+ chars for real detail).
+- **Real hooks instead of filler** — "Melody-dominant anthem" now writes the actual melody-concept hook when one exists instead of the generic phrase.
+
+### 📊 List picker prompt scores
+- Every option inside a 📜 picker list now shows, right on the option, how much it contributes to
+  the current prompt **compared with every other option in that same list**:
+  - `★<total>` — the prompt score if this option is chosen.
+  - `E 70` / `M 45` / `H 55` / `C 60` / `S 85` — the option's primary contribution
+    (Energy / Melody / Harmony / Instrumentation coverage / Style focus).
+  - `#1/83` — its **rank** inside that exact list (1 = best for this prompt).
+- Pickers are rescored in the background every time a list opens (first **240** options for huge
+  lists; search to narrow and re-score). The legend at the top of the list tells you what each
+  badge means.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed
@@ -99,6 +173,10 @@ python3 -m http.server 8080
 - Per-field **lock 🔒** and **roll 🎲** on every element, ⚡ power roll, ↶ undo / ↷ redo.
 - **Hide 👁** on every card plus BPM and Key individually — hiding a section removes its
   content from the generated prompt.
+- **📄 Prompt view** (on by default when the page opens) hides every card whose settings do
+  **not** appear in the Style Prompt — Idea Engine, Audition, Genetic Lab, Batch Lab, Stats,
+  Max Roll Lab, Variations, Presets and History stay collapsed until you click the header
+  toggle (or run **🎯 Prompt view** / **👁 Show all** from ⌘K).
 - 3 variations, refreshed on power roll, with "Apply this one".
 - Presets (localStorage), shareable deterministic URLs, history (records only on copy/apply),
   and full **session export / import** as JSON.
