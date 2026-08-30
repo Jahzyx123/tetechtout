@@ -525,5 +525,43 @@ t("opening and scoring a list does not change state", ()=>{
   return w.NF.encodeState(S())===before || "state changed";
 });
 
+console.log("\n== PROMPT VIEW (hide non-prompt sections) ==\n");
+const PROMPT_SET = new Set(["styleCard","feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","conceptCard","arrangementCard","modeCard","layersCard","scoreCard"]);
+const NON_PROMPT = ["sparkCard","auditionCard","geneticLabCard","batchLabCard","statsLabCard","maxRollLabCard","variationsCard","presetsCard","historyCard"];
+t("on open, non-prompt sections are hidden by default", ()=>{
+  w.NF.applyStylePromptFocus();
+  const bad = NON_PROMPT.filter(id=>!w.NF.state.hidden[id]);
+  return !bad.length || ("still visible: "+bad.join(","));
+});
+t("prompt-building sections stay visible on open", ()=>{
+  w.NF.applyStylePromptFocus();
+  const bad=[...PROMPT_SET].filter(id=>w.NF.state.hidden[id]);
+  return !bad.length || ("hidden: "+bad.join(","));
+});
+t("prompt view leaves bpm/key row flags alone", ()=>{
+  w.NF.applyStylePromptFocus();
+  return w.NF.state.hidden.bpm===false && w.NF.state.hidden.key===false || "bpm/key got auto-hidden";
+});
+t("toggle prompt view hides then shows every card", ()=>{
+  w.NF.toggleStylePromptFocus(); // off -> show all
+  const allOff = NON_PROMPT.every(id=>!w.NF.state.hidden[id]);
+  w.NF.toggleStylePromptFocus(); // on -> hide again
+  const on = NON_PROMPT.every(id=>w.NF.state.hidden[id]);
+  return (allOff && on) || ("allOff="+allOff+" on="+on);
+});
+t("prompt view header button flips text with the mode", ()=>{
+  w.NF.showAllSections();
+  const offTxt=d.getElementById("styleFocusBtn").textContent.trim();
+  w.NF.toggleStylePromptFocus();
+  const onTxt=d.getElementById("styleFocusBtn").textContent.trim();
+  return (offTxt.includes("Show all") && onTxt.includes("Prompt view")) || (offTxt+" -> "+onTxt);
+});
+t("prompt view does not use undo history for auto-open", ()=>{
+  w.NF.applyStylePromptFocus();
+  const before=w.NF.encodeState(S());
+  w.NF.applyStylePromptFocus(); // idempotent
+  return w.NF.encodeState(S())===before || "auto-apply changed state";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);

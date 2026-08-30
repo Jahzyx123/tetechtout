@@ -444,6 +444,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
       <button id="masterLibBtn" class="ghost" title="Browse every list — manual selection for all rolls">📚 Master List</button>
       <button id="cmdBtn" class="ghost" title="Command palette (Ctrl/Cmd+K)">⌘ Commands</button>
       <button id="helpBtn" class="ghost" title="Keyboard shortcuts (?)">⌨</button>
+      <button id="styleFocusBtn" class="ghost" title="Hide every card whose settings do not appear in the Style Prompt">📄 Prompt view</button>
       <button id="maxScoreHeaderBtn" class="ghost" title="Reroll everything except Primary/Secondary to maximize Prompt Score">🏆 Max Score</button>
       <button id="powerRollBtn" class="power">⚡ Power roll</button>
     </div>
@@ -456,7 +457,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
 
       <!-- IDEA ENGINE / SPARKS -->
       <div class="card" id="sparkCard">
-        <h2><span class="dot"></span>Idea Engine — Sparks &amp; Wildcards<span class="spacer"></span><span class="readout" id="sparkCount"></span></h2>
+        <h2><span class="dot"></span>Idea Engine — Sparks &amp; Wildcards<span class="spacer"></span><span class="readout" id="sparkCount"></span><button class="hidebtn" data-hide="sparkCard" title="Show/hide whole card">👁</button></h2>
         <div class="cardbody">
           <div class="bigval" id="v-spark">— press any button for a random spark —</div>
           <div class="cluster">
@@ -8061,7 +8062,7 @@ function defaultLocks(){
   return l;
 }
 function defaultHidden(){
-  return { bpm:false, key:false, styleCard:false, feelCard:false, bassCard:false, drumsCard:false, technoLabCard:false,
+  return { bpm:false, key:false, sparkCard:false, styleCard:false, feelCard:false, bassCard:false, drumsCard:false, technoLabCard:false,
            geneticLabCard:false, rhythmLabCard:false, harmonyLabCard:false, soundDesignCard:false, batchLabCard:false, statsLabCard:false,
            mixMasterCard:false, spatialModCard:false, grooveMelodicCard:false, textureFxCard:false,
            conceptCard:false, arrangementCard:false, modeCard:false, layersCard:false,
@@ -9339,7 +9340,7 @@ function render(){
     btn.textContent = hidden ? "🙈" : "👁";
   });
   // hidden cards
-  ["styleCard","feelCard","bassCard","drumsCard","technoLabCard","conceptCard","arrangementCard","modeCard","layersCard",
+  ["sparkCard","styleCard","feelCard","bassCard","drumsCard","technoLabCard","conceptCard","arrangementCard","modeCard","layersCard",
    "auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard","geneticLabCard","rhythmLabCard","harmonyLabCard","soundDesignCard","batchLabCard","statsLabCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard"].forEach(id=>{
     const card = $(id);
     if(card) card.classList.toggle("hidden", state.hidden[id]);
@@ -9454,6 +9455,44 @@ function toggleLayer(id){ commit(); state.layers[id] = !state.layers[id]; afterC
 function toggleInstrumental(){ commit(); state.instrumental = !state.instrumental; afterChange(); }
 function toggleVocal(){ commit(); state.vocalMode = !state.vocalMode; afterChange(); }
 function toggleHide(key){ commit(); state.hidden[key] = !state.hidden[key]; afterChange(); }
+
+const CARD_IDS = ["sparkCard","styleCard","feelCard","bassCard","drumsCard","technoLabCard","geneticLabCard","rhythmLabCard","harmonyLabCard","soundDesignCard","batchLabCard","statsLabCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","conceptCard","arrangementCard","modeCard","layersCard","auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard"];
+const STYLE_PROMPT_SECTIONS = new Set(["styleCard","feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","conceptCard","arrangementCard","modeCard","layersCard","scoreCard"]);
+let stylePromptFocus = true;
+function setStyleFocusBtn(){
+  const btn = $("styleFocusBtn");
+  if(!btn) return;
+  btn.textContent = stylePromptFocus ? "📄 Prompt view" : "🌐 Show all";
+  btn.title = stylePromptFocus ? "Hide every card whose settings do not appear in the Style Prompt" : "Show every card";
+}
+function applyStylePromptFocus(){
+  // On open, collapse every section whose settings are not emitted into the Style Prompt.
+  for(const id of CARD_IDS){
+    if(!STYLE_PROMPT_SECTIONS.has(id)) state.hidden[id] = true;
+  }
+}
+function toggleStylePromptFocus(){
+  commit();
+  stylePromptFocus = !stylePromptFocus;
+  for(const id of CARD_IDS){
+    if(stylePromptFocus){
+      if(!STYLE_PROMPT_SECTIONS.has(id)) state.hidden[id] = true;
+    } else {
+      state.hidden[id] = false;
+    }
+  }
+  setStyleFocusBtn();
+  afterChange();
+  toast(stylePromptFocus ? "🎯 Prompt view — non-prompt sections hidden" : "👁 All sections shown");
+}
+function showAllSections(){
+  commit();
+  Object.keys(state.hidden).forEach(k=>state.hidden[k]=false);
+  stylePromptFocus = false;
+  setStyleFocusBtn();
+  afterChange();
+  toast("👁 All sections shown");
+}
 
 function doRoll(kind){
   if(kind==="fuse"){
@@ -11204,7 +11243,8 @@ const COMMANDS = [
   {icon:"↷",  name:"Redo",                         key:"⌘⇧Z",   run:()=>redo()},
   {icon:"🔓", name:"Unlock everything",            key:"",      run:()=>{ commit(); Object.keys(state.locks).forEach(k=>state.locks[k]=false); afterChange(); toast("🔓 All unlocked"); }},
   {icon:"🔒", name:"Lock everything",              key:"",      run:()=>{ commit(); Object.keys(ROLL_FN).forEach(k=>state.locks[k]=true); afterChange(); toast("🔒 All locked"); }},
-  {icon:"👁", name:"Show all sections",            key:"",      run:()=>{ commit(); Object.keys(state.hidden).forEach(k=>state.hidden[k]=false); afterChange(); toast("👁 All sections shown"); }},
+  {icon:"👁", name:"Show all sections",            key:"",      run:showAllSections},
+  {icon:"🎯", name:"Prompt view (hide non-prompt sections)", key:"", run:toggleStylePromptFocus},
   {icon:"🧹", name:"Clear all detail layers",      key:"",      run:()=>{ commit(); state.layers={}; afterChange(); toast("Layers cleared"); }},
   {icon:"🎚", name:"Toggle melody microtonality",   key:"",      run:()=>$("microMelodyBtn").click()},
   {icon:"🎚", name:"Toggle bass microtonality",     key:"",      run:()=>$("microBassBtn").click()},
@@ -11580,6 +11620,7 @@ $("vocalToggle").addEventListener("click", toggleVocal);
 $("savePresetBtn").addEventListener("click", savePreset);
 $("clearHistoryBtn").addEventListener("click", clearHistory);
 $("cmdBtn").addEventListener("click", openCmd);
+if($("styleFocusBtn")) $("styleFocusBtn").addEventListener("click", toggleStylePromptFocus);
 $("stashBBtn").addEventListener("click", stashB);
 $("swapABBtn").addEventListener("click", swapAB);
 $("copyArcBtn").addEventListener("click", ()=>copyText(arcTags(),"Section tags"));
@@ -11737,7 +11778,7 @@ window.NF = {
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
   encodeState, decodeState, defaultState, doRoll, undo, redo, render, renderOutput,
-  engineerLines, djLines, Audition, openCmd, closeCmd, renderCmd, runCmd, openPicker, scoreStyleGridOptions,
+  engineerLines, djLines, Audition, openCmd, closeCmd, renderCmd, runCmd, openPicker, scoreStyleGridOptions, toggleStylePromptFocus, showAllSections, applyStylePromptFocus, setStyleFocusBtn,
   energyArc, arcLine, arcTags, scorePrompt, stashB, swapAB, exportSession, doMaxScoreRoll, doMaxScoreRollSection, doMaxTurbo, doMaxStack, doMaxEnergy, doMaxLayers, doMaxDriveAcid, doMaxAuto, doMaxAtom, scoreFor,
   sanitize, isDirty, conceptLine, styleLine,
   get slotB(){ return slotB; },
@@ -11844,6 +11885,8 @@ function init(){
     rollAllInto(state);
   }
   rng = mulberry32(state.seed);
+  applyStylePromptFocus();
+  setStyleFocusBtn();
   try{ slotB = localStorage.getItem("tetech_slotb") || null; }catch(e){ slotB = null; }
   renderKeyTable();
   updateSparkCount();

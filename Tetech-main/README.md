@@ -173,6 +173,10 @@ python3 -m http.server 8080
 - Per-field **lock 🔒** and **roll 🎲** on every element, ⚡ power roll, ↶ undo / ↷ redo.
 - **Hide 👁** on every card plus BPM and Key individually — hiding a section removes its
   content from the generated prompt.
+- **📄 Prompt view** (on by default when the page opens) hides every card whose settings do
+  **not** appear in the Style Prompt — Idea Engine, Audition, Genetic Lab, Batch Lab, Stats,
+  Max Roll Lab, Variations, Presets and History stay collapsed until you click the header
+  toggle (or run **🎯 Prompt view** / **👁 Show all** from ⌘K).
 - 3 variations, refreshed on power roll, with "Apply this one".
 - Presets (localStorage), shareable deterministic URLs, history (records only on copy/apply),
   and full **session export / import** as JSON.
