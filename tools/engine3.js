@@ -668,8 +668,6 @@ function buildCommands(){
   add("🎲 Roll bass","bass voice/movement/relation",()=>doRoll("bass"),"B");
   add("🎲 Roll drums","kick/hats/snare/perc/groove",()=>doRoll("drums"),"D");
   add("🎲 Roll techno lab","drive/acid/texture/rave/industrial",()=>doRoll("technoLab"),"T");
-  add("🎲 Roll concept","world/location/visual/narrative…",()=>doRoll("concept"),"C");
-  add("🎲 Roll arrangement","structure + energy shape",()=>doRoll("arrangement"),"A");
   add("🎲 Roll sound design","filters/env/lfo/reverb/delay…",()=>doRoll("soundDesign"),"S");
   add("🎲 Roll mix & master","density/energy/glue/master chain",()=>doRoll("mixMaster"),"X");
   add("🎲 Roll spatial & mod","stereo/modulation/texture",()=>doRoll("spatialMod"));
@@ -679,16 +677,9 @@ function buildCommands(){
   add("🎲 Roll BPM","fresh tempo",()=>doRoll("bpm"));
   add("🎲 Roll variations","3 alternative ideas",()=>doRoll("variations"),"V");
   add("🔀 Fuse styles","merge primary + secondary",()=>doRoll("fuse"),"F");
-  add("🏆 Max Score (keep styles)","20 attempts",()=>doMaxScoreRoll(20),"M2");
-  add("🚀 Turbo Max (100 attempts)","styles locked, everything else maxed",()=>doMaxTurbo(100),"M3");
-  add("🏆 Max Melody","melody-dominant anthem hunt",()=>doMaxMelodyDominant(25),"M4");
-  add("🏆 Max Bass","best bass voice/movement/relation",()=>doMaxScoreRollSection(["bassVoice","bassMovement","bassRel"],15,"Bass"));
-  add("🏆 Max Drums","best drum kit + groove",()=>doMaxScoreRollSection(["kick","hats","snare","perc","toms","groove","swing","sync","intensity"],15,"Drums"));
-  add("🏆 Max Techno Lab","drive/acid/texture/rave/industrial",()=>doMaxScoreRollSection(["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"],15,"Techno Lab"));
-  add("🏆 Max Sound Design","filters/env/lfo/reverb/delay",()=>doMaxScoreRollSection(["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity"],15,"Sound Design"));
-  add("🏆 Max Mix & Master","density/master chain",()=>doMaxScoreRollSection(["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain"],15,"Mix Master"));
-  add("🏆 Max Arrangement","best structure",()=>doMaxScoreRollSection(["arrangement"],15,"Arrangement"));
-  add("🏆 Max Concept","best concept + title",()=>doMaxScoreRollSection(["concept","concept-title","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-transform"],15,"Concept"));
+  add("🏆 Maximize my prompt (20 tries)","styles locked",()=>doMaxScoreRoll(20),"M2");
+  add("🚀 Turbo Max (100 tries)","styles locked, everything else maxed",()=>doMaxTurbo(100),"M3");
+  add("💡 New idea","one random spark",()=>ideaRoll(),"I");
   add("📜 Open style picker","manual list",()=>openStyleModal(),"L");
   add("📜 Open master library","every pool, one screen",()=>openMasterLibrary(),"M5");
   add("👁 Hide/show sections","toggle prompt view",()=>toggleStylePromptFocus(),"H");
@@ -923,36 +914,20 @@ function initEvents(){
         return;
       }
     }
-    const sparkBtn = target.closest("[data-spark]");
-    if(sparkBtn){ sparkShow(sparkBtn.getAttribute("data-spark")); return; }
-    const sparkMegaBtn2 = target.closest("#sparkMegaBtn"); if(sparkMegaBtn2){ sparkMega(); return; }
+    const ideaBtn = target.closest("#ideaBtn");
+    if(ideaBtn){ ideaRoll(); return; }
     const anthemBtn = target.closest("#anthemIdeaBtn"); if(anthemBtn){ anthemIdea(); return; }
     const luckyBtn = target.closest("#luckyDipBtn"); if(luckyBtn){ luckyDip(); return; }
     const timeBtn = target.closest("#timeMachineBtn"); if(timeBtn){ timeMachine(); return; }
-    const chaosBtn = target.closest("#chaosGridBtn"); if(chaosBtn){ chaosGrid(); return; }
-    const rouletteBtn = target.closest("#rouletteBtn"); if(rouletteBtn){ roulette(); return; }
-    const layerBtn = target.closest("#randomLayerBtn"); if(layerBtn){ randomLayers(); return; }
-    const fateBtn = target.closest("#fateRollBtn"); if(fateBtn){ fateRoll(); return; }
     const copySparkBtn = target.closest("#sparkCopyBtn"); if(copySparkBtn){ sparkCopy(); return; }
     const titleApplyBtn = target.closest("#sparkTitleApplyBtn");
     if(titleApplyBtn){
-      if(lastSparkKind!=="Title" && lastSparkKind!=="Title II"){ toast("Roll a Title spark first (🏷 Title)"); return; }
+      if(lastSparkKind!=="Title" && lastSparkKind!=="Title II"){ toast("Roll a Title idea first (🏷 Title)"); return; }
       sparkApplyTitle(); return;
-    }
-    const mashApplyBtn = target.closest("#sparkMashApplyBtn");
-    if(mashApplyBtn){
-      if(lastSparkKind!=="Mash-up"){ toast("Roll a Mash-up spark first (🧬 Mash-up)"); return; }
-      sparkApplyMash(); return;
-    }
-    const transformApplyBtn = target.closest("#sparkTransformApplyBtn");
-    if(transformApplyBtn){
-      if(lastSparkKind!=="Transform"){ toast("Roll a Transform spark first (🪄 Transform)"); return; }
-      sparkApplyTransform(); return;
     }
     const moreSparkBtn = target.closest("#sparkMoreBtn");
     if(moreSparkBtn){
-      if(!lastSparkKind){ toast("Roll a spark first"); return; }
-      sparkShow(lastSparkKind);
+      ideaRoll();
       return;
     }
     const saveIdeaBtn = target.closest("#saveIdeaBtn"); if(saveIdeaBtn){ saveIdea(); return; }
@@ -1122,7 +1097,6 @@ function initEvents(){
       toast("🎚 "+on+" layers rolled");
       return;
     }
-    const maxAllBtn = target.closest("#maxAllBtn"); if(maxAllBtn){ doMaxScoreRoll(20); return; }
     const maxTurboBtn = target.closest("#maxTurboBtn"); if(maxTurboBtn){ doMaxTurbo(100); return; }
     const maxScoreBtn = target.closest("#maxScoreBtn"); if(maxScoreBtn){ doMaxScoreRoll(20); return; }
     const maxMelodyBtn = target.closest("#maxMelodyBtn"); if(maxMelodyBtn){ doMaxMelodyDominant(25); return; }
@@ -1260,7 +1234,8 @@ function boot(){
   if(voiceRelSel) voiceRelSel.innerHTML = ["supports","follows","counters"].map(v=>'<option value="'+v+'">'+v+'</option>').join("");
   const durationSel = $("durationSel");
   if(durationSel) durationSel.innerHTML = ["compact","standard","extended"].map(v=>'<option value="'+v+'">'+v+'</option>').join("");
-  buildSparkButtons();
+  buildIdeaChips();
+  buildMaxChips();
   buildCommands();
   renderCommands();
   initEvents();
@@ -1296,7 +1271,8 @@ function boot(){
     doMaxScoreRoll, doMaxScoreRollSection, doMaxTurbo, doMaxMelodyDominant,
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
-    rollGroup, buildSlimStylePrompt
+    rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,
+    SECTION_MAX_DEFS
   };
 }
 

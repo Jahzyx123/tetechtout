@@ -29,8 +29,8 @@ function buildDynamicRows(){
   });
 }
 
-const CARD_IDS = ["sparkCard","styleCard","feelCard","bassCard","drumsCard","technoLabCard","rhythmLabCard","harmonyLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","conceptCard","arrangementCard","modeCard","layersCard","auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard"];
-const STYLE_PROMPT_SECTIONS = new Set(["styleCard","feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","conceptCard","arrangementCard","modeCard","layersCard","scoreCard"]);
+const CARD_IDS = ["sparkCard","styleCard","feelCard","bassCard","drumsCard","technoLabCard","rhythmLabCard","harmonyLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","modeCard","layersCard","auditionCard","scoreCard","maxRollLabCard","variationsCard","presetsCard","historyCard"];
+const STYLE_PROMPT_SECTIONS = new Set(["styleCard","feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard","modeCard","layersCard","scoreCard"]);
 
 const lastMicro = {microMelody:"quarter", microBass:"quarter"};
 function render(){
@@ -175,8 +175,8 @@ function renderOutput(){
   const limit = currentTab==="style" ? 1000 : (currentTab==="brief" ? 3000 : 8000);
   let html = escapeHtml(text);
   const secs = (currentTab==="kit"||currentTab==="eng")
-    ? ["STYLE PROMPT:","FULL BRIEF:","ARRANGEMENT:","VOCAL POLICY:","CONCEPT:","ENGINEER NOTES:","DJ NOTES:","KEY:","TEMPO:","LOW END:","SIDECHAIN:","STEREO:","MASTER:","CUE:","MIX RANGE:","SLOT:","REFERENCE:","ENERGY ARC:"]
-    : ["STYLE:","EMOTION:","MELODY CONCEPT:","MELODY:","HARMONY:","BASS:","DRUMS:","ARRANGEMENT:","CONCEPT —","MIX &amp; DETAIL:","VOCAL POLICY:","VOCAL:"];
+    ? ["STYLE PROMPT:","FULL BRIEF:","ENERGY ARC:","VOCAL POLICY:","ENGINEER NOTES:","DJ NOTES:","KEY:","TEMPO:","LOW END:","SIDECHAIN:","STEREO:","MASTER:","CUE:","MIX RANGE:","SLOT:","REFERENCE:"]
+    : ["STYLE:","EMOTION:","MELODY CONCEPT:","MELODY:","HARMONY:","BASS:","DRUMS:","ENERGY ARC:","MIX &amp; DETAIL:","VOCAL POLICY:","VOCAL:"];
   secs.forEach(s=>{ html = html.replace(new RegExp(escapeRe(s),'g'), '<span class="sec">'+s+'</span>'); });
   const outbox = $("outbox");
   if(outbox) outbox.innerHTML = html;
@@ -510,29 +510,32 @@ function renderAB(){
 
 /* ---------------------------- MAX ROLL ---------------------------- */
 const SECTION_MAX_DEFS = {
-  melody: { label:"Melody", keys:["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation"] },
-  bass: { label:"Bass", keys:["bassVoice","bassMovement","bassRel"] },
-  drums: { label:"Drums", keys:["kick","hats","snare","perc","toms","groove","swing","sync","intensity"] },
-  tempo: { label:"Tempo", keys:["bpm"] },
-  tempoLab: { label:"Tempo & Key", keys:["bpm","key","rootPc","scaleId"] },
-  technoLab: { label:"Techno Lab", keys:["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"] },
-  concept: { label:"Concept", keys:["concept","concept-title","concept-world","concept-location","concept-visual","concept-narrative","concept-sensation","concept-event","concept-conflict","concept-crowd","concept-transform"] },
-  arrangement: { label:"Arrangement", keys:["arrangement"] },
-  rhythm: { label:"Rhythm", keys:["rhythm","rhythmPattern","ghostNotes","humanizeType","pocketType","sectionDensity"] },
-  harmony: { label:"Harmony", keys:["harmony","chordColor","chordProg","voicingType","inversionType","tensionType","resolutionType"] },
-  soundDesign: { label:"Sound Design", keys:["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity"] },
-  mixMaster: { label:"Mix Master", keys:["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain","filterCutoff","filterResonance","eqType","compressionType","saturationType","sidechainCurve"] },
-  spatialMod: { label:"Spatial Mod", keys:["stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer","grainType","shimmerType","atmosphereType","reverbSize","reverbDecay","stereoEnhance"] },
-  grooveMelodic: { label:"Groove Melodic", keys:["ghostNotes","humanizeType","pocketType","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType","delayTime","delayFeedback","sectionDensity"] },
-  textureFx: { label:"Texture FX", keys:["rideType","crashType","clapLayer","percFill","fxType","transitionType","riserType","impactType","energyCurve","buildType","dropType","chopType"] }
+  melody: { label:"🎵 Melody", keys:["feeling","flavor","direction","leadVoice","leadPerf","harmony","chordColor","arpeggio","contour","rhythm","melodyConcept","melodyConcept-story","melodyConcept-role","melodyConcept-motion","melodyConcept-hook","counter-melody","counter-relation"] },
+  bass: { label:"🔊 Bass", keys:["bassVoice","bassMovement","bassRel"] },
+  drums: { label:"🥁 Drums", keys:["kick","hats","snare","perc","toms","groove","swing","sync","intensity"] },
+  tempoLab: { label:"⚙️ Tempo & Key", keys:["bpm","key","rootPc","scaleId"] },
+  technoLab: { label:"🧪 Techno", keys:["technoDrive","technoAcid","technoTexture","technoRave","technoIndustrial"] },
+  harmony: { label:"🎼 Chords", keys:["harmony","chordColor","chordProg","voicingType","inversionType","tensionType","resolutionType"] },
+  rhythm: { label:"🥁 Rhythm", keys:["rhythm","rhythmPattern","ghostNotes","humanizeType","pocketType","sectionDensity"] },
+  soundDesign: { label:"⚗️ Sound", keys:["filterType","envelopeType","lfoType","distortionType","reverbType","delayType","sidechainType","stereoType","fxChain","soundIntensity"] },
+  mixMaster: { label:"🎛 Mix & Master", keys:["mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness","masterColor","masterChain","filterCutoff","filterResonance","eqType","compressionType","saturationType","sidechainCurve"] },
+  spatialMod: { label:"🌌 Spatial", keys:["stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","modDest","modRate","modDepth","textureLayer","grainType","shimmerType","atmosphereType","reverbSize","reverbDecay","stereoEnhance"] },
+  grooveMelodic: { label:"🎼 Groove", keys:["ghostNotes","humanizeType","pocketType","ornamentType","vibratoType","portamentoType","scaleRun","intervalLeap","voicingType","inversionType","tensionType","resolutionType","delayTime","delayFeedback","sectionDensity"] },
+  textureFx: { label:"💥 Texture & FX", keys:["rideType","crashType","clapLayer","percFill","fxType","transitionType","riserType","impactType","energyCurve","buildType","dropType","chopType"] }
 };
-const SECTION_MAX_BTN2 = {};
-Object.keys(SECTION_MAX_DEFS).forEach(k=>{
-  const def = SECTION_MAX_DEFS[k];
-  const id = "max" + (k==="tempoLab" ? "TempoLab" : k.charAt(0).toUpperCase()+k.slice(1)) + "Btn2";
-  SECTION_MAX_BTN2[id] = def;
-});
-SECTION_MAX_BTN2["maxMelodyBtn2"] = SECTION_MAX_DEFS.melody;
+function buildMaxChips(){
+  const wrap = $("maxChips"); if(!wrap) return;
+  wrap.innerHTML = "";
+  Object.keys(SECTION_MAX_DEFS).forEach(k=>{
+    const def = SECTION_MAX_DEFS[k];
+    const el = document.createElement("button");
+    el.className = "toggle";
+    el.innerHTML = '<span class="led"></span>' + def.label;
+    el.title = "Roll 15 random tries of this part, keep the best score";
+    el.addEventListener("click", ()=>doMaxScoreRollSection(def.keys, 15, def.label));
+    wrap.appendChild(el);
+  });
+}
 let maxRollRunning = false;
 function yieldUI(){ return new Promise(r=>setTimeout(r, 12)); }
 function scoreFor(s){
@@ -552,7 +555,7 @@ async function doMaxScoreRoll(attempts){
   const bestStart = snapshot();
   let best = bestStart;
   let bestScore = scoreFor(bestStart).total;
-  const btns = ["maxScoreBtn","maxAllBtn","maxTurboBtn"].map(id=>$(id)).filter(Boolean);
+  const btns = ["maxScoreBtn","maxTurboBtn"].map(id=>$(id)).filter(Boolean);
   btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
   setMaxStatus("Searching "+attempts+" combos — styles locked");
   toast("🏆 Searching "+attempts+" combos — styles locked: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"));
@@ -584,7 +587,7 @@ async function doMaxScoreRoll(attempts){
   rng = mulberry32(state.seed);
   afterChange();
   flash($("scoreCard"));
-  btns.forEach(b=>{ if(b){ b.disabled=false; if(b.id==="maxAllBtn") b.textContent="🏆 Max ALL (20)"; else if(b.id==="maxTurboBtn") b.textContent="🚀 Turbo Max 100"; else b.textContent="🏆 Max Score (keep styles)"; } });
+  btns.forEach(b=>{ if(b){ b.disabled=false; if(b.id==="maxTurboBtn") b.textContent="🚀 Turbo — 100 tries"; else b.textContent="🏆 MAXIMIZE MY PROMPT"; } });
   setMaxStatus("Best "+bestScore+"/100 after "+attempts+" tries — "+(state.primaryStyle||"")+" + "+(state.secondaryStyle||""));
   toast("🏆 Best score "+bestScore+" /100 — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+attempts+" tries");
   maxRollRunning = false;
@@ -667,13 +670,71 @@ function resetMaxState(){
   toast("🔓 Max state reset — you can roll again");
 }
 
-/* ---------------------------- IDEA ENGINE / SPARKS ---------------------------- */
+/* ---------------------------- IDEA ENGINE ----------------------------
+   One button, one idea. Pick a category (or roll random), read the
+   spark, use it as the song title, copy it, or save it to the Idea
+   Book. Simple on purpose. */
 let lastSpark = "", lastSparkKind = "", lastSparkKindLabel = "";
+let ideaCat = "random";
+const IDEA_CATS = [
+  ["random",     "✨ Random"],
+  ["title",      "🏷 Title"],
+  ["hook",       "🪝 Hook"],
+  ["vibe",       "🌊 Vibe"],
+  ["scene",      "🗺 Scene"],
+  ["constraint", "⛓ Constraint"],
+  ["melody",     "🎼 Melody phrase"]
+];
+const IDEA_POOLS = {
+  title:      SPARK_TITLES,
+  hook:       SPARK_HOOKS,
+  vibe:       SPARK_VIBES,
+  scene:      SPARK_PLACES,
+  constraint: SPARK_CONSTRAINTS,
+  melody:     SPARK_MELODY_PHRASES
+};
+const IDEA_LABELS = { title:"🏷 Title", hook:"🪝 Hook", vibe:"🌊 Vibe", scene:"🗺 Scene", constraint:"⛓ Constraint", melody:"🎼 Melody phrase" };
 function sparkPick(a){ return a[Math.floor(Math.random()*a.length)] || ""; }
+function updateIdeaButtons(){
+  const canTitle = lastSparkKind === "Title" || lastSparkKind === "Title II";
+  const btn = $("sparkTitleApplyBtn");
+  if(btn) btn.disabled = !canTitle;
+}
 function setSpark(text, kind, meta){
   lastSpark = text; lastSparkKind = kind; lastSparkKindLabel = meta;
   const el = $("v-spark"); if(el) el.textContent = text;
   const m = $("sparkMeta"); if(m) m.textContent = meta || "";
+  updateIdeaButtons();
+}
+function buildIdeaChips(){
+  const wrap = $("ideaCats"); if(!wrap) return;
+  wrap.innerHTML = "";
+  IDEA_CATS.forEach(([id, label])=>{
+    const el = document.createElement("button");
+    el.className = "toggle" + (id === ideaCat ? " on" : "");
+    el.innerHTML = '<span class="led"></span>' + label;
+    el.addEventListener("click", ()=>{
+      ideaCat = id;
+      buildIdeaChips();
+      ideaRoll(id);
+    });
+    wrap.appendChild(el);
+  });
+  const cnt = $("sparkCount");
+  if(cnt) cnt.textContent = IDEA_CATS.reduce((a,[id])=>a+(IDEA_POOLS[id]?IDEA_POOLS[id].length:0),0) + " ideas loaded";
+}
+function ideaRoll(cat){
+  cat = cat || ideaCat;
+  if(cat === "random"){
+    const list = IDEA_CATS.filter(c=>c[0]!=="random");
+    cat = list[Math.floor(Math.random()*list.length)][0];
+  }
+  const pool = IDEA_POOLS[cat];
+  if(!pool || !pool.length){ toast("No ideas in that category"); return; }
+  const text = sparkPick(pool);
+  const kind = cat === "title" ? "Title" : (IDEA_LABELS[cat] || cat);
+  setSpark(text, kind, IDEA_LABELS[cat] + " · " + pool.length + " options · tap 🎲 Another one for more");
+  return text;
 }
 const SPARK_KIND_DEFS = [
   ["💡 Idea", SPARK_IDEAS, "Idea"],
@@ -708,20 +769,6 @@ const SPARK_KIND_DEFS = [
   ["🎬 Anthem Name", SPARK_ANTHEM_NAMES, "Anthem Name"],
   ["🏷 Title II", SPARK_TITLES2, "Title II"]
 ];
-function buildSparkButtons(){
-  const wrap = $("sparkButtons"); if(!wrap) return;
-  wrap.innerHTML = "";
-  SPARK_KIND_DEFS.forEach(([label, pool, kind])=>{
-    const b = document.createElement("button");
-    b.className = "sm";
-    b.textContent = label;
-    b.title = pool.length + " options";
-    b.addEventListener("click", ()=>sparkShow(kind));
-    wrap.appendChild(b);
-  });
-  const n = SPARK_KIND_DEFS.reduce((a,[l,p])=>a+p.length,0) + SPARK_MEGA_LINES.length;
-  const cnt = $("sparkCount"); if(cnt) cnt.textContent = n + " sparks loaded";
-}
 function sparkShow(kind){
   const def = SPARK_KIND_DEFS.find(x=>x[2]===kind);
   if(!def){ toast("Unknown spark pool"); return; }

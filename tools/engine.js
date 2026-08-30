@@ -161,7 +161,7 @@ function defaultLocks(){
 function defaultHidden(){
   return { bpm:false, key:false, sparkCard:false, styleCard:false, feelCard:false, bassCard:false, drumsCard:false, technoLabCard:false,
            rhythmLabCard:false, harmonyLabCard:false, soundDesignCard:false, mixMasterCard:false, spatialModCard:false,
-           grooveMelodicCard:false, textureFxCard:false, conceptCard:false, arrangementCard:false, modeCard:false, layersCard:false,
+           grooveMelodicCard:false, textureFxCard:false, modeCard:false, layersCard:false,
            auditionCard:false, scoreCard:false, maxRollLabCard:false, variationsCard:false, presetsCard:false, historyCard:false };
 }
 function defaultState(){
@@ -610,15 +610,12 @@ function buildStylePrompt(){
     const tfl = textureFxLine(false);
     if(tfl) blocks.push({t: tfl, compact: textureFxLine(true), required:false, priority:5.88});
   }
-  if(!state.hidden.conceptCard) blocks.push({t: SLIM ? conceptLine(true) : conceptLine(false), compact: conceptLine(true), required:true, priority:6});
-  if(!state.hidden.arrangementCard) blocks.push({t: arrangementLine(), compact: "Arrangement: " + (state.arrangement ? state.arrangement.split(",")[0] : ""), required:false, priority:7});
-  blocks.push({t: layerLine(), required:false, priority:8});
+  blocks.push({t: layerLine(), required:false, priority:6});
   let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20), ". ");
   body = sanitize(body);
   body = body.replace(/[.\s]+$/,"");
   if(!/Bass:/.test(body) && !state.hidden.bassCard) body += ". " + bassLine();
   if(!/Drums:/.test(body) && !state.hidden.drumsCard) body += ". " + drumLine();
-  if(!/Concept:/.test(body) && !state.hidden.conceptCard) body += ". " + conceptLine(true);
   if(state.counterMelody && state.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". Counter-melody: " + state.counterMelody.voice;
   if(state.voiceConcept && state.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + state.voiceConcept.voice;
   body = sanitize(body);
@@ -684,11 +681,7 @@ function buildFullBrief(){
     const tfl = textureFxLine(false);
     if(tfl) sec.push(tfl.toUpperCase() + ".");
   }
-  if(!state.hidden.arrangementCard){
-    sec.push("ARRANGEMENT: " + state.arrangement);
-    sec.push("ENERGY ARC: " + arcLine() + ".");
-  }
-  if(!state.hidden.conceptCard) sec.push("CONCEPT — " + c.title + ": World: " + c.world + ". Location: " + c.location + ". Visual: " + c.visual + ". Narrative: " + c.narrative + ". Sensation: " + c.sensation + ". Event: " + c.event + ". Conflict: " + c.conflict + ". Crowd: " + c.crowd + ". Transformation: " + c.transform + ".");
+  sec.push("ENERGY ARC: " + arcLine() + ".");
   if(layers.length) sec.push("MIX & DETAIL: " + layers.map(l=>l.phrase).join(", ") + ".");
   sec.push("VOCAL POLICY: " + vocalLine() + ".");
   let text = sec.map(s=>sanitize(s)).filter(Boolean).join("\n\n");
@@ -701,18 +694,14 @@ function buildFullBrief(){
   return text;
 }
 function buildKit(){
-  const c = state.concept;
   const sp = buildStylePrompt();
   const fb = buildFullBrief();
   const policy = vocalLine() || (state.vocalMode ? "vocal mode enabled — " + pick(VOCAL_DIRECTIONS) : "no vocals");
-  const arrTags = arcTags();
   return [
     "STYLE PROMPT:\n" + sp,
     "FULL BRIEF:\n" + fb,
-    "ARRANGEMENT:\n" + arrTags,
-    "ENERGY ARC:\n" + arcLine(),
-    "VOCAL POLICY:\n" + policy,
-    "CONCEPT:\n" + sanitize(c.title + " — " + c.world + "; " + c.location + "; " + c.visual + "; " + c.narrative + "; " + c.sensation + "; " + c.event + "; " + c.conflict + "; " + c.crowd + "; " + c.transform + ".")
+    "ENERGY ARC:\n" + arcLine() + "\n\n" + arcTags(),
+    "VOCAL POLICY:\n" + policy
   ].join("\n\n");
 }
 function buildEngineer(){

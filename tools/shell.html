@@ -268,6 +268,7 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
 .foot{margin-top:28px;text-align:center;color:var(--text-faint);font-family:var(--mono);font-size:10.5px;line-height:1.8;position:relative}
 .foot .sig{position:absolute;right:2px;bottom:2px;font-size:9.5px;letter-spacing:1px;color:var(--cyan);opacity:.5}
 .rhythmGrid{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin:8px 0}
+.rhythmGrid .rhythmCell:nth-child(4n){border-color:var(--line-bright)}
 .rhythmCell{height:30px;background:rgba(3,10,17,.8);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:.12s;
   display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--text-faint)}
 .rhythmCell:hover{border-color:var(--line-bright);color:var(--cyan)}
@@ -314,34 +315,33 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
 
       <!-- IDEA ENGINE -->
       <div class="card" id="sparkCard">
-        <h2><span class="dot"></span>Idea Engine — Sparks &amp; Melody Ideas<span class="spacer"></span><span class="readout" id="sparkCount"></span><button class="hidebtn" data-hide="sparkCard" title="Show/hide whole card">👁</button></h2>
+        <h2><span class="dot"></span>Idea Engine<span class="spacer"></span><span class="readout" id="sparkCount"></span><button class="hidebtn" data-hide="sparkCard" title="Show/hide whole card">👁</button></h2>
         <div class="cardbody">
-          <div class="bigval" id="v-spark">— press any button for a random spark —</div>
-          <div class="sparkgrid" id="sparkButtons"></div>
+          <div class="row" style="margin-bottom:10px"><span class="val dim" style="font-size:12px;font-family:var(--sans)">One roll = one spark of inspiration. Pick a category, use the spark in your prompt, or save it to the Idea Book.</span></div>
+          <div class="cluster" style="margin-top:0">
+            <button class="power" id="ideaBtn" style="flex:1">💡 NEW IDEA</button>
+          </div>
+          <div class="toggles" id="ideaCats" style="margin:10px 0"></div>
+          <div class="bigval" id="v-spark">— press 💡 NEW IDEA —</div>
+          <div class="readout" id="sparkMeta" style="margin-top:8px"></div>
           <div class="cluster">
-            <button class="sm power" id="sparkMegaBtn">🔥 Mega Chaos Roll</button>
-            <button class="sm" id="sparkTitleApplyBtn">🏷 Apply title</button>
-            <button class="sm" id="sparkMashApplyBtn">🧬 Apply mash-up</button>
-            <button class="sm" id="sparkTransformApplyBtn">🪄 Apply transform</button>
-            <button class="sm" id="sparkCopyBtn">📋 Copy spark</button>
-            <button class="sm" id="sparkMoreBtn">🎲 More spark</button>
+            <button class="sm" id="sparkTitleApplyBtn" disabled>🏷 Use as title</button>
+            <button class="sm" id="sparkCopyBtn">📋 Copy idea</button>
+            <button class="sm ghost" id="sparkMoreBtn">🎲 Another one</button>
           </div>
           <div class="cluster">
-            <button class="sm power" id="anthemIdeaBtn">💥 Anthem Idea</button>
-            <button class="sm power" id="luckyDipBtn">🎰 Lucky Dip</button>
-            <button class="sm" id="timeMachineBtn">🕰 Time Machine</button>
-            <button class="sm" id="chaosGridBtn">🎛 Chaos Grid</button>
-            <button class="sm" id="rouletteBtn">🎲 Roulette</button>
-            <button class="sm" id="randomLayerBtn">🎚 Random Layers</button>
-            <button class="sm" id="fateRollBtn">🔮 Fate Roll</button>
-            <button class="sm" id="saveIdeaBtn">📌 Save idea</button>
-            <button class="sm" id="loadIdeaBtn">📖 Load idea</button>
-            <button class="sm" id="clearIdeasBtn">🧹 Clear ideas</button>
-            <button class="sm" id="copyPackBtn">📦 Copy Full Pack</button>
-            <button class="sm" id="optimizePromptBtn">⚙️ Optimize Prompt</button>
-            <button class="sm" id="slimModeBtn">🧵 Slim Mode</button>
+            <button class="sm power" id="anthemIdeaBtn" title="Rolls a full melody-dominant anthem: title + vibe + transformation, all melody maximized">💥 Anthem Idea</button>
+            <button class="sm power" id="luckyDipBtn" title="Completely rerolls the whole song and gives you 3 variations to compare">🎰 Lucky Dip</button>
+            <button class="sm" id="timeMachineBtn" title="Fresh tempo, key, duration and energy shape">🕰 Time Machine</button>
           </div>
-          <div class="readout" id="sparkMeta" style="margin-top:10px">All spark pools are loaded. Roll until one gives you a whole song.</div>
+          <div class="cluster">
+            <button class="sm ghost" id="saveIdeaBtn">📌 Save idea</button>
+            <button class="sm ghost" id="loadIdeaBtn">📖 Load idea</button>
+            <button class="sm ghost" id="clearIdeasBtn">🧹 Clear ideas</button>
+            <button class="sm ghost" id="copyPackBtn">📦 Copy Full Pack</button>
+            <button class="sm ghost" id="optimizePromptBtn">⚙️ Optimize space</button>
+            <button class="sm ghost" id="slimModeBtn">🧵 Slim</button>
+          </div>
           <div class="readout" id="ideaBookMeta">Idea Book: 0 saved.</div>
         </div>
       </div>
@@ -405,8 +405,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="mini listbtn" data-pick="rootPc">📜 Roots</button>
           </div>
           <div class="cluster">
-            <button class="sm power" id="maxTempoBtn">🏆 Max Tempo</button>
-            <button class="sm power" id="maxTempoLabBtn">🏆 Max Tempo Lab</button>
           </div>
         </div>
       </div>
@@ -456,8 +454,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="push" data-roll="feel-melody">🎭 Roll feeling → melody</button>
             <button class="push" data-roll="melody">🎼 Roll melody</button>
             <button class="push" data-roll="concept-melody">🌌 Roll melody concept</button>
-            <button class="sm power" id="maxMelodyBtn">🏆 Max Melody</button>
-            <button class="sm power" id="maxAnthemMelodyBtn">🎤 Max Melody-Dominant Anthem</button>
           </div>
         </div>
       </div>
@@ -487,7 +483,7 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <select id="microBassSel"></select>
             <span class="readout" id="microBassRead"></span>
           </div>
-          <div class="cluster"><button class="push" data-roll="bass">🔊 Roll bass</button><button class="sm power" id="maxBassBtn">🏆 Max Bass</button></div>
+          <div class="cluster"><button class="push" data-roll="bass">🔊 Roll bass</button></div>
         </div>
       </div>
 
@@ -496,7 +492,7 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
         <h2><span class="dot"></span>Drums &amp; Groove<span class="spacer"></span><button class="hidebtn" data-hide="drumsCard">👁</button></h2>
         <div class="cardbody">
           <div id="drumsRows"></div>
-          <div class="cluster"><button class="push" data-roll="drums">🥁 Roll drums</button><button class="sm power" id="maxDrumsBtn">🏆 Max Drums</button></div>
+          <div class="cluster"><button class="push" data-roll="drums">🥁 Roll drums</button></div>
         </div>
       </div>
 
@@ -514,7 +510,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="sm ghost" data-pick="technoAcid">📜 Acid list</button>
             <button class="sm ghost" data-pick="technoTexture">📜 Texture list</button>
             <button class="sm ghost" data-pick="technoRave">📜 Rave list</button>
-            <button class="sm power" id="maxTechnoLabBtn">🏆 Max Techno Lab</button>
           </div>
           <div class="technoDna" id="technoDnaBox"></div>
           <div class="readout" id="technoDnaRead">Techno DNA — drive / acid / texture / rave / industrial</div>
@@ -529,7 +524,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
           <div class="bigval" id="chordProgDisplay">—</div>
           <div class="cluster">
             <button class="push" data-roll="harmony">🎼 Roll Harmony</button>
-            <button class="sm power" id="maxHarmonyBtn">🏆 Max Harmony</button>
           </div>
         </div>
       </div>
@@ -544,7 +538,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="push" data-roll="rhythm">🥁 Roll Rhythm</button>
             <button class="sm" id="rhythmRandomBtn">🎲 Randomize Grid</button>
             <button class="sm ghost" id="rhythmClearBtn">✕ Clear</button>
-            <button class="sm power" id="maxRhythmBtn">🏆 Max Rhythm</button>
           </div>
           <div class="readout" id="rhythmStatus" style="margin-top:8px">16-step grid — click to toggle</div>
         </div>
@@ -557,7 +550,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
           <div id="soundDesignRows"></div>
           <div class="cluster">
             <button class="push" data-roll="soundDesign">⚗️ Roll Sound Design</button>
-            <button class="sm power" id="maxSoundDesignBtn">🏆 Max Sound Design</button>
             <button class="sm ghost" data-pick="filterType">📜 Filter</button>
             <button class="sm ghost" data-pick="envelopeType">📜 Env</button>
             <button class="sm ghost" data-pick="lfoType">📜 LFO</button>
@@ -577,7 +569,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="push" data-roll="mixMaster">⚙️ Roll Mix & Master</button>
             <button class="sm" data-roll="mix">🎛 Roll Mix</button>
             <button class="sm" data-roll="master">🔊 Roll Master</button>
-            <button class="sm power" id="maxMixMasterBtn">🏆 Max MixMaster</button>
           </div>
         </div>
       </div>
@@ -592,7 +583,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="sm" data-roll="spatial">🎧 Roll Spatial</button>
             <button class="sm" data-roll="mod">🌀 Roll Mod</button>
             <button class="sm" data-roll="texture">✨ Roll Texture</button>
-            <button class="sm power" id="maxSpatialModBtn">🏆 Max SpatialMod</button>
           </div>
         </div>
       </div>
@@ -607,7 +597,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="sm" data-roll="grooveExtra">🥁 Roll Groove Extra</button>
             <button class="sm" data-roll="melodicExtra">🎹 Roll Melodic Extra</button>
             <button class="sm" data-roll="harmonicExtra">🎶 Roll Harmonic Extra</button>
-            <button class="sm power" id="maxGrooveMelodicBtn">🏆 Max GrooveMelodic</button>
           </div>
         </div>
       </div>
@@ -622,57 +611,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="sm" data-roll="percExtra">🥁 Roll Perc Extra</button>
             <button class="sm" data-roll="fxExtra">⚗️ Roll FX Extra</button>
             <button class="sm" data-roll="arrangementExtra">🎛 Roll Arr Extra</button>
-            <button class="sm power" id="maxTextureFxBtn">🏆 Max TextureFX</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONCEPT -->
-      <div class="card" id="conceptCard">
-        <h2><span class="dot"></span>Concept<span class="spacer"></span><button class="hidebtn" data-hide="conceptCard">👁</button></h2>
-        <div class="cardbody">
-          <div class="row"><span class="lbl">Title</span>
-            <span class="val title" id="v-ctitle">—</span>
-            <button class="lock" data-lock="concept">🔓</button>
-            <button class="mini miniroll" data-roll="concept">💡</button>
-            <button class="mini listbtn" data-pick="concept-title">📜 List</button>
-            <button class="mini listbtn" data-pick="concept">📜 All Concepts</button>
-            <button class="sm power" id="maxConceptBtn">🏆 Max Concept</button>
-          </div>
-          <div class="concept-grid" id="conceptGrid">
-            <div class="citem"><div class="clbl">World</div><div class="cval" id="v-cworld">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-world">🎲</button><button class="mini listbtn" data-pick="concept-world">📜</button></div></div>
-            <div class="citem"><div class="clbl">Location</div><div class="cval" id="v-clocation">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-location">🎲</button><button class="mini listbtn" data-pick="concept-location">📜</button></div></div>
-            <div class="citem"><div class="clbl">Visual</div><div class="cval" id="v-cvisual">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-visual">🎲</button><button class="mini listbtn" data-pick="concept-visual">📜</button></div></div>
-            <div class="citem"><div class="clbl">Narrative</div><div class="cval" id="v-cnarrative">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-narrative">🎲</button><button class="mini listbtn" data-pick="concept-narrative">📜</button></div></div>
-            <div class="citem"><div class="clbl">Sensation</div><div class="cval" id="v-csensation">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-sensation">🎲</button><button class="mini listbtn" data-pick="concept-sensation">📜</button></div></div>
-            <div class="citem"><div class="clbl">Event</div><div class="cval" id="v-cevent">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-event">🎲</button><button class="mini listbtn" data-pick="concept-event">📜</button></div></div>
-            <div class="citem"><div class="clbl">Conflict</div><div class="cval" id="v-cconflict">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-conflict">🎲</button><button class="mini listbtn" data-pick="concept-conflict">📜</button></div></div>
-            <div class="citem"><div class="clbl">Crowd</div><div class="cval" id="v-ccrowd">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-crowd">🎲</button><button class="mini listbtn" data-pick="concept-crowd">📜</button></div></div>
-            <div class="citem"><div class="clbl">Transformation</div><div class="cval" id="v-ctransform">—</div><div class="row" style="margin:6px 0 0;gap:4px"><button class="mini miniroll" data-roll="concept-transform">🎲</button><button class="mini listbtn" data-pick="concept-transform">📜</button></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ARRANGEMENT -->
-      <div class="card" id="arrangementCard">
-        <h2><span class="dot"></span>Arrangement<span class="spacer"></span><button class="hidebtn" data-hide="arrangementCard">👁</button></h2>
-        <div class="cardbody">
-          <div class="row"><span class="lbl">Duration</span>
-            <select id="durationSel">
-              <option value="compact">Compact</option>
-              <option value="standard" selected>Standard</option>
-              <option value="extended">Extended</option>
-            </select>
-          </div>
-          <div class="bigval" id="v-arrangement">—</div>
-          <div class="arc" id="arcBox"></div>
-          <div class="row"><span class="readout" id="arcTotal"></span></div>
-          <div class="cluster">
-            <button class="push" data-roll="arrangement">🎛 Roll arrangement</button>
-            <button class="mini listbtn" data-pick="arrangement">📜 List</button>
-            <button class="lock" data-lock="arrangement">🔓 Lock</button>
-            <button class="sm ghost" id="copyArcBtn">📋 Copy section tags</button>
-            <button class="sm power" id="maxArrangementBtn">🏆 Max Arrangement</button>
           </div>
         </div>
       </div>
@@ -689,6 +627,14 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <span class="toggle" id="vocalToggle"><span class="led"></span>🎤 Vocal mode</span>
           </div>
           <div class="row"><span class="val dim" id="modeNote" style="font-family:var(--sans)">Instrumental safety is ON — all vocal content is stripped automatically.</span></div>
+          <div class="row"><span class="lbl">Duration</span>
+            <select id="durationSel">
+              <option value="compact">Compact</option>
+              <option value="standard" selected>Standard</option>
+              <option value="extended">Extended</option>
+            </select>
+            <span class="readout">track shape · energy arc</span>
+          </div>
         </div>
       </div>
 
@@ -750,36 +696,22 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
           <div class="cluster">
             <button class="sm" id="stashBBtn">📌 Stash to B</button>
             <button class="sm ghost" id="swapABBtn" disabled>🔄 Swap A ⇄ B</button>
-            <button class="sm power" id="maxScoreBtn" title="Reroll everything except Primary/Secondary to maximize Prompt Score — keeps styles">🏆 Max Score (keep styles)</button>
           </div>
+          <div class="row" style="margin-top:8px"><span class="readout">Score 90+ = ready for Suno. Want higher? Use the Prompt Maximizer card.</span></div>
         </div>
       </div>
 
-      <!-- MAX ROLL LAB -->
+      <!-- MAX ROLL LAB (PROMPT MAXIMIZER) -->
       <div class="card" id="maxRollLabCard">
-        <h2><span class="dot"></span>Max Roll Lab — keep styles<span class="spacer"></span><span class="scoretotal good" id="maxRollScore">–</span><button class="hidebtn" data-hide="maxRollLabCard">👁</button></h2>
+        <h2><span class="dot"></span>Prompt Maximizer — keeps your styles<span class="spacer"></span><span class="scoretotal good" id="maxRollScore">–</span><button class="hidebtn" data-hide="maxRollLabCard">👁</button></h2>
         <div class="cardbody">
-          <div class="row"><span class="val dim" style="font-family:var(--sans)">Async search — never blocks UI. Every button keeps Primary/Secondary locked and hunts the highest Prompt Score.</span></div>
+          <div class="row"><span class="val dim" style="font-family:var(--sans)">What it does: rolls many random prompts in the background, keeps the one with the best <b>Prompt Score</b>, and applies it. Your Primary / Secondary styles are always locked.</span></div>
           <div class="cluster" style="margin-top:10px">
-            <button class="power" id="maxAllBtn">🏆 Max ALL (20)</button>
-            <button class="sm power" id="maxTurboBtn">🚀 Turbo Max 100</button>
-            <button class="sm power" id="maxMelodyBtn2">🎭 Max Melody</button>
-            <button class="sm power" id="maxBassBtn2">🔊 Max Bass</button>
-            <button class="sm power" id="maxDrumsBtn2">🥁 Max Drums</button>
-            <button class="sm power" id="maxTempoBtn2">⏱ Max Tempo</button>
-            <button class="sm power" id="maxTempoLabBtn2">⚙️ Max Tempo Lab</button>
-            <button class="sm power" id="maxTechnoLabBtn2">🧪 Max Techno Lab</button>
-            <button class="sm power" id="maxConceptBtn2">💡 Max Concept</button>
-            <button class="sm power" id="maxArrangementBtn2">🎛 Max Arrangement</button>
-            <button class="sm power" id="maxRhythmBtn2">🥁 Max Rhythm</button>
-            <button class="sm power" id="maxHarmonyBtn2">🎼 Max Harmony</button>
-            <button class="sm power" id="maxSoundDesignBtn2">⚗️ Max Sound Design</button>
-            <button class="sm power" id="maxMixMasterBtn2">🎛 Max MixMaster</button>
-            <button class="sm power" id="maxSpatialModBtn2">🌌 Max SpatialMod</button>
-            <button class="sm power" id="maxGrooveMelodicBtn2">🎼 Max GrooveMelodic</button>
-            <button class="sm power" id="maxTextureFxBtn2">💥 Max TextureFX</button>
+            <button class="power" id="maxScoreBtn" title="20 random tries — keeps your styles">🏆 MAXIMIZE MY PROMPT</button>
+            <button class="sm power" id="maxTurboBtn" title="100 tries — slower, usually even better">🚀 Turbo — 100 tries</button>
           </div>
-          <div class="row" style="margin-top:12px"><span class="readout" id="maxRollStatus">Idle — click any max button. Scores 0-100.</span><button class="sm ghost" id="resetMaxBtn">🔓 Reset Max</button></div>
+          <div class="toggles" id="maxChips" style="margin:12px 0"></div>
+          <div class="row" style="margin-top:12px"><span class="readout" id="maxRollStatus">Idle — press 🏆 MAXIMIZE MY PROMPT to find your best description.</span><button class="sm ghost" id="resetMaxBtn">🔓 Reset Max</button></div>
         </div>
       </div>
 

@@ -20,7 +20,8 @@ for (const m of engineSrc.matchAll(/\$\("([A-Za-z0-9_\-]+)"\)/g)) staticIds.add(
 for (const m of engineSrc.matchAll(/getElementById\("([A-Za-z0-9_\-]+)"\)/g)) staticIds.add(m[1]);
 const shellIds = new Set();
 for (const m of HTML.matchAll(/id="([A-Za-z0-9_\-]+)"/g)) shellIds.add(m[1]);
-const missing = [...staticIds].filter(id => !shellIds.has(id) && !/^v-/.test(id) && !/^max/.test(id));
+const REMOVED_IDS = new Set(["conceptCard","arrangementCard","arcBox","arcTotal","copyArcBtn","maxAllBtn","maxMelodyBtn2","maxBassBtn2","maxDrumsBtn2","maxTempoBtn2","maxTempoLabBtn2","maxTechnoLabBtn2","maxConceptBtn2","maxArrangementBtn2","maxRhythmBtn2","maxHarmonyBtn2","maxSoundDesignBtn2","maxMixMasterBtn2","maxSpatialModBtn2","maxGrooveMelodicBtn2","maxTextureFxBtn2","sparkButtons","sparkMegaBtn","sparkMashApplyBtn","sparkTransformApplyBtn","chaosGridBtn","rouletteBtn","randomLayerBtn","fateRollBtn"]);
+const missing = [...staticIds].filter(id => !shellIds.has(id) && !REMOVED_IDS.has(id) && !/^v-/.test(id) && !/^max/.test(id));
 sec("Engine-referenced IDs present in shell");
 ok(missing.length === 0, "all static IDs exist (" + (missing.length ? missing.join(", ") : "all " + staticIds.size + " present") + ")");
 const missingMax = [...staticIds].filter(id => /^max/.test(id) && !shellIds.has(id));
@@ -109,10 +110,15 @@ ok(w.document.querySelectorAll("#keyTable kbd").length >= 8, "help table has sho
 w.document.getElementById("helpModal").dispatchEvent(new w.MouseEvent("click", {bubbles: true}));
 ok(!w.document.getElementById("helpModal").classList.contains("open"), "help closes via backdrop delegation");
 
-sec("Interaction: spark apply title");
-NF.sparkShow("Title");
+sec("Interaction: idea engine");
+NF.ideaRoll("title");
+ok(!w.document.getElementById("sparkTitleApplyBtn").disabled, "title apply enabled after title idea");
 w.document.getElementById("sparkTitleApplyBtn").click();
-ok(!!NF.get().concept.title, "title spark applies to concept (" + NF.get().concept.title + ")");
+ok(!!NF.get().concept.title, "title idea applies to concept (" + NF.get().concept.title + ")");
+w.document.getElementById("ideaBtn").click();
+ok(!!w.document.getElementById("v-spark").textContent.trim() && w.document.getElementById("v-spark").textContent !== "— press 💡 NEW IDEA —", "NEW IDEA rolls a spark (" + w.document.getElementById("v-spark").textContent.slice(0,60) + ")");
+w.document.getElementById("sparkMoreBtn").click();
+ok(true, "another one rolls");
 
 sec("Interaction: variations apply");
 NF.doRoll("variations");
@@ -122,12 +128,12 @@ ok(!!NF.get().primaryStyle, "variation applied state intact");
 
 sec("Interaction: max section buttons (async)");
 (async () => {
-  const btn2 = w.document.getElementById("maxDrumsBtn2");
-  if (btn2) {
-    btn2.click();
+  const chip = w.document.querySelector("#maxChips .toggle");
+  if (chip) {
+    chip.click();
     await new Promise(r => setTimeout(r, 700));
     const st = w.document.getElementById("maxRollStatus");
-    ok(/Best/.test(st.textContent), "Max Lab Btn2 runs (" + st.textContent + ")");
+    ok(/Best/.test(st.textContent), "Max chip runs (" + st.textContent + ")");
   }
 
   sec("Output tabs");

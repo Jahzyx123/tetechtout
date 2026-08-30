@@ -65,7 +65,7 @@ function run() {
   ok(sp.length >= 100, "style prompt has real content (" + sp.length + " chars)");
   ok(/Bass:/.test(sp), "prompt contains Bass block");
   ok(/Drums:/.test(sp), "prompt contains Drums block");
-  ok(/Concept:/.test(sp), "prompt contains Concept block");
+  ok(!/Concept:/.test(sp), "Concept block removed from prompt (user preference)");
   ok(!/vocals?\b/i.test(sp) || sp.includes("no vocals"), "instrumental safety keeps vocals out");
 
   section("Genre-combo naming (no-techno mode)");
@@ -167,9 +167,11 @@ function run() {
 
     section("Sparks & idea engine");
     const sparkCount = w.document.getElementById("sparkCount");
-    ok(sparkCount && /sparks loaded/.test(sparkCount.textContent), "spark buttons built (" + sparkCount.textContent + ")");
-    NF.sparkShow("Title");
-    ok(/options/.test(w.document.getElementById("sparkMeta").textContent), "spark meta shown (" + w.document.getElementById("sparkMeta").textContent + ")");
+    ok(sparkCount && /ideas loaded/.test(sparkCount.textContent), "idea chips built (" + sparkCount.textContent + ")");
+    NF.ideaRoll("title");
+    ok(/options/.test(w.document.getElementById("sparkMeta").textContent), "idea meta shown (" + w.document.getElementById("sparkMeta").textContent + ")");
+    const ideaCats = w.document.getElementById("ideaCats");
+    ok(ideaCats && ideaCats.querySelectorAll(".toggle").length >= 6, "idea categories present (" + (ideaCats ? ideaCats.querySelectorAll(".toggle").length : 0) + ")");
     NF.saveIdea();
     const saved = NF.saveIdea();
     ok(saved && saved.title, "idea book saves");
