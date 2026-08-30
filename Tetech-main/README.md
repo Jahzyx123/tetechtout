@@ -138,6 +138,17 @@ python3 -m http.server 8080
 - **Full Brief de-duplicated** — FILTER / ENVELOPE / LFO / FX CHAIN were already inside the Sound Design line, so those separate lines are gone (frees ~100+ chars for real detail).
 - **Real hooks instead of filler** — "Melody-dominant anthem" now writes the actual melody-concept hook when one exists instead of the generic phrase.
 
+### 📊 List picker prompt scores
+- Every option inside a 📜 picker list now shows, right on the option, how much it contributes to
+  the current prompt **compared with every other option in that same list**:
+  - `★<total>` — the prompt score if this option is chosen.
+  - `E 70` / `M 45` / `H 55` / `C 60` / `S 85` — the option's primary contribution
+    (Energy / Melody / Harmony / Instrumentation coverage / Style focus).
+  - `#1/83` — its **rank** inside that exact list (1 = best for this prompt).
+- Pickers are rescored in the background every time a list opens (first **240** options for huge
+  lists; search to narrow and re-score). The legend at the top of the list tells you what each
+  badge means.
+
 ### Hearing it
 - **Live audition engine** — a Web Audio sketch of the current recipe. It plays the actual
   rolled parameters: your key and scale, BPM, swing feel, motif contour, and a timbre sniffed

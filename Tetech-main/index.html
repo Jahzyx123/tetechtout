@@ -231,6 +231,13 @@ input[type=number]{width:76px}
 .cat.rare{background:rgba(255,75,75,.15);color:var(--red)}
 .cat.genre{background:rgba(63,199,255,.15);color:#5cd6ff}
 .cat.tech{background:rgba(255,75,75,.15);color:var(--red)}
+.cat.score{background:rgba(57,255,20,.18);color:#b8ffc8;font-weight:900}
+.cat.rank{background:rgba(255,210,63,.16);color:var(--amber);font-weight:700}
+.cat.energy{background:rgba(255,120,60,.16);color:#ffb37a}
+.cat.harmony{background:rgba(85,231,255,.16);color:#8be7ff}
+.cat.melody{background:rgba(120,120,255,.18);color:#b3b3ff}
+.cat.cov{background:rgba(112,255,143,.16);color:#8cffa8}
+.cat.style{background:rgba(140,190,255,.15);color:#bcdcff}
 .techonly-toggle{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);cursor:pointer;user-select:none;white-space:nowrap}
 .techonly-toggle input{accent-color:#ff2d55;width:14px;height:14px;cursor:pointer}
 .techonly-toggle input:checked ~ span{color:var(--red);text-shadow:0 0 8px rgba(255,45,85,.5)}
@@ -1168,6 +1175,7 @@ input[type=range]::-webkit-slider-thumb{width:18px;height:18px;box-shadow:0 0 0 
     </div>
     <div class="modalbody">
       <input type="text" id="styleSearch" placeholder="Search styles…">
+      <div class="readout" id="styleScoreNote" style="margin:-6px 0 10px;color:var(--text-dim)">Scoring each option…</div>
       <div class="stylegrid" id="styleGrid"></div>
     </div>
   </div>
@@ -9647,11 +9655,116 @@ function setNestedField(fieldPath, value){
     state[parts[0]][parts[1]] = value;
   }
 }
+
+/* ---------------------------- PICKER SCORING ----------------------------
+   Every item shown in a List gains three badges:
+     ★  = total Prompt Score when that value is selected
+     M / E / H / C / S  = Melodic / Energy / Harmony / Instrumentation / Style sub-score
+     #  = rank within the same field list (1 = best before selecting it)
+   Scoring is done on a clone of the state so nothing is committed.
+----------------------------------------------------------------------- */
+function pickerScoreMeta(poolKey){
+  const p = PICKER_POOLS[poolKey] || {};
+  const field = p.field || "";
+  const key = String(poolKey);
+  if(/primary|secondary|genre|style/.test(key)) return {abbr:"S", label:"Style focus", className:"style"};
+  if(/bass|bassVoice|bassMovement|bassRel|voice-concept|voiceConcept|voice-relation/.test(key)) return {abbr:"C", label:"Instrumentation coverage", className:"cov"};
+  if(/feeling|flavor|direction|leadVoice|leadPerf|contour|rhythm\b|melody|melodyConcept|melody-concept|counter|ornament|vibrato|portamento|scaleRun|intervalLeap/.test(key||"")) return {abbr:"M", label:"Melodic clarity", className:"melody"};
+  if(/harmony|chordColor|chordProg|arpeggio|scaleId|rootPc|voicing|inversion|tension|resolution|key/.test(key||"")) return {abbr:"H", label:"Harmonic definition", className:"harmony"};
+  if(/kick|hats|snare|perc|toms|groove|swing|sync|intensity|techno|rhythmPattern|ride|crash|clap|percFill|fxType|riser|impact|energy\w+|buildType|dropType|chopType|soundIntensity/.test(key||"")) return {abbr:"E", label:"Energy density", className:"energy"};
+  return {abbr:"T", label:"Total score", className:"score"};
+}
+function _metricFromScore(meta, sc){
+  if(!sc) return null;
+  const get=(label)=> (sc.items.find(i=>i.label===label)?.score||0);
+  if(meta.abbr==="M") return {total:sc.total, primary:get("Melodic clarity")};
+  if(meta.abbr==="E") return {total:sc.total, primary:get("Energy density")};
+  if(meta.abbr==="H") return {total:sc.total, primary:get("Harmonic definition")};
+  if(meta.abbr==="C") return {total:sc.total, primary:get("Instrumentation coverage")};
+  if(meta.abbr==="S") return {total:sc.total, primary:get("Style focus")};
+  return {total:sc.total, primary:sc.total};
+}
+function _scoreCandidate(fieldPath, value){
+  const parts = String(fieldPath).split(".");
+  let old;
+  if(parts.length===1) old = state[parts[0]];
+  else if(state[parts[0]]) old = state[parts[0]][parts[1]];
+  const oldChord = state.chordColor;
+  let out=null;
+  try{
+    if(parts.length===1){
+      if(fieldPath==="bpm"){ state[parts[0]] = parseInt(value)||state[parts[0]]; }
+      else state[parts[0]] = value;
+    } else {
+      if(!state[parts[0]]) state[parts[0]] = {};
+      state[parts[0]][parts[1]] = value;
+    }
+    if(fieldPath==="scaleId") state.chordColor = scaleOf(state).n;
+    out = scorePrompt();
+  }catch(e){ out = null; }
+  if(parts.length===1) state[parts[0]] = old;
+  else if(state[parts[0]]) state[parts[0]][parts[1]] = old;
+  if(fieldPath==="scaleId") state.chordColor = oldChord;
+  return out;
+}
+const MAX_PICKER_SCORED = 240;
+function scoreStyleGridOptions(grid){
+  if(!grid) return;
+  const all = Array.from(grid.querySelectorAll("[data-score-field]"));
+  const rows = all.slice(0, MAX_PICKER_SCORED);
+  const note = $("styleScoreNote");
+  if(!rows.length){ if(note) note.textContent=""; return; }
+  const cache = new Map();
+  const byField = {};
+  rows.forEach(row=>{
+    const poolKey = row.getAttribute("data-score-pool")||pickerTarget;
+    const field = row.getAttribute("data-score-field");
+    const value = row.getAttribute("data-score-value");
+    if(!field) return;
+    if(!byField[field]) byField[field] = [];
+    byField[field].push({row, value, poolKey});
+  });
+  Object.keys(byField).forEach(field=>{
+    const arr = byField[field].map(o=>{
+      const meta = pickerScoreMeta(o.poolKey);
+      const key = field + "\u0001" + o.value;
+      if(!cache.has(key)){
+        const sc = _scoreCandidate(field, o.value);
+        cache.set(key, sc ? _metricFromScore(meta, sc) : null);
+      }
+      return {value:o.value, meta, m:cache.get(key)};
+    });
+    const sorted = arr.filter(x=>x.m).slice().sort((a,b)=> (b.m.primary-a.m.primary) || (b.m.total-a.m.total));
+    const ranks = {};
+    sorted.forEach((x,i)=>{ if(!(x.value in ranks)) ranks[x.value]=i+1; });
+    byField[field].forEach(o=>{ o.rank = ranks[o.value] || 0; });
+  });
+  let scored = 0;
+  rows.forEach(row=>{
+    const field = row.getAttribute("data-score-field");
+    const value = row.getAttribute("data-score-value");
+    const poolKey = row.getAttribute("data-score-pool")||pickerTarget;
+    const meta = pickerScoreMeta(poolKey);
+    const m = cache.get(field + "\u0001" + value);
+    if(!m) return;
+    const count = (byField[field]||[]).length;
+    const entry = (byField[field]||[]).find(o=>o.value===value);
+    const rank = entry ? entry.rank : 0;
+    const b1 = document.createElement("span"); b1.className="cat "+meta.className; b1.textContent=meta.abbr+" "+m.primary;
+    const b2 = document.createElement("span"); b2.className="cat rank"; b2.textContent="#"+(rank||"–")+"/"+(count||"–");
+    const b3 = document.createElement("span"); b3.className="cat score"; b3.textContent="★"+m.total;
+    row.appendChild(b1); row.appendChild(b2); row.appendChild(b3);
+    scored++;
+  });
+  if(note) note.textContent = (all.length>rows.length ? "⚡ Fast mode: ★ total / category / # rank shown for the first "+rows.length+" of "+all.length+" options. Search to narrow and re-score." : "⚡ ★ total score · "+[["M","Melody"],["E","Energy"],["H","Harmony"],["C","Coverage"],["S","Style"]].map(x=>x[1]).join(" · ")+" · # rank in this list · "+scored+" options scored.");
+}
+
 function renderStyleGrid(query){
   const q = query.trim().toLowerCase();
   const grid = $("styleGrid");
   grid.innerHTML = "";
   const pool = PICKER_POOLS[pickerTarget];
+  setTimeout(()=>scoreStyleGridOptions(grid), 0);
 
   // ---- SPECIAL TYPES ----
   if(pickerTarget==="primary" || pickerTarget==="secondary" || (pool && pool.type==="style")){
@@ -9672,6 +9785,7 @@ function renderStyleGrid(query){
           const el = document.createElement("div");
           el.className = "styleopt";
           el.innerHTML = '<span>'+escapeHtml(combo)+'</span><span class="cat genre">combo</span>';
+          el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", (pool&&pool.field)||pickerTarget); el.setAttribute("data-score-value", combo);
           el.addEventListener("click", ()=>selectStyle(combo));
           grid.appendChild(el);
         });
@@ -9686,6 +9800,7 @@ function renderStyleGrid(query){
       const el = document.createElement("div");
       el.className = "styleopt";
       el.innerHTML = '<span>'+escapeHtml(st.n)+'</span><span class="cat tech">'+st.c+'</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", (pool&&pool.field)||pickerTarget); el.setAttribute("data-score-value", st.n);
       el.addEventListener("click", ()=>selectStyle(st.n));
       grid.appendChild(el);
     });
@@ -9698,6 +9813,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+v+' BPM</span><span class="cat core">bpm</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "bpm"); el.setAttribute("data-score-value", String(v));
       el.addEventListener("click",()=>selectStyle(v));
       grid.appendChild(el);
     });
@@ -9709,6 +9825,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(v)+' (MIDI '+i+')</span><span class="cat genre">root</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "rootPc"); el.setAttribute("data-score-value", String(i));
       el.addEventListener("click",()=>selectStyle(i));
       grid.appendChild(el);
     });
@@ -9720,6 +9837,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(s.n)+' — <i>'+escapeHtml(s.mood)+'</i></span><span class="cat core">'+s.iv.length+' notes</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "scaleId"); el.setAttribute("data-score-value", s.id);
       el.addEventListener("click",()=>selectStyle(s.id));
       grid.appendChild(el);
     });
@@ -9731,6 +9849,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(s.n)+'</span><span class="cat core">scale</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "scaleId"); el.setAttribute("data-score-value", s.id);
       el.addEventListener("click",()=>selectStyle(s.id));
       grid.appendChild(el);
     });
@@ -9747,6 +9866,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(n)+'</span><span class="cat genre">root</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "rootPc"); el.setAttribute("data-score-value", String(i));
       el.addEventListener("click",()=>selectStyle({rootPc:i}));
       grid.appendChild(el);
     });
@@ -9759,6 +9879,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(s.n)+'</span><span class="cat core">'+s.mood+'</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "scaleId"); el.setAttribute("data-score-value", s.id);
       el.addEventListener("click",()=>selectStyle({scaleId:s.id}));
       grid.appendChild(el);
     });
@@ -9795,6 +9916,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(v)+'</span><span class="cat genre">lead</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "counterMelody.voice"); el.setAttribute("data-score-value", v);
       el.addEventListener("click",()=>selectStyle({counterVoice:v}));
       grid.appendChild(el);
     });
@@ -9807,6 +9929,7 @@ function renderStyleGrid(query){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(v)+'</span><span class="cat genre">bass</span>';
+      el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", "voiceConcept.voice"); el.setAttribute("data-score-value", v);
       el.addEventListener("click",()=>selectStyle({voiceConcept:v}));
       grid.appendChild(el);
     });
@@ -9827,6 +9950,7 @@ function renderStyleGrid(query){
       el.className = "styleopt";
       const cat = pool.label.split(" ")[0].toLowerCase();
       el.innerHTML = '<span>'+escapeHtml(String(v))+'</span><span class="cat genre">'+escapeHtml(cat)+'</span>';
+      if(pool.field){ el.setAttribute("data-score-pool", pickerTarget); el.setAttribute("data-score-field", pool.field); el.setAttribute("data-score-value", String(v)); }
       el.addEventListener("click", ()=>selectStyle(v));
       grid.appendChild(el);
     });
@@ -11613,7 +11737,7 @@ window.NF = {
   scaleOf, scaleNote, camelot, keyName, freqOf, MICRO_MODES, microOf, microCents,
   buildStylePrompt, buildFullBrief, buildKit, buildEngineer, buildStylePromptFor,
   encodeState, decodeState, defaultState, doRoll, undo, redo, render, renderOutput,
-  engineerLines, djLines, Audition, openCmd, closeCmd, renderCmd, runCmd,
+  engineerLines, djLines, Audition, openCmd, closeCmd, renderCmd, runCmd, openPicker, scoreStyleGridOptions,
   energyArc, arcLine, arcTags, scorePrompt, stashB, swapAB, exportSession, doMaxScoreRoll, doMaxScoreRollSection, doMaxTurbo, doMaxStack, doMaxEnergy, doMaxLayers, doMaxDriveAcid, doMaxAuto, doMaxAtom, scoreFor,
   sanitize, isDirty, conceptLine, styleLine,
   get slotB(){ return slotB; },
@@ -11678,6 +11802,7 @@ function renderMasterGrid(query, cat){
       const el=document.createElement("div");
       el.className="styleopt";
       el.innerHTML='<span>'+escapeHtml(String(v).slice(0,80))+'</span><span class="cat genre">'+escapeHtml(k)+'</span>';
+      if(pool.field){ el.setAttribute("data-score-pool", k); el.setAttribute("data-score-field", pool.field); el.setAttribute("data-score-value", String(v)); }
       el.addEventListener("click",()=>{ pickerTarget=k; selectStyle(v); });
       grid.appendChild(el);
     });
@@ -11691,6 +11816,7 @@ function renderMasterGrid(query, cat){
     total+=filtered.length;
   });
   $("masterCount").textContent = total+" options";
+  setTimeout(()=>scoreStyleGridOptions(grid), 0);
 }
 function init(){
   // build dynamic field rows (feeling/bass/drums cards)

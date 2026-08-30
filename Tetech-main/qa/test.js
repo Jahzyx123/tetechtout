@@ -474,5 +474,56 @@ t("optimizer commands registered", ()=>{
   return names.some(n=>/Optimize prompt space/.test(n)) && names.some(n=>/Toggle slim mode/.test(n)) || "missing optimizer commands";
 });
 
+console.log("\n== LIST PICKER SCORE BADGES ==\n");
+t("kick list shows star + rank + energy score per option", ()=>{
+  w.NF.openPicker("kick");
+  w.NF.scoreStyleGridOptions(d.getElementById("styleGrid"));
+  const opts=[...d.querySelectorAll("#styleGrid .styleopt")];
+  const star=opts.filter(o=>o.querySelector(".cat.score")).length;
+  const rank=opts.filter(o=>o.querySelector(".cat.rank")).length;
+  const energy=opts.filter(o=>o.querySelector(".cat.energy")).length;
+  d.querySelector("#styleModalClose").click();
+  return (star===opts.length && rank===opts.length && energy>0) || ("star="+star+" rank="+rank+" energy="+energy);
+});
+t("lead list uses Melody category score", ()=>{
+  w.NF.openPicker("leadVoice");
+  w.NF.scoreStyleGridOptions(d.getElementById("styleGrid"));
+  const opts=[...d.querySelectorAll("#styleGrid .styleopt")];
+  const mel=opts.filter(o=>o.querySelector(".cat.melody")).length;
+  d.querySelector("#styleModalClose").click();
+  return mel>0 || ("melody badges="+mel);
+});
+t("harmony list uses Harmony category score", ()=>{
+  w.NF.openPicker("harmony");
+  w.NF.scoreStyleGridOptions(d.getElementById("styleGrid"));
+  const opts=[...d.querySelectorAll("#styleGrid .styleopt")];
+  const harm=opts.filter(o=>o.querySelector(".cat.harmony")).length;
+  d.querySelector("#styleModalClose").click();
+  return harm>0 || ("harmony badges="+harm);
+});
+t("bass list uses Coverage category score", ()=>{
+  w.NF.openPicker("bassVoice");
+  w.NF.scoreStyleGridOptions(d.getElementById("styleGrid"));
+  const opts=[...d.querySelectorAll("#styleGrid .styleopt")];
+  const cov=opts.filter(o=>o.querySelector(".cat.cov")).length;
+  d.querySelector("#styleModalClose").click();
+  return cov>0 || ("coverage badges="+cov);
+});
+t("rank badges rank every option in the same list", ()=>{
+  w.NF.openPicker("kick");
+  w.NF.scoreStyleGridOptions(d.getElementById("styleGrid"));
+  const ranks=[...d.querySelectorAll("#styleGrid .cat.rank")].map(x=>x.textContent);
+  const uniq=new Set(ranks);
+  d.querySelector("#styleModalClose").click();
+  return (uniq.size===ranks.length && ranks.length>50) || ("distinct="+uniq.size+" total="+ranks.length);
+});
+t("opening and scoring a list does not change state", ()=>{
+  const before=w.NF.encodeState(S());
+  w.NF.openPicker("leadVoice");
+  w.NF.scoreStyleGridOptions(d.getElementById("styleGrid"));
+  d.querySelector("#styleModalClose").click();
+  return w.NF.encodeState(S())===before || "state changed";
+});
+
 console.log("\n"+pass+" passed, "+fail+" failed");
 process.exit(fail?1:0);
