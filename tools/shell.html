@@ -82,8 +82,13 @@ button.listbtn:hover{color:var(--amber);border-color:var(--amber);box-shadow:0 0
 .grid{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(430px,.94fr);gap:20px;align-items:start}
 @media(max-width:1080px){.grid{grid-template-columns:1fr}}
 .controls{display:flex;flex-direction:column;gap:15px}
-.output{display:flex;flex-direction:column;gap:15px;position:sticky;top:16px}
-@media(max-width:1080px){.output{position:static}}
+.output{display:flex;flex-direction:column;gap:15px}
+/* the generated description stays pinned top-right while you roll on the left */
+#outputCard{position:sticky;top:12px;z-index:40;max-height:calc(100vh - 24px);overflow:auto}
+@media(max-width:1080px){
+  .output{order:-1}
+  #outputCard{position:static;max-height:none;overflow:visible}
+}
 
 .card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;padding:17px 18px 19px;
   background:linear-gradient(145deg,rgba(14,23,33,.95),rgba(7,13,21,.92));box-shadow:0 20px 55px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.035);
@@ -205,6 +210,10 @@ input[type=number]{width:76px}
 .vcard .vhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .vcard .vtitle{font-family:var(--mono);color:var(--cyan);font-weight:800;font-size:12.5px;letter-spacing:.5px}
 .vcard .vsub{font-family:var(--mono);font-size:10.5px;color:var(--text-dim)}
+.vcard .vscore{font-family:var(--mono);font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;border:1px solid var(--line)}
+.vcard .vscore.good{color:var(--lime);border-color:rgba(168,255,62,.5)}
+.vcard .vscore.mid{color:var(--amber);border-color:rgba(255,194,75,.5)}
+.vcard .vscore.bad{color:var(--magenta);border-color:rgba(255,93,162,.5)}
 .vcard .vbody{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);line-height:1.5;max-height:110px;overflow:auto}
 .vcard .vactions{display:flex;gap:6px;margin-top:10px}
 .hist{display:flex;flex-direction:column;gap:8px;max-height:460px;overflow:auto}
@@ -355,6 +364,10 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="mode-btn" id="modeAnyBtn">🌍 NO TECHNО<span class="msub">every other genre · sub-style + genre combos</span></button>
           </div>
           <div class="modebar-note" id="modeNoteBar">Genre mode — the roller draws sub-style + genre combos from 40+ genres. No techno appears unless you switch.</div>
+          <div class="row" style="margin-top:10px"><span class="lbl">⚡ DNA</span>
+            <div class="toggles" id="dnaPresets" style="flex:1"></div>
+            <span class="readout" id="dnaRead" style="font-size:10px">one-click techno flavors</span>
+          </div>
           <div class="row"><span class="lbl">Primary</span>
             <span class="val" id="v-primary">—</span>
             <button class="lock" data-lock="primary">🔓</button>
@@ -671,6 +684,29 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
     <!-- ======================= OUTPUT ======================= -->
     <section class="output">
 
+      <!-- GENERATED OUTPUT (sticky top-right) -->
+      <div class="card" id="outputCard">
+        <h2><span class="dot"></span>Generated Output — Suno 5.5<span class="spacer"></span><span class="readout" id="seedView" title="This roll's seed — click to copy">seed</span></h2>
+        <div class="cardbody">
+          <div class="tabs">
+            <button class="tab active" data-tab="style">Suno 5.5 Description ≤1000</button>
+            <button class="tab" data-tab="brief">Full Brief</button>
+            <button class="tab" data-tab="kit">Suno Kit</button>
+            <button class="tab" data-tab="eng">Engineer</button>
+          </div>
+          <div class="outbox" id="outbox"></div>
+          <div class="outmeta">
+            <button class="copybtn" id="copyBtn">📋 Copy</button>
+            <button class="sm power" id="sunoOpenBtn" title="Copy the description and open Suno in a new tab">🎤 Copy &amp; open Suno</button>
+            <button class="ghost sm" id="copyKitBtn">📦 Copy Suno kit</button>
+            <button class="ghost sm" id="dlBtn" title="Download the current tab as .txt">⬇ .txt</button>
+            <label class="toggle" id="structToggle" title="Append [Intro] [Build] [Drop] section tags to the description — Suno 5.5 follows them"><span class="led"></span>[Intro] tags</label>
+            <span class="counter" id="counter"></span>
+          </div>
+          <div class="row" style="margin-top:8px"><button class="readout ghost sm" id="hiddenChip" title="Click to reveal everything">👁 all sections visible</button></div>
+        </div>
+      </div>
+
       <!-- AUDITION -->
       <div class="card" id="auditionCard">
         <h2><span class="dot"></span>Audition<span class="spacer"></span><span class="readout" id="audHud">Idle — press play to hear this recipe.</span><button class="hidebtn" data-hide="auditionCard">👁</button></h2>
@@ -724,25 +760,6 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="sm ghost" id="clearVariationsBtn">🗑 Clear</button>
           </div>
           <div class="vari" id="variList"><div class="vcard"><div class="vbody dim">Hit "Generate 3 variations" (or ⚡ Power roll) to roll three alternative ideas, then apply the best one.</div></div></div>
-        </div>
-      </div>
-
-      <!-- OUTPUT -->
-      <div class="card" id="outputCard">
-        <h2><span class="dot"></span>Generated Output — Suno 5.5</h2>
-        <div class="cardbody">
-          <div class="tabs">
-            <button class="tab active" data-tab="style">Suno 5.5 Description ≤1000</button>
-            <button class="tab" data-tab="brief">Full Brief</button>
-            <button class="tab" data-tab="kit">Suno Kit</button>
-            <button class="tab" data-tab="eng">Engineer</button>
-          </div>
-          <div class="outbox" id="outbox"></div>
-          <div class="outmeta">
-            <button class="copybtn" id="copyBtn">📋 Copy</button>
-            <button class="ghost sm" id="copyKitBtn">📦 Copy Suno kit</button>
-            <span class="counter" id="counter"></span>
-          </div>
         </div>
       </div>
 

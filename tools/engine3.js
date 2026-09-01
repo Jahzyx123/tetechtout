@@ -680,6 +680,15 @@ function buildCommands(){
   add("🏆 Maximize my prompt (20 tries)","styles locked",()=>doMaxScoreRoll(20),"M2");
   add("🚀 Turbo Max (100 tries)","styles locked, everything else maxed",()=>doMaxTurbo(100),"M3");
   add("💡 New idea","one random spark",()=>ideaRoll(),"I");
+  add("⚡ DNA: Hard","150+ BPM peak-time hammer",()=>applyDna("hard"));
+  add("🧪 DNA: Acid","303 squelch & roll",()=>applyDna("acid"));
+  add("🎵 DNA: Melodic","anthem hooks, melody-dominant",()=>applyDna("melodic"));
+  add("▫️ DNA: Minimal","hypnotic, stripped back",()=>applyDna("minimal"));
+  add("🌑 DNA: Dark","industrial & cavernous",()=>applyDna("dark"));
+  add("🎲 DNA: Surprise","full random techno chaos",()=>applyDna("surprise"));
+  add("🎤 Copy & open Suno","description + suno.com/create",()=>{ const t=buildStylePrompt(); copyText(t,"Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e){} },400); },"O");
+  add("⬇ Download .txt","current tab",()=>downloadText("neonforge-prompt.txt", currentTab==="style"?buildStylePrompt():currentTab==="brief"?buildFullBrief():currentTab==="eng"?buildEngineer():buildKit()));
+  add("🎚 Toggle structure tags","[Intro] [Drop] in description",()=>{ commit(); state.structure=!state.structure; afterChange(); });
   add("📜 Open style picker","manual list",()=>openStyleModal(),"L");
   add("📜 Open master library","every pool, one screen",()=>openMasterLibrary(),"M5");
   add("👁 Hide/show sections","toggle prompt view",()=>toggleStylePromptFocus(),"H");
@@ -755,6 +764,7 @@ function openHelp(){
     ["F","Fuse styles"],
     ["H","Toggle Prompt view (hide non-prompt sections)"],
     ["L","Manual style list"],
+    ["O","Copy & open Suno"],
     ["?","This help"]
   ].map(r=>'<span class="kd"><kbd>'+r[0]+'</kbd></span><span>'+r[1]+'</span>').join("");
   modal.classList.add("open");
@@ -803,6 +813,7 @@ function handleKey(e){
   if(e.key==="f" || e.key==="F"){ doRoll("fuse"); return; }
   if(e.key==="h" || e.key==="H"){ toggleStylePromptFocus(); return; }
   if(e.key==="l" || e.key==="L"){ openStyleModal(); return; }
+  if(e.key==="o" || e.key==="O"){ copyText(buildStylePrompt(), "Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e2){} }, 400); return; }
   if(e.key==="?"){ openHelp(); return; }
 }
 function initShortcuts(){
@@ -919,6 +930,8 @@ function initEvents(){
     const anthemBtn = target.closest("#anthemIdeaBtn"); if(anthemBtn){ anthemIdea(); return; }
     const luckyBtn = target.closest("#luckyDipBtn"); if(luckyBtn){ luckyDip(); return; }
     const timeBtn = target.closest("#timeMachineBtn"); if(timeBtn){ timeMachine(); return; }
+    const dnaBtn = target.closest("[data-dna]");
+    if(dnaBtn){ applyDna(dnaBtn.getAttribute("data-dna")); return; }
     const copySparkBtn = target.closest("#sparkCopyBtn"); if(copySparkBtn){ sparkCopy(); return; }
     const titleApplyBtn = target.closest("#sparkTitleApplyBtn");
     if(titleApplyBtn){
@@ -937,6 +950,43 @@ function initEvents(){
     const optimizeBtn = target.closest("#optimizePromptBtn"); if(optimizeBtn){ optimizePromptSpace(); return; }
     const slimBtn = target.closest("#slimModeBtn"); if(slimBtn){ toggleSlimMode(); return; }
     const resetMaxBtn = target.closest("#resetMaxBtn"); if(resetMaxBtn){ resetMaxState(); return; }
+    const sunoOpenBtn = target.closest("#sunoOpenBtn");
+    if(sunoOpenBtn){
+      const text = buildStylePrompt();
+      copyText(text, "Style Prompt");
+      setTimeout(()=>{
+        try{
+          if(window.open){
+            window.open("https://suno.com/create", "_blank");
+            toast("🎤 Suno opened — paste the description in the style box");
+          } else {
+            toast("Paste the copied description into Suno");
+          }
+        }catch(e){ toast("Paste the copied description into Suno"); }
+      }, 500);
+      return;
+    }
+    const dlBtn = target.closest("#dlBtn");
+    if(dlBtn){
+      const text = currentTab==="style" ? buildStylePrompt() : currentTab==="brief" ? buildFullBrief() : currentTab==="eng" ? buildEngineer() : buildKit();
+      downloadText("neonforge-" + (state.concept&&state.concept.title ? state.concept.title.replace(/[^a-z0-9]+/gi,"-").toLowerCase().slice(0,30) : "prompt") + ".txt", text);
+      toast("⬇ Downloaded .txt (" + text.length + " chars)");
+      return;
+    }
+    const structToggle = target.closest("#structToggle");
+    if(structToggle){
+      commit(); state.structure = !state.structure; afterChange();
+      toast(state.structure ? "🎚 [Intro] [Drop] tags ON — Suno will follow the structure" : "🎚 Structure tags OFF");
+      return;
+    }
+    const hiddenChip = target.closest("#hiddenChip");
+    if(hiddenChip){
+      if(Object.keys(state.hidden).some(k=>state.hidden[k])){ showAllSections(); }
+      else { commit(); stylePromptFocus = true; for(const id of CARD_IDS){ if(!STYLE_PROMPT_SECTIONS.has(id)) state.hidden[id]=true; } afterChange(); toast("🎯 Prompt view — extras hidden"); }
+      return;
+    }
+    const seedView = target.closest("#seedView");
+    if(seedView){ copyText(String(state.seed), "Seed"); return; }
     const stashBtn = target.closest("#stashBBtn"); if(stashBtn){ stashB(); return; }
     const swapBtn = target.closest("#swapABBtn"); if(swapBtn){ swapAB(); return; }
     const audBtn = target.closest("#auditionBtn"); if(audBtn){ Audition.toggle(); return; }
@@ -1236,6 +1286,7 @@ function boot(){
   if(durationSel) durationSel.innerHTML = ["compact","standard","extended"].map(v=>'<option value="'+v+'">'+v+'</option>').join("");
   buildIdeaChips();
   buildMaxChips();
+  buildDnaChips();
   buildCommands();
   renderCommands();
   initEvents();
@@ -1272,7 +1323,7 @@ function boot(){
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,
-    SECTION_MAX_DEFS
+    SECTION_MAX_DEFS, applyDna, buildDnaChips, downloadText, DNA_PRESETS
   };
 }
 

@@ -35,7 +35,7 @@ const STYLE_PROMPT_SECTIONS = new Set(["styleCard","feelCard","bassCard","drumsC
 const lastMicro = {microMelody:"quarter", microBass:"quarter"};
 function render(){
   syncHarmonicColor(state);
-  const seedEl=$("seedView"); if(seedEl) seedEl.textContent = state.seed % 1000000;
+  const seedEl=$("seedView"); if(seedEl){ seedEl.textContent = "seed " + (state.seed % 1000000); seedEl.title = "This roll's seed — click to copy"; }
   const undoBtn=$("undoBtn"), redoBtn=$("redoBtn");
   if(undoBtn) undoBtn.disabled = undoStack.length===0;
   if(redoBtn) redoBtn.disabled = redoStack.length===0;
@@ -149,6 +149,17 @@ function render(){
   renderOutput();
   renderVariations();
   const maxRollScore=$("maxRollScore"); if(maxRollScore) maxRollScore.textContent = scorePrompt().total;
+  const structToggle=$("structToggle");
+  if(structToggle) structToggle.classList.toggle("on", !!state.structure);
+  const hiddenChip=$("hiddenChip");
+  if(hiddenChip){
+    let n = 0;
+    STYLE_PROMPT_SECTIONS.forEach(id=>{ if(state.hidden[id]) n++; });
+    if(state.hidden.bpm) n++;
+    if(state.hidden.key) n++;
+    hiddenChip.textContent = n ? "👁 " + n + " hidden from description — click to show" : "👁 all sections visible";
+    hiddenChip.classList.toggle("dim", n>0);
+  }
   const styleFocusBtn=$("styleFocusBtn");
   if(styleFocusBtn){
     styleFocusBtn.textContent = stylePromptFocus ? "🌐 Show all" : "📄 Prompt view";
@@ -197,11 +208,13 @@ function renderVariations(){
   list.innerHTML = "";
   state.variations.forEach((v,i)=>{
     const sp = buildStylePromptFor(v);
+    const sc = scoreFor(v);
     const card = document.createElement("div");
     card.className = "vcard";
     card.innerHTML =
       '<div class="vhead"><span class="vtitle">#'+(i+1)+' · '+escapeHtml((v.concept&&v.concept.title)||"Untitled")+'</span>'+
-      '<span class="vsub">'+escapeHtml(v.primaryStyle)+' · '+v.bpm+' BPM</span></div>'+
+      '<span class="vscore '+scoreClass(sc.total)+'">'+sc.total+'/100</span>'+
+      '<span class="vsub">'+escapeHtml(v.primaryStyle)+' · '+v.bpm+' BPM · '+sp.length+' chars</span></div>'+
       '<div class="vbody">'+escapeHtml(sp)+'</div>'+
       '<div class="vactions">'+
         '<button class="sm" data-apply-var="'+i+'">Apply this one</button>'+
@@ -321,6 +334,20 @@ function fallbackCopy(text, done){
   try{ document.execCommand("copy"); done(); }catch(e){ toast("Copy failed — select manually"); }
   document.body.removeChild(ta);
 }
+function downloadText(filename, text){
+  const a = document.createElement("a");
+  try{
+    if(window.URL && URL.createObjectURL && Blob){
+      a.href = URL.createObjectURL(new Blob([text], {type:"text/plain"}));
+    } else {
+      a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+    }
+    a.download = filename;
+    a.click();
+  }catch(e){
+    copyText(text, "Download blocked — copied instead");
+  }
+}
 
 /* ---------------------------- SHARE URL / PRESETS ---------------------------- */
 function encodeState(s){
@@ -330,7 +357,7 @@ function encodeState(s){
     ar:s.arpeggio, bv:s.bassVoice, bm:s.bassMovement, br:s.bassRel, k:s.kick, ha:s.hats,
     sn:s.snare, pc:s.perc, tm:s.toms, gr:s.groove, sw:s.swing, sy:s.sync, it:s.intensity,
     arng:s.arrangement, td:s.technoDrive, ta:s.technoAcid, tt:s.technoTexture, tr:s.technoRave, ti:s.technoIndustrial, aa:s.acidAmt, da:s.driveAmt, mm:s.microMelody, mb:s.microBass, im:s.instrumental, vm:s.vocalMode, w:s.weirdness, inf:s.influence,
-    dur:s.duration, mf:s.melodicForce, to:s.techOnly, eq:s.equalChance, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden,
+    dur:s.duration, mf:s.melodicForce, to:s.techOnly, eq:s.equalChance, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden, st:s.structure,
     ft:s.filterType, et:s.envelopeType, lt:s.lfoType, dt:s.distortionType, rt:s.reverbType, dlt:s.delayType, sct:s.sidechainType, stt:s.stereoType, fx:s.fxChain, cprog:s.chordProg, rpat:s.rhythmPattern, sint:s.soundIntensity, rg:s.rhythmGrid,
     mixDensity:s.mixDensity, mixEnergy:s.mixEnergy, mixSpace:s.mixSpace, mixGlue:s.mixGlue, mixPunch:s.mixPunch,
     masterDrive:s.masterDrive, masterLoudness:s.masterLoudness, masterColor:s.masterColor, masterChain:s.masterChain,
@@ -381,6 +408,7 @@ function decodeState(str){
       saturationType:"saturationType", compressionType:"compressionType", eqType:"eqType", sidechainCurve:"sidechainCurve", stereoEnhance:"stereoEnhance",
       cm:"counterMelody", cmr:"counterMelodyRelation", vc:"voiceConcept", vr:"voiceRelation"};
     for(const short in map){ if(m[short]!==undefined) s[map[short]] = m[short]; }
+    if(m.st!==undefined) s.structure = !!m.st;
     if(m.cp) s.concept = Object.assign(s.concept, m.cp);
     if(m.mc) s.melodyConcept = Object.assign(s.melodyConcept, m.mc);
     if(m.ly) s.layers = m.ly;
@@ -669,6 +697,117 @@ function resetMaxState(){
   setMaxStatus("Reset — all max locks cleared");
   toast("🔓 Max state reset — you can roll again");
 }
+
+/* ---------------------------- DNA PRESETS (one-click techno flavors) ---------------------------- */
+function pickMatching(pool, re){
+  if(!pool || !pool.length) return "";
+  const f = pool.filter(x=>re.test(String(x).toLowerCase()));
+  return (f.length ? f[Math.floor(Math.random()*f.length)] : pool[Math.floor(Math.random()*pool.length)]);
+}
+function pickScaleByMood(re){
+  const f = SCALES.filter(s=>re.test((s.mood||"").toLowerCase()));
+  if(f.length) return f[Math.floor(Math.random()*f.length)];
+  const ae = SCALES.find(s=>s.id==="aeolian");
+  return ae || SCALES[0];
+}
+function applyDna(name){
+  commit(); beginRoll();
+  const s = state;
+  s.techOnly = true;
+  const roll = (k)=>{ if(!s.locks[k] && ROLL_FN[k]) ROLL_FN[k](s); };
+  const set = (k,v)=>{ if(!s.locks[k]) s[k]=v; };
+  if(name==="hard"){
+    set("bpm", 150 + Math.floor(rng()*9));
+    set("driveAmt", 100); set("acidAmt", 80);
+    set("intensity", pickMatching(INTENSITIES,/hard|peak|maximum|slam|relentless/));
+    set("kick", pickMatching(KICKS,/hard|peak|punch|slam|hammer/));
+    set("snare", pickMatching(SNARES,/hard|punch|snap/));
+    set("technoDrive", pickMatching(TECHNO_DRIVES,/hard|peak|relentless|brutal|maximum/));
+    set("energyCurve", pickMatching(ENERGY_CURVE_TYPES,/peak|max|slam|aggressive/));
+    set("dropType", pickMatching(DROP_TYPES,/slam|hard|impact/));
+    set("textureLayer", pickMatching(TEXTURE_LAYER,/dense|thick|layer/));
+    set("melodicForce", "balanced"); set("duration", "standard");
+    s.layers.texture = true; s.layers.fx = true;
+    set("technoTexture", pickMatching(TECHNO_TEXTURES,/hard|raw|brutal|metallic/));
+  } else if(name==="acid"){
+    set("bpm", 140 + Math.floor(rng()*9));
+    set("acidAmt", 100); set("driveAmt", 85);
+    set("technoAcid", pickMatching(TECHNO_ACIDS,/acid|303|squelch|bubbl|resonant/));
+    set("filterType", pickMatching(FILTER_TYPES,/band|resonan|acid/));
+    set("lfoType", pickMatching(LFO_TYPES,/filter|acid|sweep|pump/));
+    set("groove", pickMatching(GROOVES,/rolling|hypnotic|pulsing/));
+    set("swing", pickMatching(SWINGS,/acid|16th|triplet/));
+    set("technoTexture", pickMatching(TECHNO_TEXTURES,/acid|squelch|resonan/));
+    set("rhythmPattern", pickMatching(RHYTHM_PATTERNS,/acid|16th|rolling/));
+    set("melodicForce", "balanced"); set("duration", "standard");
+    s.layers.acid = true;
+  } else if(name==="melodic"){
+    set("bpm", 136 + Math.floor(rng()*7));
+    set("melodicForce", "dominant");
+    set("feeling", pickMatching(FEELINGS,/euphor|uplift|radiant|bliss|joy|soar/));
+    set("flavor", pickMatching(FLAVORS,/radiant|uplift|blazing|euphor/));
+    set("leadVoice", pickMatching(LEADS,/lead|pluck|arp|bell|shimmer|vocal/));
+    set("harmony", pickMatching(HARMONIES,/major|seventh|plagal|lush|open/));
+    set("arpeggio", pickMatching(ARPS,/shimmer|ripple|rising|spark/));
+    roll("counter-melody");
+    set("duration", "standard");
+    s.layers.space = true; s.layers.reverb = true;
+  } else if(name==="minimal"){
+    set("bpm", 130 + Math.floor(rng()*7));
+    set("melodicForce", "light");
+    set("intensity", pickMatching(INTENSITIES,/hypnotic|minimal|subtle|driving/));
+    set("groove", pickMatching(GROOVES,/hypnotic|rolling|minimal|pumping/));
+    set("kick", pickMatching(KICKS,/tight|punch|minimal|boomy/));
+    set("hats", pickMatching(HATS,/clean|tight|stripped|hypnotic/));
+    set("perc", pickMatching(PERCS,/minimal|sparse|wooden/));
+    set("technoTexture", pickMatching(TECHNO_TEXTURES,/hypnotic|minimal|dub/));
+    set("duration", "extended");
+    Object.keys(s.layers).forEach(k=>s.layers[k]=false);
+  } else if(name==="dark"){
+    set("bpm", 142 + Math.floor(rng()*7));
+    const sc = pickScaleByMood(/dark|minor|grief|tragic|haunt/);
+    set("scaleId", sc.id); set("chordColor", sc.n);
+    set("technoIndustrial", pickMatching(TECHNO_INDUSTRIALS,/industrial|dark|brutal|grinding|metallic|machin/));
+    set("technoTexture", pickMatching(TECHNO_TEXTURES,/industrial|dark|raw/));
+    set("reverbType", pickMatching(REVERB_TYPES,/dark|cavern|hall|cathedral/));
+    set("distortionType", pickMatching(DISTORTION_TYPES,/hard|heavy|overdrive|crush/));
+    set("intensity", pickMatching(INTENSITIES,/brutal|dark|relentless|aggressive/));
+    set("driveAmt", 90); set("acidAmt", 60);
+    set("melodicForce", "strong");
+    s.layers.experimental = true; s.layers.fx = true;
+  } else { // surprise — pure chaos within the techno world
+    ["technoLab","drums","feel-melody","key","grooveMelodic","textureFx","soundDesign"].forEach(g=>{
+      const keys = GROUPS[g] || [g];
+      keys.forEach(k=>roll(k));
+    });
+    set("melodicForce", ["light","balanced","strong","dominant"][Math.floor(rng()*4)]);
+    set("duration", ["compact","standard","extended"][Math.floor(rng()*3)]);
+    set("bpm", 132 + Math.floor(rng()*26));
+  }
+  afterChange();
+  toast("⚡ DNA: " + DNA_PRESETS[name].label + " — " + DNA_PRESETS[name].desc);
+  return name;
+}
+function buildDnaChips(){
+  const wrap = $("dnaPresets"); if(!wrap) return;
+  wrap.innerHTML = "";
+  Object.keys(DNA_PRESETS).forEach(k=>{
+    const el = document.createElement("button");
+    el.className = "toggle";
+    el.setAttribute("data-dna", k);
+    el.innerHTML = '<span class="led"></span>' + DNA_PRESETS[k].label;
+    el.title = DNA_PRESETS[k].desc;
+    wrap.appendChild(el);
+  });
+}
+const DNA_PRESETS = {
+  hard:    {label:"🔨 HARD",    desc:"150+ BPM peak-time hammer — relentless drive, slamming drops"},
+  acid:    {label:"🧪 ACID",    desc:"303 squelch, resonant filters, rolling 16th grooves"},
+  melodic: {label:"🎵 MELODIC", desc:"euphoric leads, anthem hooks, melody-dominant"},
+  minimal: {label:"▫️ MINIMAL", desc:"hypnotic, stripped-back, rolling for 10+ minutes"},
+  dark:    {label:"🌑 DARK",    desc:"industrial, cavernous reverb, brutal percussion"},
+  surprise:{label:"🎲 SURPRISE",desc:"full random techno chaos"}
+};
 
 /* ---------------------------- IDEA ENGINE ----------------------------
    One button, one idea. Pick a category (or roll random), read the

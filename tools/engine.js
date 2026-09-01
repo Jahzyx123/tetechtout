@@ -198,7 +198,7 @@ function defaultState(){
     arrangement:"",
     instrumental:true, vocalMode:false,
     layers:{}, locks:defaultLocks(), hidden:defaultHidden(),
-    weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced", slim:false,
+    weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced", slim:false, structure:false,
     acidAmt:60, driveAmt:75,
     variations:[]
   };
@@ -611,7 +611,9 @@ function buildStylePrompt(){
     if(tfl) blocks.push({t: tfl, compact: textureFxLine(true), required:false, priority:5.88});
   }
   blocks.push({t: layerLine(), required:false, priority:6});
-  let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20), ". ");
+  const STRUCT_TAGS = " [Intro] [Build] [Drop] [Breakdown] [Drop] [Outro]";
+  const tagCost = state.structure ? STRUCT_TAGS.length + 1 : 0;
+  let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20) - tagCost, ". ");
   body = sanitize(body);
   body = body.replace(/[.\s]+$/,"");
   if(!/Bass:/.test(body) && !state.hidden.bassCard) body += ". " + bassLine();
@@ -619,8 +621,13 @@ function buildStylePrompt(){
   if(state.counterMelody && state.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". Counter-melody: " + state.counterMelody.voice;
   if(state.voiceConcept && state.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + state.voiceConcept.voice;
   body = sanitize(body);
+  if(state.structure && !state.hidden.styleCard) body += STRUCT_TAGS;
   const v = vocalLine();
-  return normalizePrompt(body + "." + (v ? " " + v : ""));
+  let out = normalizePrompt(body + "." + (v ? " " + v : ""));
+  if(state.structure && out.length > 1000){
+    out = normalizePrompt(out.replace(STRUCT_TAGS, ""));
+  }
+  return out;
 }
 function buildFullBrief(){
   const c = state.concept;
