@@ -682,6 +682,7 @@ function buildCommands(){
   add("🔀 Fuse styles","merge primary + secondary",()=>doRoll("fuse"),"F");
   add("🏆 Maximize my prompt (20 tries)","styles locked",()=>doMaxScoreRoll(20),"M2");
   add("🚀 Turbo Max (100 tries)","styles locked, everything else maxed",()=>doMaxTurbo(100),"M3");
+  add("🎲 Re-roll similar (keep styles)","fresh set, score within ~5 of current",()=>doReRollSimilar(25),"R");
   add("💡 New idea","one random spark",()=>ideaRoll(),"I");
   add("⚡ DNA: Hard","150+ BPM peak-time hammer",()=>applyDna("hard"));
   add("🧪 DNA: Acid","303 squelch & roll",()=>applyDna("acid"));
@@ -770,6 +771,7 @@ function openHelp(){
     ["H","Toggle Prompt view (hide non-prompt sections)"],
     ["L","Manual style list"],
     ["O","Copy & open Suno"],
+    ["R","🎲 Re-roll similar (keep styles)"],
     ["A","All sounds on (un-hide every sound card)"],
     ["?","This help"]
   ].map(r=>'<span class="kd"><kbd>'+r[0]+'</kbd></span><span>'+r[1]+'</span>').join("");
@@ -820,6 +822,7 @@ function handleKey(e){
   if(e.key==="h" || e.key==="H"){ toggleStylePromptFocus(); return; }
   if(e.key==="l" || e.key==="L"){ openStyleModal(); return; }
   if(e.key==="o" || e.key==="O"){ copyText(buildStylePrompt(), "Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e2){} }, 400); return; }
+  if(e.key==="r" || e.key==="R"){ doReRollSimilar(25); return; }
   if(e.key==="a" || e.key==="A"){ allSoundsOn(); return; }
   if(e.key==="?"){ openHelp(); return; }
 }
@@ -1158,6 +1161,7 @@ function initEvents(){
     }
     const maxTurboBtn = target.closest("#maxTurboBtn"); if(maxTurboBtn){ doMaxTurbo(100); return; }
     const maxScoreBtn = target.closest("#maxScoreBtn"); if(maxScoreBtn){ doMaxScoreRoll(20); return; }
+    const rerollSimilarBtn = target.closest("#rerollSimilarBtn"); if(rerollSimilarBtn){ doReRollSimilar(25); return; }
     const maxMelodyBtn = target.closest("#maxMelodyBtn"); if(maxMelodyBtn){ doMaxMelodyDominant(25); return; }
     const maxAnthemBtn = target.closest("#maxAnthemMelodyBtn"); if(maxAnthemBtn){ doMaxMelodyDominant(25); return; }
     const maxTempoBtn = target.closest("#maxTempoBtn"); if(maxTempoBtn){ doMaxScoreRollSection(["bpm"],15,"Tempo"); return; }
@@ -1331,6 +1335,7 @@ function boot(){
     scorePrompt, openPicker, openStyleModal, pickGenreCombo, genreComboName,
     allCombos, pickStyle, defaultState, commit, undo, redo,
     doMaxScoreRoll, doMaxScoreRollSection, doMaxTurbo, doMaxMelodyDominant,
+    doReRollSimilar, runMaxSearch, maxSearchKeys,
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,

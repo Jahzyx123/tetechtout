@@ -750,6 +750,7 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
           <div class="cluster" style="margin-top:10px">
             <button class="power" id="maxScoreBtn" title="20 random tries — keeps your styles">🏆 MAXIMIZE MY PROMPT</button>
             <button class="sm power" id="maxTurboBtn" title="100 tries — slower, usually even better">🚀 Turbo — 100 tries</button>
+            <button class="sm power" id="rerollSimilarBtn" title="Rolls everything EXCEPT Primary + Secondary styles — gives you a fresh set that scores within ~5 of the current one (R key)">🎲 Re-roll similar (keep styles)</button>
           </div>
           <div class="toggles" id="maxChips" style="margin:12px 0"></div>
           <div class="row" style="margin-top:12px"><span class="readout" id="maxRollStatus">Idle — press 🏆 MAXIMIZE MY PROMPT to find your best description.</span><button class="sm ghost" id="resetMaxBtn">🔓 Reset Max</button></div>
@@ -7640,9 +7641,10 @@ function scorePrompt(){
   const meloScore = !melo ? 0 : force==="light" ? 72 : force==="balanced" ? 92 : 100;
   items.push({label:"Melodic clarity", score:meloScore,
     note: !melo ? "Melody missing — unhide Feeling & Melody." : force==="light" ? "Light force; raise it for a stronger hook." : "Melody is clearly led."});
-  const parts = ["Bass:","Drums:","Harmony:","Arrangement:","Concept:"].filter(k=>sp.includes(k)).length;
+  const hasLead = /Lead:|Melody-driven|Melody-dominant/.test(sp);
+  const parts = ["Bass:","Drums:","Harmony:","Emotion-led melody:"].filter(k=>sp.includes(k)).length + (hasLead?1:0);
   items.push({label:"Instrumentation coverage", score:Math.round(parts/5*100),
-    note: parts===5 ? "Every layer specified." : (5-parts)+" section(s) hidden from the prompt."});
+    note: parts===5 ? "Every layer specified." : (5-parts)+" section(s) missing from the prompt."});
   const styleWords = styleLine().split(/,|with|fused/).length;
   const focusScore = styleWords<=3 ? 100 : styleWords<=4 ? 85 : 65;
   items.push({label:"Style focus", score:focusScore,
@@ -8317,59 +8319,153 @@ function scoreFor(s){
 function setMaxStatus(msg){
   const el = $("maxRollStatus"); if(el) el.textContent = msg;
 }
+/* Never rolled by a max search: the style combo itself, and the Concept /
+   Arrangement cards (removed from the prompt — rolling them would churn the
+   track title for zero score). */
+const NEVER_MAX = new Set(["concept","arrangement","primary","secondary","genre"]);
+/* Which ROLL_FN keys a max search may touch, given the starting state:
+   skips styles, concept/arrangement, atoms on hidden cards (not in the
+   prompt, so they can't help the score) and atoms the user locked. */
+function maxSearchKeys(start){
+  const out = [];
+  for(const k in ROLL_FN){
+    if(NEVER_MAX.has(k) || k.startsWith("concept-")) continue;
+    if(start.locks && start.locks[k]) continue;
+    const at = ATOM_BY_KEY[k];
+    if(at && at.card && start.hidden && start.hidden[at.card]) continue;
+    out.push(k);
+  }
+  return out;
+}
+/* Shared search: tries `attempts` fresh states (styles locked), keeps the
+   best Prompt Score. acceptTies lets a re-run always produce a NEW set even
+   when the score can't improve — that was the old "max does nothing" bug.
+   minScore: candidates below this are only used as a fallback
+   (for "re-roll similar"). */
+async function runMaxSearch(attempts, opts){
+  opts = opts || {};
+  const acceptTies = opts.acceptTies !== false;
+  const minScore = opts.minScore;
+  attempts = attempts || 20;
+  const start = snapshot();
+  const startScore = scoreFor(start).total;
+  const keys = maxSearchKeys(start);
+  if(!keys.length){
+    toast("🔒 Everything is locked or hidden — nothing to maximize");
+    setMaxStatus("Nothing to roll — everything locked or hidden.");
+    return {best:start, bestScore:startScore, startScore, attempts:0, adopted:false, keys:0};
+  }
+  let best = start;
+  let bestScore = startScore;
+  let bestInTol = null, bestInTolScore = -1;
+  let last = null, lastScore = -1;
+  for(let i=0;i<attempts;i++){
+    await yieldUI();
+    const v = snapshot();
+    v.variations = [];
+    v.seed = newSeed();
+    rng = mulberry32(v.seed);
+    for(const k of keys) ROLL_FN[k](v);
+    if(!v.techOnly && !v.locks.bpm && v.primaryGenre){
+      v.bpm = tempoForGenre(v.primaryGenre, v.secondaryGenre); // no-techno: fit tempo to the genre
+    }
+    const sc = scoreFor(v).total;
+    last = v; lastScore = sc;
+    if(sc > bestScore || (acceptTies && sc === bestScore)){
+      best = v; bestScore = sc;
+      if(opts.onProgress) opts.onProgress(bestScore, i+1, attempts);
+    }
+    if(minScore !== undefined && sc >= minScore && sc > bestInTolScore){
+      bestInTol = v; bestInTolScore = sc;
+    }
+  }
+  /* adopt a fresh set even if it only ties — that's what makes re-runs move */
+  let final = best, finalScore = bestScore;
+  let adopted = bestScore > startScore || (acceptTies && bestScore === startScore && best !== start);
+  if(opts.alwaysFresh && best === start){
+    final = bestInTol || last || best;
+    finalScore = bestInTolScore >= 0 ? bestInTolScore : lastScore;
+    adopted = true;
+  } else if(bestInTol && bestInTolScore > bestScore){
+    final = bestInTol; finalScore = bestInTolScore;
+  }
+  try{ final.locks = JSON.parse(JSON.stringify(start.locks)); }catch(e){ final.locks = start.locks; }
+  try{ final.hidden = JSON.parse(JSON.stringify(start.hidden)); }catch(e){ final.hidden = start.hidden; }
+  try{ final.layers = JSON.parse(JSON.stringify(start.layers)); }catch(e){ final.layers = start.layers; }
+  final.variations = [];
+  state = final;
+  rng = mulberry32(state.seed);
+  return {best:final, bestScore:finalScore, startScore, attempts, adopted, keys:keys.length};
+}
 async function doMaxScoreRoll(attempts){
   if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
   attempts = attempts || 20;
   maxRollRunning = true;
   commit();
-  const bestStart = snapshot();
-  let best = bestStart;
-  let bestScore = scoreFor(bestStart).total;
-  const btns = ["maxScoreBtn","maxTurboBtn"].map(id=>$(id)).filter(Boolean);
-  btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
+  const startScore = scoreFor(state).total;
+  const btns = ["maxScoreBtn","maxTurboBtn","rerollSimilarBtn"].map(id=>$(id)).filter(Boolean);
+  const origTexts = btns.map(b=>b.textContent);
+  btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+startScore; });
   setMaxStatus("Searching "+attempts+" combos — styles locked");
   toast("🏆 Searching "+attempts+" combos — styles locked: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"));
-  for(let i=0;i<attempts;i++){
-    await yieldUI();
-    const v = snapshot();
-    if(!v.locks) v.locks = defaultLocks();
-    v.locks.primary = true;
-    v.locks.secondary = true;
-    v.locks.genre = true; // genre mutator re-rolls the styles — keep them
-    for(const k in ROLL_FN){ if(k==="primary"||k==="secondary"||k==="genre") continue; v.locks[k]=false; }
-    v.seed = newSeed();
-    rng = mulberry32(v.seed);
-    rollAllInto(v);
-    v.variations = [];
-    const sc = scoreFor(v);
-    if(sc.total > bestScore){
-      best = v;
-      bestScore = sc.total;
-      btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore+" ("+(i+1)+"/"+attempts+")"; });
-      setMaxStatus("Best "+bestScore+" at "+(i+1)+"/"+attempts);
-    }
-    if(i%5===0) setMaxStatus("Progress "+(i+1)+"/"+attempts+" best "+bestScore);
-  }
-  try{ best.locks = JSON.parse(JSON.stringify(bestStart.locks)); }catch(e){ best.locks = bestStart.locks; }
-  try{ best.hidden = JSON.parse(JSON.stringify(bestStart.hidden)); }catch(e){ best.hidden = bestStart.hidden; }
-  try{ best.layers = JSON.parse(JSON.stringify(bestStart.layers)); }catch(e){ best.layers = bestStart.layers; }
-  state = best;
-  rng = mulberry32(state.seed);
+  const res = await runMaxSearch(attempts, {
+    minScore: startScore - 2, // never downgrade more than 2 — but always move when a near-equal set exists
+    alwaysFresh: true,
+    onProgress: (sc, i, n)=>{ setMaxStatus("Best "+sc+"/100 at "+i+"/"+n); btns.forEach(b=>{ if(b) b.textContent="⏳ "+sc+" ("+i+"/"+n+")"; }); }
+  });
   afterChange();
   flash($("scoreCard"));
-  btns.forEach(b=>{ if(b){ b.disabled=false; if(b.id==="maxTurboBtn") b.textContent="🚀 Turbo — 100 tries"; else b.textContent="🏆 MAXIMIZE MY PROMPT"; } });
-  setMaxStatus("Best "+bestScore+"/100 after "+attempts+" tries — "+(state.primaryStyle||"")+" + "+(state.secondaryStyle||""));
-  toast("🏆 Best score "+bestScore+" /100 — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+attempts+" tries");
+  btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||b.textContent; });
+  const delta = res.bestScore - res.startScore;
+  setMaxStatus("Best "+res.bestScore+"/100 after "+res.attempts+" tries — styles kept: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none")+(delta>0 ? " (+"+delta+")" : ""));
+  toast("🏆 Best score "+res.bestScore+" /100"+(delta>0 ? " (was "+res.startScore+", +"+delta+")" : " — fresh set at the same score")+" — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+res.attempts+" tries");
   maxRollRunning = false;
-  return bestScore;
+  return res.bestScore;
+}
+/* NEW: re-roll a fresh set with a similar score — everything rolls again
+   EXCEPT primary + secondary styles. Always adopts a new set, even when the
+   score only ties (that's the point: you get another idea with the same
+   quality). */
+async function doReRollSimilar(attempts, tolerance){
+  if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
+  attempts = attempts || 25;
+  const tol = (tolerance === undefined) ? 5 : tolerance;
+  maxRollRunning = true;
+  commit();
+  const startScore = scoreFor(state).total;
+  const btn = $("rerollSimilarBtn");
+  const origText = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ "+startScore; }
+  setMaxStatus("Re-rolling "+attempts+" fresh sets — styles locked, aiming within "+tol+" of "+startScore);
+  toast("🎲 Re-rolling "+attempts+" fresh sets — keeping "+((state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"))+" — target ≥ "+(startScore-tol)+"/100");
+  const res = await runMaxSearch(attempts, {
+    minScore: startScore - tol,
+    alwaysFresh: true,
+    onProgress: (sc, i, n)=>{ setMaxStatus("Similar-score search "+i+"/"+n+" — best "+sc+"/100 (target ≥ "+(startScore-tol)+")"); if(btn) btn.textContent="⏳ "+sc+" ("+i+"/"+n+")"; }
+  });
+  afterChange();
+  flash($("scoreCard"));
+  if(btn){ btn.disabled = false; btn.textContent = origText; }
+  const delta = res.bestScore - res.startScore;
+  setMaxStatus("Fresh set at "+res.bestScore+"/100 (was "+res.startScore+") after "+res.attempts+" tries — styles kept: "+state.primaryStyle+" / "+(state.secondaryStyle||"none"));
+  toast("🎲 Fresh set at "+res.bestScore+" /100"+(delta>=0 ? " (same or better)" : " — "+delta+" vs before")+" · styles kept — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary"));
+  maxRollRunning = false;
+  return {score:res.bestScore, startScore, delta, attempts:res.attempts};
 }
 async function doMaxScoreRollSection(sectionKeys, attempts, label){
   if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
   maxRollRunning = true;
   attempts = attempts || 15;
   commit();
-  const keepPrimary = !sectionKeys.includes("primary") && !sectionKeys.includes("secondary");
   const bestStart = snapshot();
+  /* only roll keys that are real, unlocked, and on a visible card */
+  const keys = sectionKeys.filter(k => ROLL_FN[k] && !bestStart.locks[k] && !(ATOM_BY_KEY[k] && ATOM_BY_KEY[k].card && bestStart.hidden[ATOM_BY_KEY[k].card]));
+  if(!keys.length){
+    maxRollRunning = false;
+    toast("🔒 "+label+" is fully locked or hidden — nothing to maximize");
+    setMaxStatus(label+" — everything locked or hidden.");
+    return scoreFor(bestStart).total;
+  }
   let best = bestStart;
   let bestScore = scoreFor(bestStart).total;
   const btnIds = ["max"+label.replace(/\s+/g,"")+"Btn", "max"+label.replace(/\s+/g,"")+"Btn2"];
@@ -8381,18 +8477,14 @@ async function doMaxScoreRollSection(sectionKeys, attempts, label){
   for(let i=0;i<attempts;i++){
     await yieldUI();
     const v = snapshot();
-    if(!v.locks) v.locks = defaultLocks();
-    for(const k in ROLL_FN){ v.locks[k]=true; }
-    sectionKeys.forEach(k=>{ if(k in v.locks) v.locks[k]=false; });
-    if(keepPrimary){ v.locks.primary=true; v.locks.secondary=true; }
+    v.variations = [];
     v.seed = newSeed();
     rng = mulberry32(v.seed);
-    rollAllInto(v);
-    v.variations = [];
-    const sc = scoreFor(v);
-    if(sc.total > bestScore){
+    for(const k of keys) ROLL_FN[k](v);
+    const sc = scoreFor(v).total;
+    if(sc > bestScore || sc === bestScore){ // ties adopted → re-runs always move
       best = v;
-      bestScore = sc.total;
+      bestScore = sc;
       btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore+" ("+(i+1)+"/"+attempts+")"; });
       setMaxStatus(label+" best "+bestScore+" ("+(i+1)+"/"+attempts+")");
     }
@@ -8400,6 +8492,7 @@ async function doMaxScoreRollSection(sectionKeys, attempts, label){
   try{ best.locks = JSON.parse(JSON.stringify(bestStart.locks)); }catch(e){ best.locks = bestStart.locks; }
   try{ best.hidden = JSON.parse(JSON.stringify(bestStart.hidden)); }catch(e){ best.hidden = bestStart.hidden; }
   try{ best.layers = JSON.parse(JSON.stringify(bestStart.layers)); }catch(e){ best.layers = bestStart.layers; }
+  best.variations = [];
   state = best;
   rng = mulberry32(state.seed);
   afterChange();
@@ -9513,6 +9606,7 @@ function buildCommands(){
   add("🔀 Fuse styles","merge primary + secondary",()=>doRoll("fuse"),"F");
   add("🏆 Maximize my prompt (20 tries)","styles locked",()=>doMaxScoreRoll(20),"M2");
   add("🚀 Turbo Max (100 tries)","styles locked, everything else maxed",()=>doMaxTurbo(100),"M3");
+  add("🎲 Re-roll similar (keep styles)","fresh set, score within ~5 of current",()=>doReRollSimilar(25),"R");
   add("💡 New idea","one random spark",()=>ideaRoll(),"I");
   add("⚡ DNA: Hard","150+ BPM peak-time hammer",()=>applyDna("hard"));
   add("🧪 DNA: Acid","303 squelch & roll",()=>applyDna("acid"));
@@ -9601,6 +9695,7 @@ function openHelp(){
     ["H","Toggle Prompt view (hide non-prompt sections)"],
     ["L","Manual style list"],
     ["O","Copy & open Suno"],
+    ["R","🎲 Re-roll similar (keep styles)"],
     ["A","All sounds on (un-hide every sound card)"],
     ["?","This help"]
   ].map(r=>'<span class="kd"><kbd>'+r[0]+'</kbd></span><span>'+r[1]+'</span>').join("");
@@ -9651,6 +9746,7 @@ function handleKey(e){
   if(e.key==="h" || e.key==="H"){ toggleStylePromptFocus(); return; }
   if(e.key==="l" || e.key==="L"){ openStyleModal(); return; }
   if(e.key==="o" || e.key==="O"){ copyText(buildStylePrompt(), "Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e2){} }, 400); return; }
+  if(e.key==="r" || e.key==="R"){ doReRollSimilar(25); return; }
   if(e.key==="a" || e.key==="A"){ allSoundsOn(); return; }
   if(e.key==="?"){ openHelp(); return; }
 }
@@ -9989,6 +10085,7 @@ function initEvents(){
     }
     const maxTurboBtn = target.closest("#maxTurboBtn"); if(maxTurboBtn){ doMaxTurbo(100); return; }
     const maxScoreBtn = target.closest("#maxScoreBtn"); if(maxScoreBtn){ doMaxScoreRoll(20); return; }
+    const rerollSimilarBtn = target.closest("#rerollSimilarBtn"); if(rerollSimilarBtn){ doReRollSimilar(25); return; }
     const maxMelodyBtn = target.closest("#maxMelodyBtn"); if(maxMelodyBtn){ doMaxMelodyDominant(25); return; }
     const maxAnthemBtn = target.closest("#maxAnthemMelodyBtn"); if(maxAnthemBtn){ doMaxMelodyDominant(25); return; }
     const maxTempoBtn = target.closest("#maxTempoBtn"); if(maxTempoBtn){ doMaxScoreRollSection(["bpm"],15,"Tempo"); return; }
@@ -10162,6 +10259,7 @@ function boot(){
     scorePrompt, openPicker, openStyleModal, pickGenreCombo, genreComboName,
     allCombos, pickStyle, defaultState, commit, undo, redo,
     doMaxScoreRoll, doMaxScoreRollSection, doMaxTurbo, doMaxMelodyDominant,
+    doReRollSimilar, runMaxSearch, maxSearchKeys,
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,

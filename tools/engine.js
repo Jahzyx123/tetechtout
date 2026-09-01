@@ -1003,9 +1003,10 @@ function scorePrompt(){
   const meloScore = !melo ? 0 : force==="light" ? 72 : force==="balanced" ? 92 : 100;
   items.push({label:"Melodic clarity", score:meloScore,
     note: !melo ? "Melody missing — unhide Feeling & Melody." : force==="light" ? "Light force; raise it for a stronger hook." : "Melody is clearly led."});
-  const parts = ["Bass:","Drums:","Harmony:","Arrangement:","Concept:"].filter(k=>sp.includes(k)).length;
+  const hasLead = /Lead:|Melody-driven|Melody-dominant/.test(sp);
+  const parts = ["Bass:","Drums:","Harmony:","Emotion-led melody:"].filter(k=>sp.includes(k)).length + (hasLead?1:0);
   items.push({label:"Instrumentation coverage", score:Math.round(parts/5*100),
-    note: parts===5 ? "Every layer specified." : (5-parts)+" section(s) hidden from the prompt."});
+    note: parts===5 ? "Every layer specified." : (5-parts)+" section(s) missing from the prompt."});
   const styleWords = styleLine().split(/,|with|fused/).length;
   const focusScore = styleWords<=3 ? 100 : styleWords<=4 ? 85 : 65;
   items.push({label:"Style focus", score:focusScore,
