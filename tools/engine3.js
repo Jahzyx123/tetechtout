@@ -1335,7 +1335,7 @@ function boot(){
     scorePrompt, openPicker, openStyleModal, pickGenreCombo, genreComboName,
     allCombos, pickStyle, defaultState, commit, undo, redo,
     doMaxScoreRoll, doMaxScoreRollSection, doMaxTurbo, doMaxMelodyDominant,
-    doReRollSimilar, runMaxSearch, maxSearchKeys,
+    doReRollSimilar, runMaxSearch, maxSearchKeys, maxRollBusy: () => maxRollRunning,
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,

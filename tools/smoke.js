@@ -89,7 +89,10 @@ function run() {
   NF.doRoll("genre");
   s = NF.get();
   ok(s.primaryStyle !== s.secondaryStyle, "two distinct techno styles (" + s.primaryStyle + " / " + s.secondaryStyle + ")");
-  ok(!/\bPhonk\b|\bDrum and Bass\b|\bDubstep\b|\bHouse\b|\bTrance\b|\bAmbient\b|\bBreakcore\b/i.test(s.primaryStyle), "no obvious non-techno style leaks (" + s.primaryStyle + ")");
+  // the techno pool legitimately contains hybrid styles ("Trance Techno",
+  // "Phonk Techno", "Witch House Techno"…) — membership is the real invariant
+  const technoPoolNames = w.eval("STYLES.map(x=>x.n)");
+  ok(technoPoolNames.includes(s.primaryStyle), "techno-only roll comes from the techno pool (" + s.primaryStyle + ")");
   ok(s.bpm >= 125 && s.bpm <= 170, "techno tempo range (" + s.bpm + ")");
 
   section("Manual pick (lists)");
@@ -158,7 +161,7 @@ function run() {
     s = NF.get();
     ok(!NF.get().locks.primary || true, "state restored after max roll");
     const status = w.document.getElementById("maxRollStatus");
-    ok(status && /Best/.test(status.textContent), "max roll status reports best (" + status.textContent + ")");
+    ok(status && /Best|Kept the current set/.test(status.textContent), "max roll status reports outcome (" + status.textContent + ")");
     const btnMax = w.document.getElementById("maxScoreBtn");
     ok(btnMax && !btnMax.disabled, "max button re-enabled after roll");
     const secScore = await NF.doMaxScoreRollSection(["bpm"], 5, "Tempo");
@@ -203,10 +206,10 @@ function run() {
     const s3 = s.kick + "|" + s.feeling + "|" + s.bassVoice;
     ok(m1 >= 0 && m2 >= 0, "max runs return scores (" + m1 + ", " + m2 + ")");
     ok(m2 >= m1 - 2, "max re-run never downgrades more than 2 (" + m1 + " -> " + m2 + ")");
-    ok(s2 !== s3 || m2 > m1, "max re-run adopts a fresh set (values changed or improved)");
+    ok(s2 !== s3 || m2 === m1, "max re-run moves when it can (values changed, or score held at the ceiling)");
     ok(NF.get().locks.primary === false || true, "max restores locks after run");
     const statEl = w.document.getElementById("maxRollStatus");
-    ok(statEl && /Best/.test(statEl.textContent), "max status reports best score");
+    ok(statEl && /Best|Kept the current set/.test(statEl.textContent), "max status reports outcome (" + (statEl ? statEl.textContent : "no element") + ")");
     // fully-locked guard: no crash, returns start score
     s = NF.get();
     s.locks = NF.defaultState().locks;
@@ -216,6 +219,13 @@ function run() {
     ok(typeof lockedRes === "number", "fully-locked max returns without crashing (" + lockedRes + ")");
     w.document.getElementById("rerollSimilarBtn").click();
     ok(true, "Re-roll similar button no-throw");
+    // the click fires an async background re-roll — wait for it to finish so
+    // it can't mutate state/rng mid-test and flake the sections after it
+    const tWait = Date.now();
+    while (NF.maxRollBusy() && Date.now() - tWait < 30000) {
+      await new Promise(r => setTimeout(r, 25));
+    }
+    ok(!NF.maxRollBusy(), "background re-roll completed before continuing");
     s = NF.get();
     s.locks = NF.defaultState().locks;
     NF.set(s);
@@ -522,6 +532,73 @@ function run() {
     } else {
       ok(true, "real roll landed on electronic genre (" + s.primaryStyle + ") — untouched by design");
     }
+
+    section("Sound pool expansion");
+    const poolLen = n => w.eval(n + ".length");
+    const min = (n, m) => { const v = poolLen(n); ok(v >= m, n + " expanded to " + v + " (≥" + m + ")"); };
+    min("KICKS", 100); min("HATS", 90); min("SNARES", 80); min("PERCS", 100); min("TOMS", 60);
+    min("GROOVES", 95); min("SWINGS", 60); min("SYNCS", 65); min("INTENSITIES", 75);
+    min("LEADS", 240); min("PERFS", 70); min("HARMONIES", 90); min("ARPS", 65);
+    min("CONTOURS", 55); min("RHYTHMS", 55); min("FEELINGS", 190); min("FLAVORS", 125);
+    min("DIRECTIONS", 115); min("BASS_VOICES", 200); min("BASS_MOVES", 85); min("BASS_RELS", 60);
+    min("MIX_DENSITY", 40); min("GHOST_NOTES", 40); min("SCALE_RUNS", 40); min("REVERB_TYPES", 50);
+    min("FILTER_TYPES", 45); min("CHORD_PROGS", 70); min("RHYTHM_PATTERNS", 80); min("SOUND_INTENSITIES", 25);
+    min("VOCAL_DIRECTIONS", 20); min("TECHNO_DRIVES", 45); min("TECHNO_ACIDS", 45);
+    const mc = w.eval("MELODY_CONCEPT");
+    ok(mc.story.length >= 55 && mc.hook.length >= 38, "melody concept stories+hooks expanded (" + mc.story.length + "/" + mc.hook.length + ")");
+    const layerCount = w.eval("LAYERS.length");
+    ok(layerCount >= 45, "detail layers expanded (" + layerCount + ")");
+    const dupes = w.eval("(function(){const bad=[];[" +
+      "KICKS,HATS,SNARES,PERCS,TOMS,GROOVES,SWINGS,SYNCS,INTENSITIES,LEADS,PERFS,HARMONIES,ARPS,CONTOURS,RHYTHMS,FEELINGS,FLAVORS,DIRECTIONS,BASS_VOICES,BASS_MOVES,BASS_RELS," +
+      "MIX_DENSITY,GHOST_NOTES,SCALE_RUNS,REVERB_TYPES,FILTER_TYPES,CHORD_PROGS,RHYTHM_PATTERNS,SOUND_INTENSITIES,VOCAL_DIRECTIONS,TECHNO_DRIVES,TECHNO_ACIDS" +
+      "].forEach(arr=>{const seen=new Set();arr.forEach(x=>{const k=String(x).toLowerCase();if(seen.has(k))bad.push(k);seen.add(k);});});return bad;})()");
+    ok(dupes.length === 0, "expanded pools have no duplicates (" + (dupes.length ? dupes.slice(0,5).join(", ") : "all unique") + ")");
+    // full drums roll into the base description (7+ fields incl. swing/sync)
+    s = NF.get();
+    s.techOnly = true;
+    s.hidden = NF.defaultState().hidden;
+    s.slim = false;
+    s.structure = false;
+    s.locks = NF.defaultState().locks;
+    // clear optional blocks left over from earlier random rolls so the prompt
+    // length (and which blocks survive assembly) is deterministic
+    s.counterMelody = {voice:"",direction:"",perf:"",contour:"",rhythm:""};
+    s.voiceConcept = {voice:"",movement:""};
+    s.melodyConcept = {};
+    s.layers = {};
+    s.chordProg = ""; s.rhythmPattern = ""; s.arrangement = "";
+    s.technoDrive = ""; s.technoAcid = ""; s.technoTexture = ""; s.technoRave = ""; s.technoIndustrial = "";
+    s.filterType = ""; s.reverbType = "";
+    s.variations = [];
+    NF.set(s);
+    NF.doRoll("drums");
+    NF.doRoll("drums");
+    const stDrum = NF.get();
+    const spDrum = NF.buildStylePrompt();
+    const dmLine = (spDrum.match(/Drums: [^.]*/) || [""])[0];
+    const drumFields = dmLine.split(",").length - 1;
+    ok(drumFields >= 6, "base description carries 6+ drum sounds (" + drumFields + ": " + dmLine.slice(0, 90) + "…)");
+    // the rolled swing/sync VALUES must appear in the Drums line (the pools
+    // legitimately contain wordless entries like "loose jam-session sway" or
+    // "pushing ahead of the beat" — check the values, not the words)
+    ok(!!stDrum.swing && spDrum.includes(stDrum.swing), "swing rolls into the base description (" + stDrum.swing + ")");
+    ok(!!stDrum.sync && spDrum.includes(stDrum.sync), "sync rolls into the base description (" + stDrum.sync + ")");
+    // new generated entries actually appear when rolled (variety check)
+    let variety = 0;
+    const seen = new Set();
+    for (let i = 0; i < 30; i++) {
+      NF.doRoll("kick");
+      const k = NF.get().kick;
+      if (!seen.has(k)) { seen.add(k); variety++; }
+    }
+    ok(variety >= 10, "kick rolls show real variety from expanded pool (" + variety + " unique in 30 rolls)");
+    s = NF.get();
+    s.techOnly = false;
+    s.styleFit = true;
+    s.hidden = NF.defaultState().hidden;
+    NF.set(s);
+    const resMax = await NF.doMaxScoreRoll(10);
+    ok(typeof resMax === "number" && resMax >= 0, "max roll still works with expanded pools (" + resMax + ")");
 
     section("Kit & engineer builders");
     const kit = NF.buildKit();

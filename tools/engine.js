@@ -440,7 +440,7 @@ const ORGANIC_MAP = [
   [/\b([a-z]+(?:[- ][a-z]+)?)[- ]synth\b/gi, (m,stem)=>stem.replace(/-/g," ")],
   [/\bdrop(s)?\b/gi, "refrain"],
   /* compound techno-isms (remove whole phrase) */
-  [/\b(acid[- ]?squelch|acid[- ]?drenched|acid[- ]?fueled|303[- ]?style|303[- ]?filtered|bunker[- ]?rattling|peak[- ]?time|warehouse[- ]?powered|warehouse[- ]?echo|rave[- ]?charged|rave[- ]?stab|trance[- ]?pluck|saw[- ]?stack|triple[- ]?oscillator|hands[- ]?in[- ]?the[- ]?air|siren[- ]?like|siren[- ]?sweep|sub[- ]?wobble|turbo[- ]?charged|piston[- ]?powered|voltage[- ]?spiked|modular[- ]?patched|micro[- ]?swept|rave[- ]?fueled|synth[- ]?string bass|kick[- ]?locked|filter[- ]?swept|overdrive[- ]?slammed)\b/gi, " "],
+  [/\b(acid[- ]?squelch|acid[- ]?drenched|acid[- ]?fueled|303[- ]?style|303[- ]?filtered|bunker[- ]?rattling|peak[- ]?time|warehouse[- ]?powered|warehouse[- ]?echo|rave[- ]?charged|rave[- ]?stab|trance[- ]?pluck|saw[- ]?stack|triple[- ]?oscillator|hands[- ]?in[- ]?the[- ]?air|siren[- ]?like|siren[- ]?sweep|sub[- ]?wobble|turbo[- ]?charged|piston[- ]?powered|voltage[- ]?spiked|modular[- ]?patched|micro[- ]?swept|rave[- ]?fueled|synth[- ]?string bass|kick[- ]?locked|filter[- ]?swept|overdrive[- ]?slammed|gate[- ]?stab)\b/gi, " "],
   /* machine-model numbers */
   [/\b(909|808|303)\b/gi, " "],
   /* pure techno nouns / instruments */
@@ -453,18 +453,20 @@ const ORGANIC_MAP = [
   [/\bstomp(s|ing)?\b/gi, "groove"],
   /* standalone-capable words → genre-fitting equivalents */
   [/\boverdriven\b/gi, "intense"],
-  [/\bpounding\b/gi, "powerful"],
   [/\beuphoric\b/gi, "joyous"],
   [/\banthem(s)?\b/gi, "showpiece"],
   [/\bpumping\b/gi, "pulsing"],
-  [/\bsiren\b/gi, "soaring"]
+  [/\bsiren\b/gi, "soaring"],
+  [/\bcrushing\b/gi, "extremely"],
+  [/\bferocious\b/gi, "fierce"],
+  [/\bexplosive\b/gi, "bursting"]
 ];
 const HYBRID_MAP = [
   [/\bhardgroove[- ]?locked\b/gi, "locked-in"],
   [/\bacid[- ]?driven\b/gi, "propulsive"],
   [/\bbunker[- ]?born\b/gi, "raw"],
   /* compound techno-isms — only the ones with no place outside techno */
-  [/\b(acid[- ]?squelch|acid[- ]?drenched|acid[- ]?fueled|acid[- ]?searing|303[- ]?style|303[- ]?filtered|bunker[- ]?rattling|peak[- ]?time|warehouse[- ]?powered|warehouse[- ]?echo|rave[- ]?charged|rave[- ]?stab|trance[- ]?pluck|saw[- ]?stack|triple[- ]?oscillator|siren[- ]?like|sub[- ]?wobble|turbo[- ]?charged|piston[- ]?powered|voltage[- ]?spiked|modular[- ]?patched|micro[- ]?swept|rave[- ]?fueled|kick[- ]?locked)\b/gi, " "],
+  [/\b(acid[- ]?squelch|acid[- ]?drenched|acid[- ]?fueled|acid[- ]?searing|303[- ]?style|303[- ]?filtered|bunker[- ]?rattling|peak[- ]?time|warehouse[- ]?powered|warehouse[- ]?echo|rave[- ]?charged|rave[- ]?stab|trance[- ]?pluck|saw[- ]?stack|triple[- ]?oscillator|siren[- ]?like|sub[- ]?wobble|turbo[- ]?charged|piston[- ]?powered|voltage[- ]?spiked|modular[- ]?patched|micro[- ]?swept|rave[- ]?fueled|kick[- ]?locked|gate[- ]?stab)\b/gi, " "],
   [/\b(909|808|303)\b/gi, " "],
   [/\b(sidechain|rave|trance|acid|hardstyle|gabber|industrial|warehouse|mainstage|bigroom|hardgroove(?!-)|reese)\b/gi, " "]
 ];
@@ -486,6 +488,8 @@ function genreSafeText(text, protectStyles){
     t = t.replace(re, rep);
   }
   t = t.replace(/\b\d+\.\d+\b/g,"");           /* leftover "2.0"-style junk */
+  t = t.replace(/ -\s*([a-z])/gi, " $1");      /* "glassy -bell" → "glassy bell" */
+  t = t.replace(/^-\s+|\s+-$/g, " ");          /* leading/trailing hyphen stubs */
   t = t.replace(/\s{2,}/g," ");
   t = t.replace(/\s+([,.;])/g,"$1");
   t = t.replace(/,\s*,/g,",");
@@ -569,8 +573,11 @@ function voiceConceptLine(){
   const rel = VOICE_ROLE[state.voiceRelation] || VOICE_ROLE.supports;
   return "Second line: " + vc.voice + ", " + vc.movement + "; " + rel;
 }
-function drumLine(){
-  return "Drums: " + state.kick + ", " + state.hats + ", " + state.snare + ", " + state.perc + ", " + state.groove;
+function drumLine(compact){
+  if(compact){
+    return "Drums: " + [state.kick, state.hats, state.snare, state.perc, state.groove, state.swing, state.sync].filter(Boolean).join(", ");
+  }
+  return "Drums: " + [state.kick, state.hats, state.snare, state.perc, state.toms, state.groove, state.swing, state.sync, state.intensity].filter(Boolean).join(", ");
 }
 function soundDesignLine(compact){
   const parts=[];
@@ -713,6 +720,15 @@ function sanitize(text){
 function assemble(blocks, budget, sep){
   let text = blocks.map(b=>b.t).filter(Boolean).join(sep);
   if(text.length <= budget) return text;
+  /* compact-first pass: shrink EVERY block to its compact form before
+     dropping any — packs far more sound detail into the same budget */
+  if(blocks.some(b=>b.compact && b.t !== b.compact)){
+    const alt = blocks.map(b => (b.compact && b.t !== b.compact) ? {t: b.compact, compact: b.compact, required: b.required, priority: b.priority} : b);
+    const t2 = alt.map(x=>x.t).filter(Boolean).join(sep);
+    if(t2.length <= budget){ return t2; }
+    blocks = alt;
+    text = t2;
+  }
   for(const b of blocks){
     if(b.compact && b.t !== b.compact){
       b.t = b.compact;
@@ -764,7 +780,7 @@ function buildStylePrompt(){
     const compactBass = bassLine() + (vcl && state.voiceConcept && state.voiceConcept.voice ? ". Second line: " + state.voiceConcept.voice : "");
     blocks.push({t: SLIM ? "Bass: " + state.bassVoice + "; " + state.bassMovement : fullBass, compact: compactBass, required:true, priority:4});
   }
-  if(!state.hidden.drumsCard) blocks.push({t: SLIM ? "Drums: " + state.kick + "; " + state.groove : drumLine(), required:true, priority:5});
+  if(!state.hidden.drumsCard) blocks.push({t: SLIM ? "Drums: " + state.kick + "; " + state.groove : drumLine(), compact: drumLine(true), required:true, priority:5});
   if(!state.hidden.technoLabCard){
     const tl = technoLabLine(false);
     if(tl) blocks.push({t: tl, compact: technoLabLine(true), required:false, priority:5.5});
@@ -801,7 +817,7 @@ function buildStylePrompt(){
   body = sanitize(body);
   body = body.replace(/[.\s]+$/,"");
   if(!/Bass:/.test(body) && !state.hidden.bassCard) body += ". " + bassLine();
-  if(!/Drums:/.test(body) && !state.hidden.drumsCard) body += ". " + drumLine();
+  if(!/Drums:/.test(body) && !state.hidden.drumsCard) body += ". " + drumLine(true);
   if(state.counterMelody && state.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". Counter-melody: " + state.counterMelody.voice;
   if(state.voiceConcept && state.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + state.voiceConcept.voice;
   body = sanitize(body);

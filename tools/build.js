@@ -151,11 +151,12 @@ const DATA_NAMES = [
 ];
 
 function main() {
+  const { expandPools } = require("./expand.js");
   const oldSrc = fs.readFileSync(OLD, "utf8");
   const parts = [];
   for (const name of DATA_NAMES) {
     const body = extractConst(oldSrc, name);
-    parts.push("const " + name + " = " + body + ";");
+    parts.push("const " + name + " = " + expandPools(name, body) + ";");
   }
   const dataBlock = parts.join("\n\n");
 

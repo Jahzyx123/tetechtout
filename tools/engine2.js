@@ -579,6 +579,16 @@ function buildMaxChips(){
   });
 }
 let maxRollRunning = false;
+/* When a max/reroll is already running, later calls WAIT for it instead of
+   returning undefined — double-clicks and test sequences get a real result. */
+let maxRollDone = Promise.resolve();
+function startMaxRun(){
+  maxRollRunning = true;
+  let resolveDone;
+  maxRollDone = new Promise(r => { resolveDone = r; });
+  return resolveDone;
+}
+function endMaxRun(doneResolve){ maxRollRunning = false; doneResolve(); }
 function yieldUI(){ return new Promise(r=>setTimeout(r, 12)); }
 function scoreFor(s){
   const saved = state; state = s;
@@ -649,13 +659,18 @@ async function runMaxSearch(attempts, opts){
       bestInTol = v; bestInTolScore = sc;
     }
   }
-  /* adopt a fresh set even if it only ties — that's what makes re-runs move */
+  /* adopt a fresh set even if it only ties — that's what makes re-runs move.
+     BUT never adopt a set below minScore (the downgrade tolerance): if no
+     candidate reached it, keep the current state — "max" must not make the
+     prompt worse. */
   let final = best, finalScore = bestScore;
   let adopted = bestScore > startScore || (acceptTies && bestScore === startScore && best !== start);
   if(opts.alwaysFresh && best === start){
-    final = bestInTol || last || best;
-    finalScore = bestInTolScore >= 0 ? bestInTolScore : lastScore;
-    adopted = true;
+    if(bestInTol){
+      final = bestInTol; finalScore = bestInTolScore; adopted = true;
+    } else {
+      final = start; finalScore = startScore; adopted = false;
+    }
   } else if(bestInTol && bestInTolScore > bestScore){
     final = bestInTol; finalScore = bestInTolScore;
   }
@@ -668,121 +683,139 @@ async function runMaxSearch(attempts, opts){
   return {best:final, bestScore:finalScore, startScore, attempts, adopted, keys:keys.length};
 }
 async function doMaxScoreRoll(attempts){
-  if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
+  if(maxRollRunning){ toast("⏳ Max roll already running — queued behind it…"); return await maxRollDone; }
   attempts = attempts || 20;
-  maxRollRunning = true;
-  commit();
-  const startScore = scoreFor(state).total;
-  const btns = ["maxScoreBtn","maxTurboBtn","rerollSimilarBtn"].map(id=>$(id)).filter(Boolean);
-  const origTexts = btns.map(b=>b.textContent);
-  btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+startScore; });
-  setMaxStatus("Searching "+attempts+" combos — styles locked");
-  toast("🏆 Searching "+attempts+" combos — styles locked: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"));
-  const res = await runMaxSearch(attempts, {
-    minScore: startScore - 2, // never downgrade more than 2 — but always move when a near-equal set exists
-    alwaysFresh: true,
-    onProgress: (sc, i, n)=>{ setMaxStatus("Best "+sc+"/100 at "+i+"/"+n); btns.forEach(b=>{ if(b) b.textContent="⏳ "+sc+" ("+i+"/"+n+")"; }); }
-  });
-  afterChange();
-  flash($("scoreCard"));
-  btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||b.textContent; });
-  const delta = res.bestScore - res.startScore;
-  setMaxStatus("Best "+res.bestScore+"/100 after "+res.attempts+" tries — styles kept: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none")+(delta>0 ? " (+"+delta+")" : ""));
-  toast("🏆 Best score "+res.bestScore+" /100"+(delta>0 ? " (was "+res.startScore+", +"+delta+")" : " — fresh set at the same score")+" — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+res.attempts+" tries");
-  maxRollRunning = false;
-  return res.bestScore;
+  const doneResolve = startMaxRun();
+  try {
+    commit();
+    const startScore = scoreFor(state).total;
+    const btns = ["maxScoreBtn","maxTurboBtn","rerollSimilarBtn"].map(id=>$(id)).filter(Boolean);
+    const origTexts = btns.map(b=>b.textContent);
+    btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+startScore; });
+    setMaxStatus("Searching "+attempts+" combos — styles locked");
+    toast("🏆 Searching "+attempts+" combos — styles locked: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"));
+    const res = await runMaxSearch(attempts, {
+      minScore: startScore - 2, // never downgrade more than 2 — but always move when a near-equal set exists
+      alwaysFresh: true,
+      onProgress: (sc, i, n)=>{ setMaxStatus("Best "+sc+"/100 at "+i+"/"+n); btns.forEach(b=>{ if(b) b.textContent="⏳ "+sc+" ("+i+"/"+n+")"; }); }
+    });
+    afterChange();
+    flash($("scoreCard"));
+    btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||b.textContent; });
+    const delta = res.bestScore - res.startScore;
+    if(res.adopted === false){
+      setMaxStatus("Kept the current set at "+res.bestScore+"/100 — no candidate within 2 points in "+res.attempts+" tries (styles kept: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none")+")");
+      toast("🏆 Already at "+res.bestScore+" /100 — nothing within 2 points found; current set kept");
+    } else {
+      setMaxStatus("Best "+res.bestScore+"/100 after "+res.attempts+" tries — styles kept: "+(state.primaryStyle||"")+" / "+(state.secondaryStyle||"none")+(delta>0 ? " (+"+delta+")" : ""));
+      toast("🏆 Best score "+res.bestScore+" /100"+(delta>0 ? " (was "+res.startScore+", +"+delta+")" : " — fresh set at the same score")+" — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary")+" after "+res.attempts+" tries");
+    }
+    return res.bestScore;
+  } finally {
+    endMaxRun(doneResolve);
+  }
 }
 /* NEW: re-roll a fresh set with a similar score — everything rolls again
    EXCEPT primary + secondary styles. Always adopts a new set, even when the
    score only ties (that's the point: you get another idea with the same
    quality). */
 async function doReRollSimilar(attempts, tolerance){
-  if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
+  if(maxRollRunning){ toast("⏳ Max roll already running — queued behind it…"); return await maxRollDone; }
   attempts = attempts || 25;
   const tol = (tolerance === undefined) ? 5 : tolerance;
-  maxRollRunning = true;
-  commit();
-  const startScore = scoreFor(state).total;
-  const btn = $("rerollSimilarBtn");
-  const origText = btn ? btn.textContent : "";
-  if(btn){ btn.disabled = true; btn.textContent = "⏳ "+startScore; }
-  setMaxStatus("Re-rolling "+attempts+" fresh sets — styles locked, aiming within "+tol+" of "+startScore);
-  toast("🎲 Re-rolling "+attempts+" fresh sets — keeping "+((state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"))+" — target ≥ "+(startScore-tol)+"/100");
-  const res = await runMaxSearch(attempts, {
-    minScore: startScore - tol,
-    alwaysFresh: true,
-    onProgress: (sc, i, n)=>{ setMaxStatus("Similar-score search "+i+"/"+n+" — best "+sc+"/100 (target ≥ "+(startScore-tol)+")"); if(btn) btn.textContent="⏳ "+sc+" ("+i+"/"+n+")"; }
-  });
-  afterChange();
-  flash($("scoreCard"));
-  if(btn){ btn.disabled = false; btn.textContent = origText; }
-  const delta = res.bestScore - res.startScore;
-  setMaxStatus("Fresh set at "+res.bestScore+"/100 (was "+res.startScore+") after "+res.attempts+" tries — styles kept: "+state.primaryStyle+" / "+(state.secondaryStyle||"none"));
-  toast("🎲 Fresh set at "+res.bestScore+" /100"+(delta>=0 ? " (same or better)" : " — "+delta+" vs before")+" · styles kept — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary"));
-  maxRollRunning = false;
-  return {score:res.bestScore, startScore, delta, attempts:res.attempts};
+  const doneResolve = startMaxRun();
+  try {
+    commit();
+    const startScore = scoreFor(state).total;
+    const btn = $("rerollSimilarBtn");
+    const origText = btn ? btn.textContent : "";
+    if(btn){ btn.disabled = true; btn.textContent = "⏳ "+startScore; }
+    setMaxStatus("Re-rolling "+attempts+" fresh sets — styles locked, aiming within "+tol+" of "+startScore);
+    toast("🎲 Re-rolling "+attempts+" fresh sets — keeping "+((state.primaryStyle||"")+" / "+(state.secondaryStyle||"none"))+" — target ≥ "+(startScore-tol)+"/100");
+    const res = await runMaxSearch(attempts, {
+      minScore: startScore - tol,
+      alwaysFresh: true,
+      onProgress: (sc, i, n)=>{ setMaxStatus("Similar-score search "+i+"/"+n+" — best "+sc+"/100 (target ≥ "+(startScore-tol)+")"); if(btn) btn.textContent="⏳ "+sc+" ("+i+"/"+n+")"; }
+    });
+    afterChange();
+    flash($("scoreCard"));
+    if(btn){ btn.disabled = false; btn.textContent = origText; }
+    const delta = res.bestScore - res.startScore;
+    if(res.adopted === false){
+      setMaxStatus("Kept the current set at "+res.bestScore+"/100 — nothing within "+tol+" points in "+res.attempts+" tries");
+      toast("🎲 No similar-score set found within "+tol+" points — current set kept ("+state.primaryStyle+" / "+(state.secondaryStyle||"none")+")");
+    } else {
+      setMaxStatus("Fresh set at "+res.bestScore+"/100 (was "+res.startScore+") after "+res.attempts+" tries — styles kept: "+state.primaryStyle+" / "+(state.secondaryStyle||"none"));
+      toast("🎲 Fresh set at "+res.bestScore+" /100"+(delta>=0 ? " (same or better)" : " — "+delta+" vs before")+" · styles kept — "+state.primaryStyle+" + "+(state.secondaryStyle||"no secondary"));
+    }
+    return {score:res.bestScore, startScore, delta, attempts:res.attempts};
+  } finally {
+    endMaxRun(doneResolve);
+  }
 }
 async function doMaxScoreRollSection(sectionKeys, attempts, label){
-  if(maxRollRunning){ toast("⏳ Max roll already running — wait…"); return; }
-  maxRollRunning = true;
+  if(maxRollRunning){ toast("⏳ Max roll already running — queued behind it…"); return await maxRollDone; }
   attempts = attempts || 15;
-  commit();
-  const bestStart = snapshot();
-  /* only roll keys that are real, unlocked, and on a visible card */
-  const keys = sectionKeys.filter(k => ROLL_FN[k] && !bestStart.locks[k] && !(ATOM_BY_KEY[k] && ATOM_BY_KEY[k].card && bestStart.hidden[ATOM_BY_KEY[k].card]));
-  if(!keys.length){
-    maxRollRunning = false;
-    toast("🔒 "+label+" is fully locked or hidden — nothing to maximize");
-    setMaxStatus(label+" — everything locked or hidden.");
-    return scoreFor(bestStart).total;
-  }
-  let best = bestStart;
-  let bestScore = scoreFor(bestStart).total;
-  const btnIds = ["max"+label.replace(/\s+/g,"")+"Btn", "max"+label.replace(/\s+/g,"")+"Btn2"];
-  const btns = btnIds.map(id=>$(id)).filter(Boolean);
-  const origTexts = btns.map(b=>b.textContent);
-  btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
-  setMaxStatus("Max "+label+": "+attempts+" tries…");
-  toast("🏆 Max "+label+": "+attempts+" tries…");
-  for(let i=0;i<attempts;i++){
-    await yieldUI();
-    const v = snapshot();
-    v.variations = [];
-    v.seed = newSeed();
-    rng = mulberry32(v.seed);
-    for(const k of keys) ROLL_FN[k](v);
-    const sc = scoreFor(v).total;
-    if(sc > bestScore || sc === bestScore){ // ties adopted → re-runs always move
-      best = v;
-      bestScore = sc;
-      btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore+" ("+(i+1)+"/"+attempts+")"; });
-      setMaxStatus(label+" best "+bestScore+" ("+(i+1)+"/"+attempts+")");
+  const doneResolve = startMaxRun();
+  try {
+    commit();
+    const bestStart = snapshot();
+    /* only roll keys that are real, unlocked, and on a visible card */
+    const keys = sectionKeys.filter(k => ROLL_FN[k] && !bestStart.locks[k] && !(ATOM_BY_KEY[k] && ATOM_BY_KEY[k].card && bestStart.hidden[ATOM_BY_KEY[k].card]));
+    if(!keys.length){
+      toast("🔒 "+label+" is fully locked or hidden — nothing to maximize");
+      setMaxStatus(label+" — everything locked or hidden.");
+      return scoreFor(bestStart).total;
     }
+    let best = bestStart;
+    let bestScore = scoreFor(bestStart).total;
+    const btnIds = ["max"+label.replace(/\s+/g,"")+"Btn", "max"+label.replace(/\s+/g,"")+"Btn2"];
+    const btns = btnIds.map(id=>$(id)).filter(Boolean);
+    const origTexts = btns.map(b=>b.textContent);
+    btns.forEach(b=>{ b.disabled=true; b.textContent="⏳ "+bestScore; });
+    setMaxStatus("Max "+label+": "+attempts+" tries…");
+    toast("🏆 Max "+label+": "+attempts+" tries…");
+    for(let i=0;i<attempts;i++){
+      await yieldUI();
+      const v = snapshot();
+      v.variations = [];
+      v.seed = newSeed();
+      rng = mulberry32(v.seed);
+      for(const k of keys) ROLL_FN[k](v);
+      const sc = scoreFor(v).total;
+      if(sc > bestScore || sc === bestScore){ // ties adopted → re-runs always move
+        best = v;
+        bestScore = sc;
+        btns.forEach(b=>{ if(b) b.textContent="⏳ "+bestScore+" ("+(i+1)+"/"+attempts+")"; });
+        setMaxStatus(label+" best "+bestScore+" ("+(i+1)+"/"+attempts+")");
+      }
+    }
+    try{ best.locks = JSON.parse(JSON.stringify(bestStart.locks)); }catch(e){ best.locks = bestStart.locks; }
+    try{ best.hidden = JSON.parse(JSON.stringify(bestStart.hidden)); }catch(e){ best.hidden = bestStart.hidden; }
+    try{ best.layers = JSON.parse(JSON.stringify(bestStart.layers)); }catch(e){ best.layers = bestStart.layers; }
+    best.variations = [];
+    state = best;
+    rng = mulberry32(state.seed);
+    afterChange();
+    const l = label.toLowerCase();
+    if(l.includes("melody")) flash($("feelCard"));
+    else if(l.includes("bass")) flash($("bassCard"));
+    else if(l.includes("tempo")||l.includes("bpm")||l.includes("key")) flash($("styleCard"));
+    else if(l.includes("techno")||l.includes("lab")) flash($("technoLabCard"));
+    else if(l.includes("concept")) flash($("conceptCard"));
+    else if(l.includes("arrange")) flash($("arrangementCard"));
+    else if(l.includes("drum")) flash($("drumsCard"));
+    else if(l.includes("rhythm")) flash($("rhythmLabCard"));
+    else if(l.includes("harmony")||l.includes("chord")) flash($("harmonyLabCard"));
+    else if(l.includes("sound")) flash($("soundDesignCard"));
+    else flash($("scoreCard"));
+    btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||("🏆 Max "+label); });
+    setMaxStatus("Best "+label+" → "+bestScore+"/100 after "+attempts+" tries");
+    toast("🏆 Best "+label+" → "+bestScore+" /100 after "+attempts+" tries");
+    return bestScore;
+  } finally {
+    endMaxRun(doneResolve);
   }
-  try{ best.locks = JSON.parse(JSON.stringify(bestStart.locks)); }catch(e){ best.locks = bestStart.locks; }
-  try{ best.hidden = JSON.parse(JSON.stringify(bestStart.hidden)); }catch(e){ best.hidden = bestStart.hidden; }
-  try{ best.layers = JSON.parse(JSON.stringify(bestStart.layers)); }catch(e){ best.layers = bestStart.layers; }
-  best.variations = [];
-  state = best;
-  rng = mulberry32(state.seed);
-  afterChange();
-  const l = label.toLowerCase();
-  if(l.includes("melody")) flash($("feelCard"));
-  else if(l.includes("bass")) flash($("bassCard"));
-  else if(l.includes("tempo")||l.includes("bpm")||l.includes("key")) flash($("styleCard"));
-  else if(l.includes("techno")||l.includes("lab")) flash($("technoLabCard"));
-  else if(l.includes("concept")) flash($("conceptCard"));
-  else if(l.includes("arrange")) flash($("arrangementCard"));
-  else if(l.includes("drum")) flash($("drumsCard"));
-  else if(l.includes("rhythm")) flash($("rhythmLabCard"));
-  else if(l.includes("harmony")||l.includes("chord")) flash($("harmonyLabCard"));
-  else if(l.includes("sound")) flash($("soundDesignCard"));
-  else flash($("scoreCard"));
-  btns.forEach((b,i)=>{ b.disabled=false; b.textContent=origTexts[i]||("🏆 Max "+label); });
-  setMaxStatus("Best "+label+" → "+bestScore+"/100 after "+attempts+" tries");
-  toast("🏆 Best "+label+" → "+bestScore+" /100 after "+attempts+" tries");
-  maxRollRunning = false;
-  return bestScore;
 }
 async function doMaxTurbo(attempts){ attempts = attempts||100; return await doMaxScoreRoll(attempts); }
 async function doMaxMelodyDominant(attempts){
@@ -797,6 +830,7 @@ async function doMaxMelodyDominant(attempts){
 }
 function resetMaxState(){
   maxRollRunning = false;
+  maxRollDone = Promise.resolve(); // release any queued awaiters
   const btns = document.querySelectorAll("#maxRollLabCard button, #scoreCard button");
   btns.forEach(b=>b.disabled=false);
   setMaxStatus("Reset — all max locks cleared");
