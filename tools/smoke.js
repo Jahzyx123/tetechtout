@@ -89,7 +89,7 @@ function run() {
   NF.doRoll("genre");
   s = NF.get();
   ok(s.primaryStyle !== s.secondaryStyle, "two distinct techno styles (" + s.primaryStyle + " / " + s.secondaryStyle + ")");
-  ok(!/Phonk|Drum and Bass|Dubstep|House|Trance|Ambient|Breakcore/i.test(s.primaryStyle), "no obvious non-techno style leaks (" + s.primaryStyle + ")");
+  ok(!/\bPhonk\b|\bDrum and Bass\b|\bDubstep\b|\bHouse\b|\bTrance\b|\bAmbient\b|\bBreakcore\b/i.test(s.primaryStyle), "no obvious non-techno style leaks (" + s.primaryStyle + ")");
   ok(s.bpm >= 125 && s.bpm <= 170, "techno tempo range (" + s.bpm + ")");
 
   section("Manual pick (lists)");
@@ -348,6 +348,124 @@ function run() {
     ok(NF.get().styleFit === true, "Style-fit toggle click turns it back ON");
     w.document.getElementById("allSoundsBtn").click();
     ok(true, "All sounds on button no-throw");
+
+    section("Genre-safe phrasing (no-techno)");
+    s = NF.get();
+    s.techOnly = false;
+    s.styleFit = true;
+    s.primaryGenre = "Jazz";
+    s.primaryStyle = "Acid Jazz"; // techno-ish word inside a real genre name must survive
+    s.secondaryStyle = "";
+    s.hidden = NF.defaultState().hidden;
+    s.locks = NF.defaultState().locks;
+    s.kick = "huge 909 kick";
+    s.hats = "percussive rave hats";
+    s.snare = "pounding warehouse snare";
+    s.feeling = "euphoric";
+    s.flavor = "cold yet euphoric";
+    s.direction = "bunker-born rave hook";
+    s.leadVoice = "rave-stab lead 2.0";
+    s.leadPerf = "performed with overdriven intensity";
+    s.harmony = "euphoric open fifths";
+    s.bassVoice = "distorted reese bass";
+    s.bassMovement = "pumping sidechain movement";
+    s.groove = "relentless four-on-the-floor drive";
+    s.swing = "stomping swing";
+    s.intensity = "overwhelming rave force";
+    s.rideType = "hardgroove-locked ride cymbal";
+    // clear fields left over from earlier random rolls so the prompt length
+    // (and which optional blocks survive assembly) is deterministic
+    s.counterMelody = {voice:"",direction:"",perf:"",contour:"",rhythm:""};
+    s.voiceConcept = {voice:"",movement:""};
+    s.melodyConcept = {};
+    s.layers = {};
+    s.chordProg = ""; s.rhythmPattern = ""; s.arrangement = "";
+    s.technoDrive = ""; s.technoAcid = ""; s.technoTexture = ""; s.technoRave = ""; s.technoIndustrial = "";
+    NF.set(s);
+    const spClean = NF.buildStylePrompt();
+    ok(/Acid Jazz/.test(spClean), "real genre name 'Acid Jazz' protected from cleaning");
+    ok(/live acoustic instrumentation/.test(spClean), "organic flavor line added");
+    ok(!/\b(909|rave|sidechain|synth|warehouse|euphoric|overdriven|distorted|hardgroove|2\.0|reese)\b/i.test(spClean.replace(/Acid Jazz/g,"")), "organic prompt has no techno-isms");
+    ok(/steady pulse/.test(spClean), "four-on-the-floor rephrased to steady pulse");
+    ok(/joyous/.test(spClean), "euphoric rephrased to joyous");
+    ok(NF.genreSafeText("hardgroove-locked ride cymbal") === "locked-in ride cymbal", "hardgroove-locked rephrased to locked-in");
+    ok(/locked-in ride/.test(spClean), "locked-in phrase appears in the cleaned prompt");
+    ok(/sparkling lead/.test(spClean), "rave-stab lead 2.0 rephrased to sparkling lead");
+    ok(spClean.length <= 1000, "cleaned organic prompt ≤1000 (" + spClean.length + ")");
+    const briefClean = NF.buildFullBrief();
+    ok(!/\b(909|rave|sidechain|synth|warehouse|euphoric|hardgroove|2\.0)\b/i.test(briefClean.replace(/Acid Jazz/g,"")), "full brief cleaned too");
+    ok(/Acid Jazz/.test(briefClean), "brief keeps the protected genre name");
+    s = NF.get();
+    s.primaryGenre = "Rock";
+    s.primaryStyle = "Indie Rock";
+    s.kick = "huge 909 kick";
+    s.groove = "relentless four-on-the-floor drive";
+    s.leadVoice = "huge layered synth lead";
+    s.feeling = "euphoric";
+    s.rideType = "hardgroove-locked ride cymbal";
+    NF.set(s);
+    const spHyb = NF.buildStylePrompt();
+    ok(!/909/.test(spHyb), "hybrid prompt drops 909");
+    ok(/four-on-the-floor/.test(spHyb), "hybrid prompt keeps four-on-the-floor");
+    ok(/synth lead/.test(spHyb), "hybrid prompt keeps synth");
+    ok(/euphoric/.test(spHyb), "hybrid prompt keeps euphoric");
+    ok(/live and electronic hybrid instrumentation/.test(spHyb), "hybrid flavor line added");
+    s = NF.get();
+    s.primaryGenre = "House";
+    s.primaryStyle = "Acid House";
+    NF.set(s);
+    const spElec = NF.buildStylePrompt();
+    ok(/Acid House/.test(spElec) && /acid/i.test(spElec), "electronic genre keeps everything (acid stays)");
+    ok(!/live acoustic/.test(spElec), "electronic genre gets no acoustic flavor");
+    s = NF.get();
+    s.primaryGenre = "Classical";
+    s.primaryStyle = "Romantic Classical";
+    NF.set(s);
+    ok(/Rise/.test(NF.arcLine()) && !/→ Build/.test(NF.arcLine()), "organic arc renames Build → Rise");
+    ok(/Climax/.test(NF.arcLine()) && !/→ Drop/.test(NF.arcLine()), "organic arc renames Drop → Climax");
+    s.structure = true;
+    NF.set(s);
+    const spTags = NF.buildStylePrompt();
+    ok(/\[Rise\]/.test(spTags) && !/\[Drop\]/.test(spTags), "organic structure tags use Rise/Climax");
+    ok(spTags.length <= 1000, "tagged organic prompt ≤1000 (" + spTags.length + ")");
+    s.structure = false;
+    s.techOnly = true;
+    NF.set(s);
+    ok(/→ Build/.test(NF.arcLine()) && /→ Drop/.test(NF.arcLine()), "techno arc keeps Build/Drop");
+    s.techOnly = false;
+    NF.set(s);
+    const eng2 = NF.buildEngineer();
+    ok(!/peak-hour hammer/.test(eng2), "organic engineer notes avoid peak-hour slot (bpm " + s.bpm + ")");
+    // expanded genre-world coverage + no-techno budget clamp across real rolls
+    const gWorld = w.eval("genreWorld");
+    ok(gWorld("Hawaiian") === "organic", "Hawaiian classified organic");
+    ok(gWorld("Nordic") === "organic", "Nordic classified organic");
+    ok(gWorld("Synthwave") === "electronic", "Synthwave classified electronic");
+    ok(gWorld("Gabber") === "electronic", "Gabber classified electronic");
+    ok(gWorld("Shoegaze") === "hybrid", "Shoegaze classified hybrid");
+    s = NF.get();
+    s.techOnly = false;
+    s.styleFit = true;
+    s.hidden = NF.defaultState().hidden;
+    NF.set(s);
+    let overBudget = 0;
+    let maxLen = 0;
+    for (let i = 0; i < 40; i++) {
+      NF.doRoll("genre");
+      const p = NF.buildStylePrompt();
+      maxLen = Math.max(maxLen, p.length);
+      if (p.length > 1000) overBudget++;
+    }
+    ok(overBudget === 0, "no-techno prompts never exceed 1000 across 40 rolls (max " + maxLen + ")");
+    s = NF.get();
+    const ww = gWorld(s.primaryGenre);
+    const spNow = NF.buildStylePrompt();
+    if (ww !== "electronic") {
+      const probe = spNow.replace(new RegExp(s.primaryStyle.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"g"),"");
+      ok(!/\b(909|rave|sidechain|hardgroove|warehouse|reese)\b/i.test(probe), "real roll prompt free of hard techno-isms (" + s.primaryStyle + " → " + ww + ")");
+    } else {
+      ok(true, "real roll landed on electronic genre (" + s.primaryStyle + ") — untouched by design");
+    }
 
     section("Kit & engineer builders");
     const kit = NF.buildKit();

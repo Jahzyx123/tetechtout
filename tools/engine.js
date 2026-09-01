@@ -333,8 +333,8 @@ const GROUPS = {
    the "All sounds on" button. */
 const ELECTRONIC_LEAN_CARDS = ["technoLabCard","textureFxCard","soundDesignCard","mixMasterCard","spatialModCard","rhythmLabCard"];
 const HYBRID_HIDE = ["technoLabCard","textureFxCard"];
-const ELECTRONIC_GENRES = new Set(["house","trance","electronic","dance","electronic latin","electronic retro","retro"]);
-const ORGANIC_GENRES = new Set(["jazz","blues","bossa nova","reggae","country","latin","world","classical","folk","gospel","punk","theatrical","acoustic pop","easy listening","african","caribbean","spanish","swing","big band","bluegrass","americana","western","cajun","polka","klezmer","gypsy","indian classical","middle eastern","persian","turkish","greek","italian"]);
+const ELECTRONIC_GENRES = new Set(["house","trance","electronic","dance","electronic latin","electronic retro","retro","electronic dance","hardcore","gabber","jungle","drum and bass","breakbeat","dubstep","trap","bass","uk garage","footwork","jersey club","industrial","darkwave","synthwave","vaporwave","lo-fi","chillstep","trip hop","electro-swing","city pop","video game","nightcore","retro futurist","space","broken beat","balearic","chillwave","broken bass","steampunk","dieselpunk","solarpunk","atompunk","neon","festival","factory","laboratory","observatory","spaceport","subway","airport","motor racing","skate","snowboard","gym","amusement","fair","casino","shibuya-kei","crystal","aura","ethereal","glass","lighthouse"]);
+const ORGANIC_GENRES = new Set(["jazz","blues","bossa nova","reggae","country","latin","world","classical","folk","gospel","punk","theatrical","acoustic pop","easy listening","african","caribbean","spanish","swing","big band","bluegrass","americana","western","cajun","polka","klezmer","gypsy","indian classical","middle eastern","persian","turkish","greek","italian","french","portuguese","german","nordic","celtic","slavic","russian","brazilian","mexican","argentine","andean","afro-cuban","salsa","cumbia","samba","orchestral","lounge","asian traditional","tropical","ocean","forest","desert","winter","spring","nature","weather","underwater","cave","mountain","harbor","sailing","railway","garden","farm","countryside","village","small town","river","lake","wind","storm","ice","savanna","prairie","tundra","wetland","mangrove","volcanic","geothermal","canyon","mesa","oasis","rainforest","boreal","tibetan","mongolian","korean","vietnamese","chinese","thai","filipino","hawaiian","polynesian","aboriginal","amazonian","native","egyptian","north african","southern african","lusophone","operatic pop","acoustic session","spa","yoga","meditation","wellness","temple","monastery","church","ceremonial","wedding","birthday","summer","autumn","halloween","nocturne","interlude","golden oldies","diner","motel","road trip","jukebox","cassette","vinyl","circus","marching","brass band","carnival","ballroom","port","street market","bazaar","carnival of venice","retro soul","music box","toy","puppetry","library","museum","studio","restaurant","bar","camping","hiking","fishing","surfing","climbing","adult"]);
 const SOUND_CARDS = ["feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard"];
 /* group -> the card it lives on (only re-roll groups whose card stays visible) */
 const FIT_GROUPS = [
@@ -409,6 +409,96 @@ function allSoundsOn(){
   toast(n ? "👁 All " + n + " hidden sound card" + (n>1?"s":"") + " back ON" : "👁 All sounds are already visible");
 }
 
+/* ---------------------------- GENRE-SAFE PHRASES (no-techno) ----------------------------
+   The original pools are techno-flavoured, so values that land in a
+   no-techno description get rephrased to fit the genre world:
+   - organic (jazz, classical, folk, country, …): synth → acoustic,
+     rave/acid/909/warehouse/sidechain terms removed, overdriven →
+     intense, four-on-the-floor → steady pulse, arc sections renamed
+     (Drop → Climax…)
+   - hybrid (pop, rock, soul, funk, hip-hop, …): only hard techno-only
+     terms removed (acid/303/909/808/rave/hardstyle/warehouse/sidechain);
+     synth, distortion and euphoric survive.
+   The style line (genre combos like "Acid Jazz") is protected so real
+   genre names are never mangled. */
+const ORGANIC_MAP = [
+  /* phrase-level rewrites (must run before the word removals below) */
+  [/\breese bass\b/gi, "deep bass"],
+  [/\boverdriven[- ]?intensity\b/gi, "fiery intensity"],
+  [/\bhardgroove[- ]?locked\b/gi, "locked-in"],
+  [/\bcircuit[- ]?bent\b/gi, "quirky"],
+  [/\bacid[- ]?driven\b/gi, "propulsive"],
+  [/\bbunker[- ]?born\b/gi, "raw"],
+  [/\bacid[- ]?searing\b/gi, "piercing"],
+  [/\brave[- ]?stab[- ]?lead\b/gi, "sparkling lead"],
+  [/\bsuper[- ]?charged[- ]?peak\b/gi, "electric"],
+  [/\bsuper[- ]?charged\b/gi, "electric"],
+  [/\breactor[- ]?fueled\b/gi, "driven"],
+  [/\breactor[- ]?core\b/gi, "driving"],
+  [/\bfrenzy[- ]?pumped\b/gi, "frenetic"],
+  [/\btape[- ](\w+)\b/gi, "tape $1"],
+  [/\b([a-z]+(?:[- ][a-z]+)?)[- ]synth\b/gi, (m,stem)=>stem.replace(/-/g," ")],
+  [/\bdrop(s)?\b/gi, "refrain"],
+  /* compound techno-isms (remove whole phrase) */
+  [/\b(acid[- ]?squelch|acid[- ]?drenched|acid[- ]?fueled|303[- ]?style|303[- ]?filtered|bunker[- ]?rattling|peak[- ]?time|warehouse[- ]?powered|warehouse[- ]?echo|rave[- ]?charged|rave[- ]?stab|trance[- ]?pluck|saw[- ]?stack|triple[- ]?oscillator|hands[- ]?in[- ]?the[- ]?air|siren[- ]?like|siren[- ]?sweep|sub[- ]?wobble|turbo[- ]?charged|piston[- ]?powered|voltage[- ]?spiked|modular[- ]?patched|micro[- ]?swept|rave[- ]?fueled|synth[- ]?string bass|kick[- ]?locked|filter[- ]?swept|overdrive[- ]?slammed)\b/gi, " "],
+  /* machine-model numbers */
+  [/\b(909|808|303)\b/gi, " "],
+  /* pure techno nouns / instruments */
+  [/\b(sidechain|rave|trance|acid|hardstyle|gabber|industrial|breakbeat|dubstep|techno|warehouse|festival|mainstage|bigroom|laser|glitch|bitcrush|wobble|synthesizer|synth|stadium|arena|bunker|machine|oscillator|circuit|siren|cyberpunk|reese|filter|hardgroove(?!-)|wavetable|FM|sine|overdrive|factory)\b/gi, " "],
+  /* adjective stack that only makes sense on electronic drums/synths */
+  [/\b(relentless|punishing|brutal|berserk|slammed|slamming|clipped|gated|stuttered|stuttering|distorted|stomping|hammering)\b/gi, " "],
+  [/\btightly\s+gated\b/gi, "tight"],
+  /* dance-floor pattern → neutral pulse */
+  [/\b(four[- ]?on[- ]?the[- ]?floor|4[- ]?on[- ]?the[- ]?floor)\b/gi, "steady pulse"],
+  [/\bstomp(s|ing)?\b/gi, "groove"],
+  /* standalone-capable words → genre-fitting equivalents */
+  [/\boverdriven\b/gi, "intense"],
+  [/\bpounding\b/gi, "powerful"],
+  [/\beuphoric\b/gi, "joyous"],
+  [/\banthem(s)?\b/gi, "showpiece"],
+  [/\bpumping\b/gi, "pulsing"],
+  [/\bsiren\b/gi, "soaring"]
+];
+const HYBRID_MAP = [
+  [/\bhardgroove[- ]?locked\b/gi, "locked-in"],
+  [/\bacid[- ]?driven\b/gi, "propulsive"],
+  [/\bbunker[- ]?born\b/gi, "raw"],
+  /* compound techno-isms — only the ones with no place outside techno */
+  [/\b(acid[- ]?squelch|acid[- ]?drenched|acid[- ]?fueled|acid[- ]?searing|303[- ]?style|303[- ]?filtered|bunker[- ]?rattling|peak[- ]?time|warehouse[- ]?powered|warehouse[- ]?echo|rave[- ]?charged|rave[- ]?stab|trance[- ]?pluck|saw[- ]?stack|triple[- ]?oscillator|siren[- ]?like|sub[- ]?wobble|turbo[- ]?charged|piston[- ]?powered|voltage[- ]?spiked|modular[- ]?patched|micro[- ]?swept|rave[- ]?fueled|kick[- ]?locked)\b/gi, " "],
+  [/\b(909|808|303)\b/gi, " "],
+  [/\b(sidechain|rave|trance|acid|hardstyle|gabber|industrial|warehouse|mainstage|bigroom|hardgroove(?!-)|reese)\b/gi, " "]
+];
+function genreSafeText(text, protectStyles){
+  if(state.techOnly) return text;
+  const world = genreWorld(state.primaryGenre);
+  if(world==="electronic") return text;
+  const fixes = world==="organic" ? ORGANIC_MAP : HYBRID_MAP;
+  let t = String(text||"");
+  const ph = [];
+  if(protectStyles){
+    const styles = [state.primaryStyle, state.secondaryStyle].filter(Boolean).sort((a,b)=>b.length-a.length);
+    styles.forEach(st=>{
+      const re = new RegExp(st.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"), "g");
+      t = t.replace(re, m=>{ ph.push(m); return "\u0001"+(ph.length-1)+"\u0001"; });
+    });
+  }
+  for(const [re, rep] of fixes){
+    t = t.replace(re, rep);
+  }
+  t = t.replace(/\b\d+\.\d+\b/g,"");           /* leftover "2.0"-style junk */
+  t = t.replace(/\s{2,}/g," ");
+  t = t.replace(/\s+([,.;])/g,"$1");
+  t = t.replace(/,\s*,/g,",");
+  t = t.replace(/[,.;]\s*[,.;]+/g,".");
+  t = t.replace(/^\s*[,.;:\s]+|\s*[,.;:\s]+$/g,"");
+  if(ph.length) t = t.replace(/\u0001(\d+)\u0001/g, (m,i)=>ph[+i]);
+  return t.trim();
+}
+function structTags(){
+  const names = state.techOnly ? ["Intro","Build","Drop","Breakdown","Drop","Outro"] : ["Intro","Build","Drop","Breakdown","Drop","Outro"].map(arcName);
+  return " " + names.map(n=>"["+n+"]").join(" ");
+}
+
 let state = defaultState();
 
 /* ---------------------------- LINE BUILDERS ---------------------------- */
@@ -418,6 +508,11 @@ function styleLine(){
     if(state.influence==="subtle") s += " with a touch of " + state.secondaryStyle;
     else if(state.influence==="strong") s += " fused with " + state.secondaryStyle;
     else s += " with " + state.secondaryStyle + " influence";
+  }
+  if(!state.techOnly){
+    const world = genreWorld(state.primaryGenre);
+    if(world==="organic") s += " — live acoustic instrumentation";
+    else if(world==="hybrid") s += " — live and electronic hybrid instrumentation";
   }
   if(!state.hidden.bpm) s += ", " + state.bpm + " BPM";
   if(!state.hidden.key) s += ", " + keyName(state);
@@ -652,7 +747,8 @@ function normalizePrompt(text){
 /* ---------------------------- PROMPT BUILDERS ---------------------------- */
 function buildStylePrompt(){
   const SLIM = !!state.slim;
-  const blocks = [{t: SLIM ? (state.primaryStyle + (state.secondaryStyle ? ", " + state.secondaryStyle : "")) : styleLine(), required:true, priority:1}];
+  const flavor = (!state.techOnly && SLIM) ? (genreWorld(state.primaryGenre)==="organic" ? " — live acoustic instrumentation" : genreWorld(state.primaryGenre)==="hybrid" ? " — live and electronic hybrid instrumentation" : "") : "";
+  const blocks = [{t: SLIM ? (state.primaryStyle + (state.secondaryStyle ? ", " + state.secondaryStyle : "") + flavor) : styleLine(), required:true, priority:1}];
   if(!state.hidden.feelCard){
     blocks.push({t: SLIM ? "Emotion-led melody: " + state.feeling + ", " + state.flavor + "; " + state.direction : emotionLine(), required:true, priority:2});
     const cml = counterMelodyLine();
@@ -698,9 +794,10 @@ function buildStylePrompt(){
     if(tfl) blocks.push({t: tfl, compact: textureFxLine(true), required:false, priority:5.88});
   }
   blocks.push({t: layerLine(), required:false, priority:6});
-  const STRUCT_TAGS = " [Intro] [Build] [Drop] [Breakdown] [Drop] [Outro]";
-  const tagCost = state.structure ? STRUCT_TAGS.length + 1 : 0;
-  let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20) - tagCost, ". ");
+  const TAGS = structTags();
+  const tagCost = state.structure ? TAGS.length + 1 : 0;
+  const flavorCost = (!state.techOnly && (SLIM || true)) ? (genreWorld(state.primaryGenre)==="organic" ? " — live acoustic instrumentation".length : genreWorld(state.primaryGenre)==="hybrid" ? " — live and electronic hybrid instrumentation".length : 0) : 0;
+  let body = assemble(blocks.slice(), 1000 - (state.instrumental ? SAFETY_LINE.length + 2 : 20) - tagCost - flavorCost, ". ");
   body = sanitize(body);
   body = body.replace(/[.\s]+$/,"");
   if(!/Bass:/.test(body) && !state.hidden.bassCard) body += ". " + bassLine();
@@ -708,11 +805,18 @@ function buildStylePrompt(){
   if(state.counterMelody && state.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". Counter-melody: " + state.counterMelody.voice;
   if(state.voiceConcept && state.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + state.voiceConcept.voice;
   body = sanitize(body);
-  if(state.structure && !state.hidden.styleCard) body += STRUCT_TAGS;
+  if(!state.techOnly) body = genreSafeText(body, true); // rephrase techno-isms to fit the genre (style names protected)
+  if(state.structure && !state.hidden.styleCard) body += TAGS;
   const v = vocalLine();
   let out = normalizePrompt(body + "." + (v ? " " + v : ""));
   if(state.structure && out.length > 1000){
-    out = normalizePrompt(out.replace(STRUCT_TAGS, ""));
+    out = normalizePrompt(out.replace(TAGS, ""));
+  }
+  if(out.length > 1000){ // final safety clamp at a clause boundary
+    let cut = out.slice(0, 1000);
+    const m2 = cut.match(/^(.*[.;,])/);
+    if(m2 && m2[1].length > 500) cut = m2[1].trim();
+    out = normalizePrompt(cut);
   }
   return out;
 }
@@ -785,6 +889,7 @@ function buildFullBrief(){
     text = parts.join("\n\n");
     if(text.length > 3000){ text = text.slice(0,3000).replace(/\s+\S*$/,""); }
   }
+  if(!state.techOnly) text = genreSafeText(text, true); // style names protected
   return text;
 }
 function buildKit(){
@@ -819,6 +924,12 @@ function buildStylePromptFor(s){
 }
 
 /* ---------------------------- ENERGY ARC / ENGINEER ---------------------------- */
+const ARC_NAME_MAP = {Intro:"Intro", Build:"Rise", Drop:"Climax", Breakdown:"Release", Climax:"Finale", Outro:"Outro"};
+function arcName(n){
+  if(state.techOnly) return n;
+  if(genreWorld(state.primaryGenre)!=="organic") return n;
+  return ARC_NAME_MAP[n] || n;
+}
 function energyArc(){
   const tpl = ARC_TEMPLATES[state.duration||"standard"];
   const spb = 60/(state.bpm||140);
@@ -828,7 +939,7 @@ function energyArc(){
     const startSec = bar*4*spb;
     bar += bars;
     const e = Math.max(20, Math.min(100, energy + (/Drop|Climax/.test(name)?boost:Math.round(boost/2))));
-    return {name, bars, energy:e, start:startSec, startLabel:fmtTime(startSec)};
+    return {name: arcName(name), bars, energy:e, start:startSec, startLabel:fmtTime(startSec)};
   });
 }
 function arcTotalSec(){
@@ -863,10 +974,14 @@ function engineerLines(){
 }
 function djLines(){
   const bpm = state.bpm||140;
+  const organic = !state.techOnly && genreWorld(state.primaryGenre)==="organic";
+  const slot = organic
+    ? (bpm>=150 ? "up-tempo barn-burner" : bpm>=120 ? "confident mid-set mover" : "gentle opener")
+    : (bpm>=150 ? "peak-hour hammer" : bpm>=140 ? "main-room peak time" : "driving warm-up into peak");
   return [
     "CUE: intro is beatmatch-friendly, drums first, full energy by the second phrase.",
     "MIX RANGE: pairs cleanly with " + (bpm-4) + "–" + (bpm+4) + " BPM tracks in Camelot " + camelot(state) + " and its neighbours.",
-    "SLOT: " + (bpm>=150?"peak-hour hammer":(bpm>=140?"main-room peak time":"driving warm-up into peak")) + "."
+    "SLOT: " + slot + "."
   ];
 }
 function weirdReadout(wd){

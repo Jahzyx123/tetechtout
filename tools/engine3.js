@@ -1336,7 +1336,7 @@ function boot(){
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,
     SECTION_MAX_DEFS, applyDna, buildDnaChips, downloadText, DNA_PRESETS,
     autoFitSounds, allSoundsOn, unhideAllSoundCards, styleFitCards, genreWorld,
-    toggleStyleFit
+    toggleStyleFit, genreSafeText, structTags, arcName
   };
 }
 
