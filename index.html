@@ -364,6 +364,11 @@ kbd{background:rgba(3,10,17,.9);border:1px solid var(--line-bright);border-radiu
             <button class="mode-btn" id="modeAnyBtn">🌍 NO TECHNО<span class="msub">every other genre · sub-style + genre combos</span></button>
           </div>
           <div class="modebar-note" id="modeNoteBar">Genre mode — the roller draws sub-style + genre combos from 40+ genres. No techno appears unless you switch.</div>
+          <div class="row" style="margin-top:10px"><span class="lbl">🎚 Style-fit</span>
+            <span class="toggle on" id="styleFitToggle" title="When a no-techno style is rolled: hide sound cards that don't fit the genre and re-tune the sounds that do."><span class="led"></span>auto-tune sounds to genre</span>
+            <button class="sm" id="allSoundsBtn" title="Un-hide every sound card — A key">👁 All sounds on</button>
+            <span class="readout" id="styleFitRead" style="font-size:10px">on genre roll: hides sounds that don't fit · re-tunes the rest</span>
+          </div>
           <div class="row" style="margin-top:10px"><span class="lbl">⚡ DNA</span>
             <div class="toggles" id="dnaPresets" style="flex:1"></div>
             <span class="readout" id="dnaRead" style="font-size:10px">one-click techno flavors</span>
@@ -6832,6 +6837,7 @@ function defaultState(){
     layers:{}, locks:defaultLocks(), hidden:defaultHidden(),
     weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced", slim:false, structure:false,
     acidAmt:60, driveAmt:75,
+    styleFit:true, lastFitGenre:"",
     variations:[]
   };
 }
@@ -6953,6 +6959,92 @@ const GROUPS = {
   "chord":["chordProg"], "rhythmPattern":["rhythmPattern"],
   "power":Object.keys(ROLL_FN)
 };
+
+/* ---------------------------- STYLE-FIT (no-techno auto-curation) ----------------------------
+   When a no-techno style is rolled, sound cards whose content only makes
+   sense for electronic/techno productions are auto-hidden so neither the
+   UI nor the Suno description mentions e.g. sidechain pumping on a bebop
+   tune. The remaining (fitting) sound groups are re-rolled so the sounds
+   actually match the new genre. Locks are always respected, and the whole
+   behaviour can be turned off with the Style-fit toggle / restored with
+   the "All sounds on" button. */
+const ELECTRONIC_LEAN_CARDS = ["technoLabCard","textureFxCard","soundDesignCard","mixMasterCard","spatialModCard","rhythmLabCard"];
+const HYBRID_HIDE = ["technoLabCard","textureFxCard"];
+const ELECTRONIC_GENRES = new Set(["house","trance","electronic","dance","electronic latin","electronic retro","retro"]);
+const ORGANIC_GENRES = new Set(["jazz","blues","bossa nova","reggae","country","latin","world","classical","folk","gospel","punk","theatrical","acoustic pop","easy listening","african","caribbean","spanish","swing","big band","bluegrass","americana","western","cajun","polka","klezmer","gypsy","indian classical","middle eastern","persian","turkish","greek","italian"]);
+const SOUND_CARDS = ["feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard"];
+/* group -> the card it lives on (only re-roll groups whose card stays visible) */
+const FIT_GROUPS = [
+  ["feel-melody","feelCard"],
+  ["bass","bassCard"],
+  ["drums","drumsCard"],
+  ["harmony","harmonyLabCard"],
+  ["grooveMelodic","grooveMelodicCard"],
+  ["soundDesign","soundDesignCard"],
+  ["mixMaster","mixMasterCard"],
+  ["spatialMod","spatialModCard"],
+  ["textureFx","textureFxCard"],
+  ["rhythm","rhythmLabCard"]
+];
+function genreWorld(genre){
+  const g = String(genre||"").toLowerCase().trim();
+  if(!g) return "hybrid";
+  if(ELECTRONIC_GENRES.has(g)) return "electronic";
+  if(ORGANIC_GENRES.has(g)) return "organic";
+  return "hybrid";
+}
+function styleFitCards(){
+  if(state.techOnly) return [];
+  const world = genreWorld(state.primaryGenre);
+  if(world==="electronic") return [];
+  if(world==="organic") return ELECTRONIC_LEAN_CARDS.slice();
+  return HYBRID_HIDE.slice();
+}
+function autoFitSounds(opts){
+  opts = opts || {};
+  const reRoll = opts.reRoll !== false;
+  if(state.techOnly || !state.styleFit) return {hid:0, restored:0, rolled:false, skipped:true};
+  const genre = state.primaryGenre || state.primaryStyle || "this style";
+  const toHide = styleFitCards();
+  const worldChanged = genre !== state.lastFitGenre;
+  let hid = 0, restored = 0;
+  if(worldChanged){
+    /* genre world changed — reconcile the electronic-lean cards to exactly
+       what fits now, so going Jazz → House brings the techno cards back. */
+    ELECTRONIC_LEAN_CARDS.forEach(c=>{
+      if(toHide.includes(c)){ if(!state.hidden[c]){ state.hidden[c] = true; hid++; } }
+      else if(state.hidden[c]){ state.hidden[c] = false; restored++; }
+    });
+  } else {
+    toHide.forEach(c=>{ if(!state.hidden[c]){ state.hidden[c] = true; hid++; } });
+  }
+  let rolled = false;
+  if(reRoll && worldChanged){
+    FIT_GROUPS.forEach(pair=>{
+      const g = pair[0], card = pair[1];
+      if(!state.hidden[card]) rollGroup(GROUPS[g]);
+    });
+    rolled = true;
+  }
+  state.lastFitGenre = genre;
+  const bits = [];
+  if(hid > 0) bits.push("hid " + hid + " sound card" + (hid>1?"s":"") + " that don't fit");
+  if(restored > 0) bits.push("brought back " + restored + " sound card" + (restored>1?"s":"") + " for " + genre);
+  if(rolled) bits.push("re-tuned the sounds to " + genre);
+  if(bits.length) toast("🎛 Style-fit: " + bits.join(", "));
+  return {hid, restored, rolled, skipped:false};
+}
+function unhideAllSoundCards(){
+  let n = 0;
+  SOUND_CARDS.forEach(c=>{ if(state.hidden[c]){ state.hidden[c] = false; n++; } });
+  return n;
+}
+function allSoundsOn(){
+  commit();
+  const n = unhideAllSoundCards();
+  afterChange();
+  toast(n ? "👁 All " + n + " hidden sound card" + (n>1?"s":"") + " back ON" : "👁 All sounds are already visible");
+}
 
 let state = defaultState();
 
@@ -7497,6 +7589,7 @@ function doRoll(kind){
   if(ROLL_FN[kind] && !GROUPS[kind]){
     commit(); beginRoll();
     if(!state.locks[kind]) ROLL_FN[kind](state);
+    if(kind==="genre") autoFitSounds({reRoll:true});
     afterChange(); flashCards([kind]);
     return;
   }
@@ -7504,7 +7597,8 @@ function doRoll(kind){
   if(!keys){ toast("Unknown roll: "+kind); return; }
   commit(); beginRoll();
   for(const k of keys){ if(!state.locks[k]) ROLL_FN[k](state); }
-  if(kind==="power"){ generateVariations(); }
+  if(kind==="power"){ autoFitSounds({reRoll:false}); generateVariations(); }
+  else if(kind==="primary" || kind==="secondary"){ autoFitSounds({reRoll:true}); }
   afterChange();
   flashCards(keys);
 }
@@ -7568,8 +7662,15 @@ function render(){
   if(modeNoteBar){
     modeNoteBar.textContent = state.techOnly
       ? "Techno-Only mode — the roller and every list use the curated techno pool (" + STYLES.length + " styles, core / sub / rare)."
-      : "No-Techno mode — the roller draws sub-style + genre combos from " + GENRES.length + " genres. No techno appears unless you switch.";
+      : "No-Techno mode — the roller draws sub-style + genre combos from " + GENRES.length + " genres. No techno appears unless you switch." +
+        (state.styleFit ? " · Style-fit ON: sounds auto-tune to the rolled genre." : " · Style-fit OFF: sounds stay as rolled.");
   }
+  const styleFitTgl=$("styleFitToggle");
+  if(styleFitTgl) styleFitTgl.classList.toggle("on", !!state.styleFit);
+  const styleFitRead=$("styleFitRead");
+  if(styleFitRead) styleFitRead.textContent = state.styleFit
+    ? "on genre roll: hides sounds that don't fit · re-tunes the rest"
+    : "off — nothing is hidden or re-tuned automatically";
   if(genreHint){
     if(state.techOnly){
       genreHint.textContent = "techno pool only · 🎲 rolls two techno styles";
@@ -7804,6 +7905,12 @@ function renderRhythmGrid(){
 function toggleLayer(id){ commit(); state.layers[id] = !state.layers[id]; afterChange(); }
 function toggleInstrumental(){ commit(); state.instrumental = !state.instrumental; afterChange(); }
 function toggleVocal(){ commit(); state.vocalMode = !state.vocalMode; afterChange(); }
+function toggleStyleFit(){
+  commit();
+  state.styleFit = !state.styleFit;
+  afterChange();
+  toast(state.styleFit ? "🎚 Style-fit ON — sounds auto-tune to the genre on no-techno rolls" : "🎚 Style-fit OFF — sounds stay exactly as rolled");
+}
 function toggleHide(key){ commit(); state.hidden[key] = !state.hidden[key]; afterChange(); }
 function showAllSections(){
   commit();
@@ -7876,7 +7983,7 @@ function encodeState(s){
     ar:s.arpeggio, bv:s.bassVoice, bm:s.bassMovement, br:s.bassRel, k:s.kick, ha:s.hats,
     sn:s.snare, pc:s.perc, tm:s.toms, gr:s.groove, sw:s.swing, sy:s.sync, it:s.intensity,
     arng:s.arrangement, td:s.technoDrive, ta:s.technoAcid, tt:s.technoTexture, tr:s.technoRave, ti:s.technoIndustrial, aa:s.acidAmt, da:s.driveAmt, mm:s.microMelody, mb:s.microBass, im:s.instrumental, vm:s.vocalMode, w:s.weirdness, inf:s.influence,
-    dur:s.duration, mf:s.melodicForce, to:s.techOnly, eq:s.equalChance, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden, st:s.structure,
+    dur:s.duration, mf:s.melodicForce, to:s.techOnly, eq:s.equalChance, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden, st:s.structure, sf:s.styleFit,
     ft:s.filterType, et:s.envelopeType, lt:s.lfoType, dt:s.distortionType, rt:s.reverbType, dlt:s.delayType, sct:s.sidechainType, stt:s.stereoType, fx:s.fxChain, cprog:s.chordProg, rpat:s.rhythmPattern, sint:s.soundIntensity, rg:s.rhythmGrid,
     mixDensity:s.mixDensity, mixEnergy:s.mixEnergy, mixSpace:s.mixSpace, mixGlue:s.mixGlue, mixPunch:s.mixPunch,
     masterDrive:s.masterDrive, masterLoudness:s.masterLoudness, masterColor:s.masterColor, masterChain:s.masterChain,
@@ -7928,6 +8035,7 @@ function decodeState(str){
       cm:"counterMelody", cmr:"counterMelodyRelation", vc:"voiceConcept", vr:"voiceRelation"};
     for(const short in map){ if(m[short]!==undefined) s[map[short]] = m[short]; }
     if(m.st!==undefined) s.structure = !!m.st;
+    if(m.sf!==undefined) s.styleFit = !!m.sf;
     if(m.cp) s.concept = Object.assign(s.concept, m.cp);
     if(m.mc) s.melodyConcept = Object.assign(s.melodyConcept, m.mc);
     if(m.ly) s.layers = m.ly;
@@ -8233,6 +8341,7 @@ function applyDna(name){
   commit(); beginRoll();
   const s = state;
   s.techOnly = true;
+  unhideAllSoundCards(); // DNA is a techno preset — bring every sound card back
   const roll = (k)=>{ if(!s.locks[k] && ROLL_FN[k]) ROLL_FN[k](s); };
   const set = (k,v)=>{ if(!s.locks[k]) s[k]=v; };
   if(name==="hard"){
@@ -9226,6 +9335,7 @@ function openStyleModal(){
       commit();
       state.primaryStyle = val;
       state.primaryGenre = isTech ? "Techno" : genreOfStyle(val);
+      if(!isTech) autoFitSounds({reRoll:true});
       afterChange();
       closeStyleModal();
       toast("🎯 Primary: "+val);
@@ -9237,6 +9347,7 @@ function openStyleModal(){
       commit();
       state.primaryStyle = val;
       state.primaryGenre = genreOfStyle(val);
+      autoFitSounds({reRoll:true});
       afterChange();
       closeStyleModal();
       toast("🎯 Combo: "+val);
@@ -9250,6 +9361,7 @@ function openStyleModal(){
       const combo = genreComboName({n:g}, pick(GENRES.find(x=>x.n===g).subs));
       state.primaryStyle = combo;
       if(!state.locks.bpm) state.bpm = tempoForGenre(g, "");
+      autoFitSounds({reRoll:true});
       afterChange();
       closeStyleModal();
       toast("🎯 "+combo);
@@ -9296,6 +9408,8 @@ function buildCommands(){
   add("🎤 Copy & open Suno","description + suno.com/create",()=>{ const t=buildStylePrompt(); copyText(t,"Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e){} },400); },"O");
   add("⬇ Download .txt","current tab",()=>downloadText("neonforge-prompt.txt", currentTab==="style"?buildStylePrompt():currentTab==="brief"?buildFullBrief():currentTab==="eng"?buildEngineer():buildKit()));
   add("🎚 Toggle structure tags","[Intro] [Drop] in description",()=>{ commit(); state.structure=!state.structure; afterChange(); });
+  add("👁 All sounds on","un-hide every sound card",()=>allSoundsOn(),"A");
+  add("🎚 Toggle style-fit","auto-tune sounds to no-techno genre",()=>toggleStyleFit());
   add("📜 Open style picker","manual list",()=>openStyleModal(),"L");
   add("📜 Open master library","every pool, one screen",()=>openMasterLibrary(),"M5");
   add("👁 Hide/show sections","toggle prompt view",()=>toggleStylePromptFocus(),"H");
@@ -9372,6 +9486,7 @@ function openHelp(){
     ["H","Toggle Prompt view (hide non-prompt sections)"],
     ["L","Manual style list"],
     ["O","Copy & open Suno"],
+    ["A","All sounds on (un-hide every sound card)"],
     ["?","This help"]
   ].map(r=>'<span class="kd"><kbd>'+r[0]+'</kbd></span><span>'+r[1]+'</span>').join("");
   modal.classList.add("open");
@@ -9421,6 +9536,7 @@ function handleKey(e){
   if(e.key==="h" || e.key==="H"){ toggleStylePromptFocus(); return; }
   if(e.key==="l" || e.key==="L"){ openStyleModal(); return; }
   if(e.key==="o" || e.key==="O"){ copyText(buildStylePrompt(), "Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e2){} }, 400); return; }
+  if(e.key==="a" || e.key==="A"){ allSoundsOn(); return; }
   if(e.key==="?"){ openHelp(); return; }
 }
 function initShortcuts(){
@@ -9637,10 +9753,11 @@ function initEvents(){
     if(modeTechBtn){
       commit();
       state.techOnly = true;
+      unhideAllSoundCards(); // techno mode wants the full sound set back
       if(!state.locks.genre) ROLL_FN.genre(state);
       if(!state.locks.bpm) state.bpm = tempoForGenre("Techno","Techno");
       afterChange();
-      toast("⚡ Techno-Only mode — techno pool locked in");
+      toast("⚡ Techno-Only mode — techno pool locked in, all sounds back on");
       return;
     }
     const modeAnyBtn = target.closest("#modeAnyBtn");
@@ -9649,8 +9766,9 @@ function initEvents(){
       state.techOnly = false;
       if(!state.locks.genre) ROLL_FN.genre(state);
       if(!state.locks.bpm) state.bpm = tempoForGenre(state.primaryGenre, state.secondaryGenre);
+      autoFitSounds({reRoll:true}); // hide what doesn't fit the rolled genre, re-tune the rest
       afterChange();
-      toast("🎛 No-Techno mode — genre combos on");
+      toast("🎛 No-Techno mode — genre combos on" + (state.styleFit ? " · sounds auto-fit to the genre" : ""));
       return;
     }
     const savePresetBtn = target.closest("#savePresetBtn"); if(savePresetBtn){ savePreset(); return; }
@@ -9774,6 +9892,8 @@ function initEvents(){
     const maxArrangementBtn = target.closest("#maxArrangementBtn"); if(maxArrangementBtn){ doMaxScoreRollSection(["arrangement"],15,"Arrangement"); return; }
     const instToggle2 = target.closest("#instrumentalToggle"); if(instToggle2){ toggleInstrumental(); return; }
     const vocalToggle2 = target.closest("#vocalToggle"); if(vocalToggle2){ toggleVocal(); return; }
+    const styleFitTgl = target.closest("#styleFitToggle"); if(styleFitTgl){ toggleStyleFit(); return; }
+    const allSoundsBtn = target.closest("#allSoundsBtn"); if(allSoundsBtn){ allSoundsOn(); return; }
     const modalClose = target.closest(".modal-close");
     if(modalClose){ const m = modalClose.closest(".modal"); if(m){ m.classList.remove("open"); } return; }
     const modalBackdrop = target.closest(".modal");
@@ -9930,7 +10050,9 @@ function boot(){
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,
-    SECTION_MAX_DEFS, applyDna, buildDnaChips, downloadText, DNA_PRESETS
+    SECTION_MAX_DEFS, applyDna, buildDnaChips, downloadText, DNA_PRESETS,
+    autoFitSounds, allSoundsOn, unhideAllSoundCards, styleFitCards, genreWorld,
+    toggleStyleFit
   };
 }
 

@@ -49,8 +49,15 @@ function render(){
   if(modeNoteBar){
     modeNoteBar.textContent = state.techOnly
       ? "Techno-Only mode — the roller and every list use the curated techno pool (" + STYLES.length + " styles, core / sub / rare)."
-      : "No-Techno mode — the roller draws sub-style + genre combos from " + GENRES.length + " genres. No techno appears unless you switch.";
+      : "No-Techno mode — the roller draws sub-style + genre combos from " + GENRES.length + " genres. No techno appears unless you switch." +
+        (state.styleFit ? " · Style-fit ON: sounds auto-tune to the rolled genre." : " · Style-fit OFF: sounds stay as rolled.");
   }
+  const styleFitTgl=$("styleFitToggle");
+  if(styleFitTgl) styleFitTgl.classList.toggle("on", !!state.styleFit);
+  const styleFitRead=$("styleFitRead");
+  if(styleFitRead) styleFitRead.textContent = state.styleFit
+    ? "on genre roll: hides sounds that don't fit · re-tunes the rest"
+    : "off — nothing is hidden or re-tuned automatically";
   if(genreHint){
     if(state.techOnly){
       genreHint.textContent = "techno pool only · 🎲 rolls two techno styles";
@@ -285,6 +292,12 @@ function renderRhythmGrid(){
 function toggleLayer(id){ commit(); state.layers[id] = !state.layers[id]; afterChange(); }
 function toggleInstrumental(){ commit(); state.instrumental = !state.instrumental; afterChange(); }
 function toggleVocal(){ commit(); state.vocalMode = !state.vocalMode; afterChange(); }
+function toggleStyleFit(){
+  commit();
+  state.styleFit = !state.styleFit;
+  afterChange();
+  toast(state.styleFit ? "🎚 Style-fit ON — sounds auto-tune to the genre on no-techno rolls" : "🎚 Style-fit OFF — sounds stay exactly as rolled");
+}
 function toggleHide(key){ commit(); state.hidden[key] = !state.hidden[key]; afterChange(); }
 function showAllSections(){
   commit();
@@ -357,7 +370,7 @@ function encodeState(s){
     ar:s.arpeggio, bv:s.bassVoice, bm:s.bassMovement, br:s.bassRel, k:s.kick, ha:s.hats,
     sn:s.snare, pc:s.perc, tm:s.toms, gr:s.groove, sw:s.swing, sy:s.sync, it:s.intensity,
     arng:s.arrangement, td:s.technoDrive, ta:s.technoAcid, tt:s.technoTexture, tr:s.technoRave, ti:s.technoIndustrial, aa:s.acidAmt, da:s.driveAmt, mm:s.microMelody, mb:s.microBass, im:s.instrumental, vm:s.vocalMode, w:s.weirdness, inf:s.influence,
-    dur:s.duration, mf:s.melodicForce, to:s.techOnly, eq:s.equalChance, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden, st:s.structure,
+    dur:s.duration, mf:s.melodicForce, to:s.techOnly, eq:s.equalChance, cp:s.concept, mc:s.melodyConcept, ly:s.layers, lk:s.locks, hd:s.hidden, st:s.structure, sf:s.styleFit,
     ft:s.filterType, et:s.envelopeType, lt:s.lfoType, dt:s.distortionType, rt:s.reverbType, dlt:s.delayType, sct:s.sidechainType, stt:s.stereoType, fx:s.fxChain, cprog:s.chordProg, rpat:s.rhythmPattern, sint:s.soundIntensity, rg:s.rhythmGrid,
     mixDensity:s.mixDensity, mixEnergy:s.mixEnergy, mixSpace:s.mixSpace, mixGlue:s.mixGlue, mixPunch:s.mixPunch,
     masterDrive:s.masterDrive, masterLoudness:s.masterLoudness, masterColor:s.masterColor, masterChain:s.masterChain,
@@ -409,6 +422,7 @@ function decodeState(str){
       cm:"counterMelody", cmr:"counterMelodyRelation", vc:"voiceConcept", vr:"voiceRelation"};
     for(const short in map){ if(m[short]!==undefined) s[map[short]] = m[short]; }
     if(m.st!==undefined) s.structure = !!m.st;
+    if(m.sf!==undefined) s.styleFit = !!m.sf;
     if(m.cp) s.concept = Object.assign(s.concept, m.cp);
     if(m.mc) s.melodyConcept = Object.assign(s.melodyConcept, m.mc);
     if(m.ly) s.layers = m.ly;
@@ -714,6 +728,7 @@ function applyDna(name){
   commit(); beginRoll();
   const s = state;
   s.techOnly = true;
+  unhideAllSoundCards(); // DNA is a techno preset — bring every sound card back
   const roll = (k)=>{ if(!s.locks[k] && ROLL_FN[k]) ROLL_FN[k](s); };
   const set = (k,v)=>{ if(!s.locks[k]) s[k]=v; };
   if(name==="hard"){

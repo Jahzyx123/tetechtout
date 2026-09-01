@@ -27,6 +27,9 @@ function ok(cond, msg) {
   else { failures++; console.log("  ✗ FAIL: " + msg); }
 }
 function section(name){ console.log("\n== " + name + " =="); }
+function SOUND_ALL_FALSE(s){
+  return ["feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard"].every(c=>!s.hidden[c]);
+}
 
 const errors = [];
 const dom = new JSDOM(HTML, {
@@ -248,6 +251,103 @@ function run() {
     NF.doRoll("variations");
     const varBadges = w.eval("document.querySelectorAll('#variList .vscore').length");
     ok(varBadges >= 3, "variation score badges shown (" + varBadges + ")");
+
+    section("Style-fit (no-techno auto-curation)");
+    ok(!!w.document.getElementById("styleFitToggle"), "Style-fit toggle present");
+    ok(!!w.document.getElementById("allSoundsBtn"), "All sounds on button present");
+    s = NF.get();
+    s.styleFit = true;
+    s.techOnly = false;
+    s.primaryGenre = "Jazz";
+    s.primaryStyle = "Bebop Jazz";
+    s.hidden = NF.defaultState().hidden; // start from nothing hidden
+    NF.set(s);
+    NF.autoFitSounds({reRoll:false});
+    s = NF.get();
+    ["technoLabCard","textureFxCard","soundDesignCard","mixMasterCard","spatialModCard","rhythmLabCard"].forEach(c=>{
+      ok(s.hidden[c] === true, "organic genre hides " + c);
+    });
+    ["feelCard","bassCard","drumsCard","harmonyLabCard","grooveMelodicCard"].forEach(c=>{
+      ok(s.hidden[c] === false, "organic genre keeps " + c + " visible");
+    });
+    const spJazz = NF.buildStylePrompt();
+    ok(spJazz.length <= 1000, "jazz prompt ≤1000 (" + spJazz.length + ")");
+    ok(/Jazz/.test(spJazz) && !/Techno Lab/.test(spJazz), "jazz prompt mentions genre, no techno lab");
+    ok(/Bass:/.test(spJazz) && /Drums:/.test(spJazz), "jazz prompt keeps bass + drums");
+    s.primaryGenre = "House";
+    s.primaryStyle = "Deep House";
+    NF.set(s);
+    NF.autoFitSounds({reRoll:false});
+    s = NF.get();
+    ok(SOUND_ALL_FALSE(s), "electronic genre keeps every sound card visible");
+    s.primaryGenre = "Rock";
+    s.primaryStyle = "Indie Rock";
+    NF.set(s);
+    NF.autoFitSounds({reRoll:false});
+    s = NF.get();
+    ok(s.hidden.technoLabCard === true && s.hidden.textureFxCard === true, "hybrid genre hides techno lab + texture fx");
+    ok(s.hidden.soundDesignCard === false && s.hidden.mixMasterCard === false, "hybrid genre keeps sound design + mix");
+    // re-roll behavior: unlocked sounds change to fit the genre, locked survive
+    s.primaryGenre = "Classical";
+    s.primaryStyle = "Romantic Classical";
+    s.kick = "__SENTINEL__";
+    s.locks.kick = true;
+    s.locks.feeling = false;
+    s.lastFitGenre = "";
+    NF.set(s);
+    NF.autoFitSounds({reRoll:true});
+    s = NF.get();
+    ok(s.kick === "__SENTINEL__", "locked kick survives style-fit re-tune");
+    ok(s.feeling !== "" && s.feeling !== undefined, "unlocked sounds re-tuned to new genre (feeling = " + s.feeling + ")");
+    ok(s.hidden.rhythmLabCard === true, "classical hides rhythm lab");
+    // styleFit off = no automatic changes
+    s = NF.get();
+    s.styleFit = false;
+    s.hidden = NF.defaultState().hidden;
+    s.primaryGenre = "Jazz";
+    NF.set(s);
+    NF.autoFitSounds({reRoll:true});
+    s = NF.get();
+    ok(s.hidden.technoLabCard === false, "style-fit OFF: nothing auto-hidden");
+    // allSoundsOn restores every sound card
+    s = NF.get();
+    s.styleFit = true;
+    s.hidden.technoLabCard = true;
+    s.hidden.soundDesignCard = true;
+    NF.set(s);
+    NF.allSoundsOn();
+    s = NF.get();
+    ok(SOUND_ALL_FALSE(s), "All sounds on un-hides every sound card");
+    // genre roll in no-techno mode auto-fits deterministically
+    s = NF.get();
+    s.techOnly = false;
+    s.styleFit = true;
+    s.lastFitGenre = "";
+    NF.set(s);
+    NF.doRoll("genre");
+    s = NF.get();
+    const expectHidden = NF.styleFitCards();
+    const hiddenOk = expectHidden.every(c=>s.hidden[c] === true);
+    ok(hiddenOk, "no-techno genre roll hides exactly the non-fitting cards (" + (s.primaryGenre||s.primaryStyle) + ")");
+    ok(["feelCard","bassCard","drumsCard"].every(c=>s.hidden[c] === false), "core sound cards stay visible after genre roll");
+    const spFit = NF.buildStylePrompt();
+    ok(spFit.length <= 1000, "style-fit prompt ≤1000 (" + spFit.length + ")");
+    // techno mode + genre roll hides nothing
+    s = NF.get();
+    s.hidden = NF.defaultState().hidden; // mode switch in the UI un-hides everything
+    s.techOnly = true;
+    NF.set(s);
+    NF.doRoll("genre");
+    s = NF.get();
+    ok(SOUND_ALL_FALSE(s), "techno-mode genre roll hides nothing");
+    // UI: toggle + button click handlers work
+    const fitTgl = w.document.getElementById("styleFitToggle");
+    fitTgl.click();
+    ok(NF.get().styleFit === false, "Style-fit toggle click turns it OFF");
+    fitTgl.click();
+    ok(NF.get().styleFit === true, "Style-fit toggle click turns it back ON");
+    w.document.getElementById("allSoundsBtn").click();
+    ok(true, "All sounds on button no-throw");
 
     section("Kit & engineer builders");
     const kit = NF.buildKit();

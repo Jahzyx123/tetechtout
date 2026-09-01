@@ -200,6 +200,7 @@ function defaultState(){
     layers:{}, locks:defaultLocks(), hidden:defaultHidden(),
     weirdness:50, influence:"balanced", duration:"standard", melodicForce:"balanced", slim:false, structure:false,
     acidAmt:60, driveAmt:75,
+    styleFit:true, lastFitGenre:"",
     variations:[]
   };
 }
@@ -321,6 +322,92 @@ const GROUPS = {
   "chord":["chordProg"], "rhythmPattern":["rhythmPattern"],
   "power":Object.keys(ROLL_FN)
 };
+
+/* ---------------------------- STYLE-FIT (no-techno auto-curation) ----------------------------
+   When a no-techno style is rolled, sound cards whose content only makes
+   sense for electronic/techno productions are auto-hidden so neither the
+   UI nor the Suno description mentions e.g. sidechain pumping on a bebop
+   tune. The remaining (fitting) sound groups are re-rolled so the sounds
+   actually match the new genre. Locks are always respected, and the whole
+   behaviour can be turned off with the Style-fit toggle / restored with
+   the "All sounds on" button. */
+const ELECTRONIC_LEAN_CARDS = ["technoLabCard","textureFxCard","soundDesignCard","mixMasterCard","spatialModCard","rhythmLabCard"];
+const HYBRID_HIDE = ["technoLabCard","textureFxCard"];
+const ELECTRONIC_GENRES = new Set(["house","trance","electronic","dance","electronic latin","electronic retro","retro"]);
+const ORGANIC_GENRES = new Set(["jazz","blues","bossa nova","reggae","country","latin","world","classical","folk","gospel","punk","theatrical","acoustic pop","easy listening","african","caribbean","spanish","swing","big band","bluegrass","americana","western","cajun","polka","klezmer","gypsy","indian classical","middle eastern","persian","turkish","greek","italian"]);
+const SOUND_CARDS = ["feelCard","bassCard","drumsCard","technoLabCard","harmonyLabCard","rhythmLabCard","soundDesignCard","mixMasterCard","spatialModCard","grooveMelodicCard","textureFxCard"];
+/* group -> the card it lives on (only re-roll groups whose card stays visible) */
+const FIT_GROUPS = [
+  ["feel-melody","feelCard"],
+  ["bass","bassCard"],
+  ["drums","drumsCard"],
+  ["harmony","harmonyLabCard"],
+  ["grooveMelodic","grooveMelodicCard"],
+  ["soundDesign","soundDesignCard"],
+  ["mixMaster","mixMasterCard"],
+  ["spatialMod","spatialModCard"],
+  ["textureFx","textureFxCard"],
+  ["rhythm","rhythmLabCard"]
+];
+function genreWorld(genre){
+  const g = String(genre||"").toLowerCase().trim();
+  if(!g) return "hybrid";
+  if(ELECTRONIC_GENRES.has(g)) return "electronic";
+  if(ORGANIC_GENRES.has(g)) return "organic";
+  return "hybrid";
+}
+function styleFitCards(){
+  if(state.techOnly) return [];
+  const world = genreWorld(state.primaryGenre);
+  if(world==="electronic") return [];
+  if(world==="organic") return ELECTRONIC_LEAN_CARDS.slice();
+  return HYBRID_HIDE.slice();
+}
+function autoFitSounds(opts){
+  opts = opts || {};
+  const reRoll = opts.reRoll !== false;
+  if(state.techOnly || !state.styleFit) return {hid:0, restored:0, rolled:false, skipped:true};
+  const genre = state.primaryGenre || state.primaryStyle || "this style";
+  const toHide = styleFitCards();
+  const worldChanged = genre !== state.lastFitGenre;
+  let hid = 0, restored = 0;
+  if(worldChanged){
+    /* genre world changed — reconcile the electronic-lean cards to exactly
+       what fits now, so going Jazz → House brings the techno cards back. */
+    ELECTRONIC_LEAN_CARDS.forEach(c=>{
+      if(toHide.includes(c)){ if(!state.hidden[c]){ state.hidden[c] = true; hid++; } }
+      else if(state.hidden[c]){ state.hidden[c] = false; restored++; }
+    });
+  } else {
+    toHide.forEach(c=>{ if(!state.hidden[c]){ state.hidden[c] = true; hid++; } });
+  }
+  let rolled = false;
+  if(reRoll && worldChanged){
+    FIT_GROUPS.forEach(pair=>{
+      const g = pair[0], card = pair[1];
+      if(!state.hidden[card]) rollGroup(GROUPS[g]);
+    });
+    rolled = true;
+  }
+  state.lastFitGenre = genre;
+  const bits = [];
+  if(hid > 0) bits.push("hid " + hid + " sound card" + (hid>1?"s":"") + " that don't fit");
+  if(restored > 0) bits.push("brought back " + restored + " sound card" + (restored>1?"s":"") + " for " + genre);
+  if(rolled) bits.push("re-tuned the sounds to " + genre);
+  if(bits.length) toast("🎛 Style-fit: " + bits.join(", "));
+  return {hid, restored, rolled, skipped:false};
+}
+function unhideAllSoundCards(){
+  let n = 0;
+  SOUND_CARDS.forEach(c=>{ if(state.hidden[c]){ state.hidden[c] = false; n++; } });
+  return n;
+}
+function allSoundsOn(){
+  commit();
+  const n = unhideAllSoundCards();
+  afterChange();
+  toast(n ? "👁 All " + n + " hidden sound card" + (n>1?"s":"") + " back ON" : "👁 All sounds are already visible");
+}
 
 let state = defaultState();
 
@@ -865,6 +952,7 @@ function doRoll(kind){
   if(ROLL_FN[kind] && !GROUPS[kind]){
     commit(); beginRoll();
     if(!state.locks[kind]) ROLL_FN[kind](state);
+    if(kind==="genre") autoFitSounds({reRoll:true});
     afterChange(); flashCards([kind]);
     return;
   }
@@ -872,7 +960,8 @@ function doRoll(kind){
   if(!keys){ toast("Unknown roll: "+kind); return; }
   commit(); beginRoll();
   for(const k of keys){ if(!state.locks[k]) ROLL_FN[k](state); }
-  if(kind==="power"){ generateVariations(); }
+  if(kind==="power"){ autoFitSounds({reRoll:false}); generateVariations(); }
+  else if(kind==="primary" || kind==="secondary"){ autoFitSounds({reRoll:true}); }
   afterChange();
   flashCards(keys);
 }

@@ -619,6 +619,7 @@ function openStyleModal(){
       commit();
       state.primaryStyle = val;
       state.primaryGenre = isTech ? "Techno" : genreOfStyle(val);
+      if(!isTech) autoFitSounds({reRoll:true});
       afterChange();
       closeStyleModal();
       toast("🎯 Primary: "+val);
@@ -630,6 +631,7 @@ function openStyleModal(){
       commit();
       state.primaryStyle = val;
       state.primaryGenre = genreOfStyle(val);
+      autoFitSounds({reRoll:true});
       afterChange();
       closeStyleModal();
       toast("🎯 Combo: "+val);
@@ -643,6 +645,7 @@ function openStyleModal(){
       const combo = genreComboName({n:g}, pick(GENRES.find(x=>x.n===g).subs));
       state.primaryStyle = combo;
       if(!state.locks.bpm) state.bpm = tempoForGenre(g, "");
+      autoFitSounds({reRoll:true});
       afterChange();
       closeStyleModal();
       toast("🎯 "+combo);
@@ -689,6 +692,8 @@ function buildCommands(){
   add("🎤 Copy & open Suno","description + suno.com/create",()=>{ const t=buildStylePrompt(); copyText(t,"Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e){} },400); },"O");
   add("⬇ Download .txt","current tab",()=>downloadText("neonforge-prompt.txt", currentTab==="style"?buildStylePrompt():currentTab==="brief"?buildFullBrief():currentTab==="eng"?buildEngineer():buildKit()));
   add("🎚 Toggle structure tags","[Intro] [Drop] in description",()=>{ commit(); state.structure=!state.structure; afterChange(); });
+  add("👁 All sounds on","un-hide every sound card",()=>allSoundsOn(),"A");
+  add("🎚 Toggle style-fit","auto-tune sounds to no-techno genre",()=>toggleStyleFit());
   add("📜 Open style picker","manual list",()=>openStyleModal(),"L");
   add("📜 Open master library","every pool, one screen",()=>openMasterLibrary(),"M5");
   add("👁 Hide/show sections","toggle prompt view",()=>toggleStylePromptFocus(),"H");
@@ -765,6 +770,7 @@ function openHelp(){
     ["H","Toggle Prompt view (hide non-prompt sections)"],
     ["L","Manual style list"],
     ["O","Copy & open Suno"],
+    ["A","All sounds on (un-hide every sound card)"],
     ["?","This help"]
   ].map(r=>'<span class="kd"><kbd>'+r[0]+'</kbd></span><span>'+r[1]+'</span>').join("");
   modal.classList.add("open");
@@ -814,6 +820,7 @@ function handleKey(e){
   if(e.key==="h" || e.key==="H"){ toggleStylePromptFocus(); return; }
   if(e.key==="l" || e.key==="L"){ openStyleModal(); return; }
   if(e.key==="o" || e.key==="O"){ copyText(buildStylePrompt(), "Style Prompt"); setTimeout(()=>{ try{ if(window.open) window.open("https://suno.com/create","_blank"); }catch(e2){} }, 400); return; }
+  if(e.key==="a" || e.key==="A"){ allSoundsOn(); return; }
   if(e.key==="?"){ openHelp(); return; }
 }
 function initShortcuts(){
@@ -1030,10 +1037,11 @@ function initEvents(){
     if(modeTechBtn){
       commit();
       state.techOnly = true;
+      unhideAllSoundCards(); // techno mode wants the full sound set back
       if(!state.locks.genre) ROLL_FN.genre(state);
       if(!state.locks.bpm) state.bpm = tempoForGenre("Techno","Techno");
       afterChange();
-      toast("⚡ Techno-Only mode — techno pool locked in");
+      toast("⚡ Techno-Only mode — techno pool locked in, all sounds back on");
       return;
     }
     const modeAnyBtn = target.closest("#modeAnyBtn");
@@ -1042,8 +1050,9 @@ function initEvents(){
       state.techOnly = false;
       if(!state.locks.genre) ROLL_FN.genre(state);
       if(!state.locks.bpm) state.bpm = tempoForGenre(state.primaryGenre, state.secondaryGenre);
+      autoFitSounds({reRoll:true}); // hide what doesn't fit the rolled genre, re-tune the rest
       afterChange();
-      toast("🎛 No-Techno mode — genre combos on");
+      toast("🎛 No-Techno mode — genre combos on" + (state.styleFit ? " · sounds auto-fit to the genre" : ""));
       return;
     }
     const savePresetBtn = target.closest("#savePresetBtn"); if(savePresetBtn){ savePreset(); return; }
@@ -1167,6 +1176,8 @@ function initEvents(){
     const maxArrangementBtn = target.closest("#maxArrangementBtn"); if(maxArrangementBtn){ doMaxScoreRollSection(["arrangement"],15,"Arrangement"); return; }
     const instToggle2 = target.closest("#instrumentalToggle"); if(instToggle2){ toggleInstrumental(); return; }
     const vocalToggle2 = target.closest("#vocalToggle"); if(vocalToggle2){ toggleVocal(); return; }
+    const styleFitTgl = target.closest("#styleFitToggle"); if(styleFitTgl){ toggleStyleFit(); return; }
+    const allSoundsBtn = target.closest("#allSoundsBtn"); if(allSoundsBtn){ allSoundsOn(); return; }
     const modalClose = target.closest(".modal-close");
     if(modalClose){ const m = modalClose.closest(".modal"); if(m){ m.classList.remove("open"); } return; }
     const modalBackdrop = target.closest(".modal");
@@ -1323,7 +1334,9 @@ function boot(){
     generateVariations, energyArc, arcLine, Audition, sparkShow, saveIdea, loadIdea,
     clearHistory, loadPresets, savePresets, encodeState, decodeState,
     rollGroup, buildSlimStylePrompt, ideaRoll, buildMaxChips, buildIdeaChips,
-    SECTION_MAX_DEFS, applyDna, buildDnaChips, downloadText, DNA_PRESETS
+    SECTION_MAX_DEFS, applyDna, buildDnaChips, downloadText, DNA_PRESETS,
+    autoFitSounds, allSoundsOn, unhideAllSoundCards, styleFitCards, genreWorld,
+    toggleStyleFit
   };
 }
 
