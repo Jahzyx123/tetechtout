@@ -1,0 +1,437 @@
+#!/usr/bin/env node
+/* =====================================================================
+   NEON FORGE — headless test suite
+   Mirrors the legacy tools/smoke.js checks against the new modular
+   engine:
+   - prompt length caps (≤1000 style / ≤3000 brief) across many rolls
+   - techno-only isolation (styles from the techno pool, techno BPM band)
+   - no-techno genre-combo naming + genre-aware tempo
+   - genre-safe rewriting (organic / hybrid / electronic)
+   - style-fit auto-curation
+   - instrumental vocal sanitizer + banned max-energy word list
+   - lock / hide semantics
+   - unified roll(scope, mode) engine incl. maximize mode
+   - deterministic per seed, share-URL round-trip
+   - pool integrity: expansion minimums, no duplicates, no self-censoring
+   - UI boot via jsdom (skipped with a warning if jsdom isn't installed)
+   Usage: node tests/run.js
+   ===================================================================== */
+import * as E from "../engine/index.js";
+import * as D from "../data/index.js";
+
+let passes = 0, failures = 0;
+function ok(cond, msg) {
+  if (cond) { passes++; console.log("  ✓ " + msg); }
+  else { failures++; console.log("  ✗ FAIL: " + msg); }
+}
+function section(name) { console.log("\n== " + name + " =="); }
+
+function freshTechno() {
+  const s = E.defaultState();
+  s.techOnly = true;
+  E.roll(s, "everything");
+  return s;
+}
+
+/* ---------------- prompt budget ---------------- */
+section("Prompt budgets (techno-only)");
+{
+  const s = freshTechno();
+  let maxSp = 0, maxFb = 0, over = 0;
+  for (let i = 0; i < 60; i++) {
+    E.roll(s, "everything");
+    const sp = E.buildStylePrompt(s);
+    const fb = E.buildFullBrief(s);
+    maxSp = Math.max(maxSp, sp.length);
+    maxFb = Math.max(maxFb, fb.length);
+    if (sp.length > 1000 || fb.length > 3000) over++;
+  }
+  ok(over === 0, "60 techno rolls: style ≤1000 & brief ≤3000 (max " + maxSp + " / " + maxFb + ")");
+  const sp = E.buildStylePrompt(s);
+  ok(sp.length >= 100, "style prompt has real content (" + sp.length + " chars)");
+  ok(/Bass:/.test(sp), "prompt contains Bass block");
+  ok(/Drums:/.test(sp), "prompt contains Drums block");
+}
+
+section("Prompt budgets (no-techno, style-fit on)");
+{
+  const s = E.defaultState();
+  s.techOnly = false; s.styleFit = true;
+  E.roll(s, "everything");
+  let over = 0, maxLen = 0;
+  for (let i = 0; i < 60; i++) {
+    E.roll(s, "genre");
+    const p = E.buildStylePrompt(s);
+    maxLen = Math.max(maxLen, p.length);
+    if (p.length > 1000) over++;
+  }
+  ok(over === 0, "no-techno prompts never exceed 1000 across 60 rolls (max " + maxLen + ")");
+}
+
+/* ---------------- techno-only isolation ---------------- */
+section("Techno-only isolation");
+{
+  const s = freshTechno();
+  const technoNames = new Set(D.STYLES.map(x => x.n));
+  let allFromPool = true, bpmOk = true, distinct = true;
+  for (let i = 0; i < 40; i++) {
+    E.roll(s, "genre");
+    if (!technoNames.has(s.primaryStyle) || !technoNames.has(s.secondaryStyle)) allFromPool = false;
+    if (s.bpm < 125 || s.bpm > 170) bpmOk = false;
+    if (s.primaryStyle === s.secondaryStyle) distinct = false;
+  }
+  ok(D.STYLES.length >= 838, "techno pool has ≥838 styles (" + D.STYLES.length + ")");
+  ok(allFromPool, "techno-only rolls come exclusively from the techno pool");
+  ok(bpmOk, "techno tempo stays in the weighted 128–156 band (last " + s.bpm + ")");
+  ok(distinct, "primary and secondary style never coincide");
+}
+
+/* ---------------- genre combos (no-techno) ---------------- */
+section("Genre combos (no-techno)");
+{
+  const s = E.defaultState();
+  s.techOnly = false;
+  E.roll(s, "everything");
+  const combos = E.allCombos();
+  ok(combos.length > 2000, "≥2000 genre combos available (" + combos.length + ")");
+  let comboOk = true, genreDistinct = true, tempoOk = true;
+  for (let i = 0; i < 40; i++) {
+    E.roll(s, "genre");
+    if (!combos.includes(s.primaryStyle) || !combos.includes(s.secondaryStyle)) comboOk = false;
+    if (s.primaryGenre && s.primaryGenre === s.secondaryGenre) genreDistinct = false;
+    if (s.bpm < 70 || s.bpm > 200) tempoOk = false;
+  }
+  ok(comboOk, "primary & secondary are real 'Sub-Style Genre' combos (" + s.primaryStyle + ")");
+  ok(genreDistinct, "secondary genre never repeats the primary genre (8-retry rule)");
+  ok(tempoOk, "tempo matched to genre band (last " + s.bpm + " BPM)");
+  ok(E.genreComboName({ n: "Jazz" }, "Acid Jazz") === "Acid Jazz", "combo naming: sub ending in genre isn't doubled");
+  ok(E.genreComboName({ n: "Jazz" }, "Bebop") === "Bebop Jazz", "combo naming: 'Sub-Style Genre'");
+}
+
+/* ---------------- weirdness ---------------- */
+section("Weirdness mixing");
+{
+  const m0 = E.weirdMix(0), m50 = E.weirdMix(50), m100 = E.weirdMix(100), m25 = E.weirdMix(25);
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  ok(near(m0.core, 0.72) && near(m50.core, 0.30) && near(m100.core, 0.03), "anchor mixes match the legacy table");
+  ok(Math.abs(m25.core - (0.72 + (0.30 - 0.72) * 0.5)) < 1e-9, "3-point interpolation between anchors");
+  const s = freshTechno();
+  s.equalChance = false;
+  s.weirdness = 0;
+  const coreSet = new Set(E.STYLES_BY_CAT.core);
+  let coreHits = 0, N = 300;
+  E.setSeed(1234);
+  for (let i = 0; i < N; i++) { if (coreSet.has(E.pickStyle(s))) coreHits++; }
+  ok(coreHits / N > 0.6, "weirdness 0 leans hard on core styles (" + coreHits + "/" + N + ")");
+  s.weirdness = 100;
+  const rareSet = new Set(E.STYLES_BY_CAT.rare);
+  let rareHits = 0;
+  for (let i = 0; i < N; i++) { if (rareSet.has(E.pickStyle(s))) rareHits++; }
+  ok(rareHits / N > 0.6, "weirdness 100 leans hard on rare styles (" + rareHits + "/" + N + ")");
+}
+
+/* ---------------- determinism / share ---------------- */
+section("Determinism & share URL");
+{
+  const a = E.defaultState(); a.techOnly = true;
+  a.seed = 42; E.setSeed(42);
+  E.rollKeys(a, E.resolveScope("everything"));
+  const pa = E.buildStylePrompt(a);
+  const b = E.defaultState(); b.techOnly = true;
+  b.seed = 42; E.setSeed(42);
+  E.rollKeys(b, E.resolveScope("everything"));
+  const pb = E.buildStylePrompt(b);
+  ok(pa === pb, "same seed → identical state & prompt");
+  const enc = E.encodeState(a);
+  const dec = E.decodeState(enc);
+  ok(!!dec && dec.primaryStyle === a.primaryStyle && dec.bpm === a.bpm && dec.kick === a.kick, "share-URL encode/decode round-trips");
+  ok(E.buildStylePrompt(dec) === pa, "decoded state rebuilds the identical prompt");
+  ok(E.decodeState("garbage!!") === null, "bad share strings decode to null, not a crash");
+}
+
+/* ---------------- locks & hide ---------------- */
+section("Lock / hide semantics");
+{
+  const s = freshTechno();
+  const kick = s.kick;
+  s.locks.kick = true;
+  E.roll(s, "drums");
+  ok(s.kick === kick, "locked kick survives a drums roll");
+  s.locks.kick = false;
+  s.hidden.bassCard = true;
+  ok(!/Bass:/.test(E.buildStylePrompt(s)), "hidden bass card removed from prompt");
+  s.hidden.bassCard = false;
+  ok(/Bass:/.test(E.buildStylePrompt(s)), "unhide restores bass in prompt");
+  s.hidden.bpm = true;
+  ok(!/BPM/.test(E.buildStylePrompt(s)), "hidden BPM removed from prompt");
+  s.hidden.bpm = false;
+}
+
+/* ---------------- unified roll engine ---------------- */
+section("Unified roll(scope, mode) engine");
+{
+  const s = freshTechno();
+  const before = s.kick + "|" + s.feeling + "|" + s.primaryStyle;
+  const r1 = E.roll(s, "kick");
+  ok(typeof r1.score === "number", "single-field roll returns a score");
+  ok(s.feeling + "|" + s.primaryStyle === before.split("|").slice(1).join("|"), "single-field scope touches only that field");
+  E.roll(s, "drums");
+  const start = E.scorePrompt(s).total;
+  const res = E.roll(s, "everything", { mode: "max", tries: 12 });
+  ok(res.score >= start, "maximize mode never ends below the starting score (" + start + " → " + res.score + ")");
+  const res2 = E.roll(s, "drums", { mode: "max", tries: 8 });
+  ok(res2.score >= res.score - 2 && typeof res2.score === "number", "section-scoped maximize works (" + res2.score + ")");
+  // fully locked: no crash, nothing changes
+  Object.keys(s.locks).forEach(k => s.locks[k] = true);
+  const frozen = JSON.stringify({ k: s.kick, p: s.primaryStyle, b: s.bpm });
+  const res3 = E.roll(s, "everything", { mode: "max", tries: 4 });
+  ok(typeof res3.score === "number" && frozen === JSON.stringify({ k: s.kick, p: s.primaryStyle, b: s.bpm }), "fully-locked maximize returns without changing state");
+  Object.keys(s.locks).forEach(k => s.locks[k] = false);
+  let threw = false;
+  try { E.roll(s, "nonsense-scope"); } catch (e) { threw = true; }
+  ok(threw, "unknown scope throws instead of silently no-oping");
+}
+
+/* ---------------- style-fit ---------------- */
+section("Style-fit (no-techno auto-curation)");
+{
+  const s = E.defaultState();
+  s.styleFit = true; s.techOnly = false;
+  s.primaryGenre = "Jazz"; s.primaryStyle = "Bebop Jazz"; s.lastFitGenre = "";
+  E.roll(s, "everything"); // fills the fields
+  s.primaryGenre = "Jazz"; s.primaryStyle = "Bebop Jazz"; s.secondaryStyle = "";
+  s.hidden = E.defaultHidden(); s.lastFitGenre = "";
+  E.autoFitSounds(s, { reRoll: false });
+  ["technoLabCard", "textureFxCard", "soundDesignCard", "mixMasterCard", "spatialModCard", "rhythmLabCard"].forEach(c =>
+    ok(s.hidden[c] === true, "organic genre hides " + c));
+  ["feelCard", "bassCard", "drumsCard", "harmonyLabCard", "grooveMelodicCard"].forEach(c =>
+    ok(s.hidden[c] === false, "organic genre keeps " + c + " visible"));
+  s.primaryGenre = "House"; s.primaryStyle = "Deep House";
+  E.autoFitSounds(s, { reRoll: false });
+  ok(E.SOUND_CARDS.every(c => !s.hidden[c]), "electronic genre restores every sound card");
+  s.primaryGenre = "Rock"; s.primaryStyle = "Indie Rock";
+  E.autoFitSounds(s, { reRoll: false });
+  ok(s.hidden.technoLabCard === true && s.hidden.textureFxCard === true, "hybrid genre hides techno lab + texture fx");
+  ok(s.hidden.soundDesignCard === false && s.hidden.mixMasterCard === false, "hybrid genre keeps sound design + mix");
+  // locked field survives the style-fit re-tune
+  s.primaryGenre = "Classical"; s.primaryStyle = "Romantic Classical";
+  s.kick = "__SENTINEL__"; s.locks.kick = true; s.lastFitGenre = "";
+  E.autoFitSounds(s, { reRoll: true });
+  ok(s.kick === "__SENTINEL__", "locked kick survives style-fit re-tune");
+  ok(!!s.feeling, "unlocked sounds re-tuned to the new genre (feeling = " + s.feeling + ")");
+  s.locks.kick = false;
+  // styleFit off → no automatic changes
+  s.styleFit = false; s.hidden = E.defaultHidden(); s.primaryGenre = "Jazz"; s.lastFitGenre = "";
+  E.autoFitSounds(s, { reRoll: true });
+  ok(s.hidden.technoLabCard === false, "style-fit OFF: nothing auto-hidden");
+  // techno mode: style-fit is a no-op
+  s.styleFit = true; s.techOnly = true; s.lastFitGenre = "";
+  const r = E.autoFitSounds(s, { reRoll: true });
+  ok(r.skipped === true, "techno mode skips style-fit entirely");
+}
+
+/* ---------------- genre-safe rewriting ---------------- */
+section("Genre-safe phrasing");
+{
+  const s = E.defaultState();
+  s.techOnly = false; s.styleFit = true;
+  E.roll(s, "everything");
+  s.primaryGenre = "Jazz"; s.primaryStyle = "Acid Jazz"; s.secondaryStyle = "";
+  s.hidden = E.defaultHidden(); s.locks = E.defaultLocks();
+  s.kick = "huge 909 kick"; s.hats = "percussive rave hats"; s.snare = "pounding warehouse snare";
+  s.feeling = "euphoric"; s.flavor = "cold yet euphoric"; s.direction = "bunker-born rave hook";
+  s.leadVoice = "rave-stab lead 2.0"; s.leadPerf = "performed with overdriven intensity";
+  s.harmony = "euphoric open fifths"; s.bassVoice = "distorted reese bass";
+  s.bassMovement = "pumping sidechain movement"; s.groove = "relentless four-on-the-floor drive";
+  s.swing = "stomping swing"; s.intensity = "overwhelming rave force";
+  s.rideType = "hardgroove-locked ride cymbal";
+  s.counterMelody = { voice: "", direction: "", perf: "", contour: "", rhythm: "" };
+  s.voiceConcept = { voice: "", movement: "" };
+  s.melodyConcept = {}; s.layers = {};
+  s.chordProg = ""; s.rhythmPattern = ""; s.arrangement = "";
+  s.technoDrive = ""; s.technoAcid = ""; s.technoTexture = ""; s.technoRave = ""; s.technoIndustrial = "";
+  s.concept = { world: "", location: "", visual: "", narrative: "", sensation: "", event: "", conflict: "", crowd: "", title: "", transform: "" };
+  const sp = E.buildStylePrompt(s);
+  ok(/Acid Jazz/.test(sp), "real genre name 'Acid Jazz' protected from cleaning");
+  ok(/live acoustic instrumentation/.test(sp), "organic flavor line added");
+  ok(!/\b(909|rave|sidechain|synth|warehouse|euphoric|overdriven|distorted|hardgroove|2\.0|reese)\b/i.test(sp.replace(/Acid Jazz/g, "")), "organic prompt has no techno-isms");
+  ok(/steady pulse/.test(sp), "four-on-the-floor rephrased to steady pulse");
+  ok(/joyous/.test(sp), "euphoric rephrased to joyous");
+  ok(E.genreSafeText(s, "hardgroove-locked ride cymbal") === "locked-in ride cymbal", "hardgroove-locked → locked-in");
+  ok(/sparkling lead/.test(sp), "rave-stab lead 2.0 rephrased to sparkling lead");
+  ok(sp.length <= 1000, "cleaned organic prompt ≤1000 (" + sp.length + ")");
+  const fb = E.buildFullBrief(s);
+  ok(!/\b(909|rave|sidechain|synth|warehouse|euphoric|hardgroove|2\.0)\b/i.test(fb.replace(/Acid Jazz/g, "")), "full brief cleaned too");
+  ok(/Acid Jazz/.test(fb), "brief keeps the protected genre name");
+  // hybrid: lighter touch
+  s.primaryGenre = "Rock"; s.primaryStyle = "Indie Rock";
+  s.kick = "huge 909 kick"; s.groove = "relentless four-on-the-floor drive";
+  s.leadVoice = "huge layered synth lead"; s.feeling = "euphoric"; s.rideType = "hardgroove-locked ride cymbal";
+  const spH = E.buildStylePrompt(s);
+  ok(!/909/.test(spH), "hybrid prompt drops 909");
+  ok(/four-on-the-floor/.test(spH), "hybrid prompt keeps four-on-the-floor");
+  ok(/synth lead/.test(spH), "hybrid prompt keeps synth");
+  ok(/euphoric/.test(spH), "hybrid prompt keeps euphoric");
+  ok(/live and electronic hybrid instrumentation/.test(spH), "hybrid flavor line added");
+  // electronic: untouched
+  s.primaryGenre = "House"; s.primaryStyle = "Acid House";
+  const spE = E.buildStylePrompt(s);
+  ok(/Acid House/.test(spE) && /acid/i.test(spE), "electronic genre keeps everything (acid stays)");
+  ok(!/live acoustic/.test(spE), "electronic genre gets no acoustic flavor");
+  // arc renames
+  s.primaryGenre = "Classical"; s.primaryStyle = "Romantic Classical";
+  ok(/Rise/.test(E.arcLine(s)) && !/→ Build/.test(E.arcLine(s)), "organic arc renames Build → Rise");
+  ok(/Climax/.test(E.arcLine(s)) && !/→ Drop/.test(E.arcLine(s)), "organic arc renames Drop → Climax");
+  s.techOnly = true;
+  ok(/→ Build/.test(E.arcLine(s)) && /→ Drop/.test(E.arcLine(s)), "techno arc keeps Build/Drop");
+  // world classification spot checks
+  ok(E.genreWorld("Hawaiian") === "organic", "Hawaiian classified organic");
+  ok(E.genreWorld("Nordic") === "organic", "Nordic classified organic");
+  ok(E.genreWorld("Synthwave") === "electronic", "Synthwave classified electronic");
+  ok(E.genreWorld("Gabber") === "electronic", "Gabber classified electronic");
+  ok(E.genreWorld("Shoegaze") === "hybrid", "Shoegaze classified hybrid");
+}
+
+/* ---------------- instrumental safety & banned words ---------------- */
+section("Instrumental safety & banned max-energy words");
+{
+  const s = freshTechno();
+  s.instrumental = true;
+  s.feeling = "minimal and sparse";       // banned words
+  s.direction = "restrained gentle hook"; // banned words
+  s.kick = "quiet weak kick";             // banned words
+  s.leadVoice = "soaring vocal chop lead"; // vocal ref while instrumental
+  const sp = E.buildStylePrompt(s);
+  const noPolicy = sp.replace(/no vocals, no lyrics, no screaming, no chants, no choir, no spoken words/, "");
+  for (const w of ["minimal", "sparse", "restrained", "weak", "quiet", "gentle"]) {
+    ok(!new RegExp("\\b" + w + "\\b", "i").test(noPolicy), "banned word never reaches output: " + w);
+  }
+  ok(!/vocal chop/i.test(sp), "vocal reference stripped in instrumental mode");
+  ok(/no vocals, no lyrics/.test(sp), "instrumental policy line appended");
+  const fb = E.buildFullBrief(s);
+  ok(!/\bminimal\b|\bsparse\b/i.test(fb.replace(/VOCAL POLICY[\s\S]*/, "")), "brief clauses with banned words dropped");
+  s.instrumental = false; s.vocalMode = false;
+  ok(!/no vocals/.test(E.buildStylePrompt(s)), "safety line only added in instrumental mode");
+}
+
+/* ---------------- pool integrity ---------------- */
+section("Pool integrity");
+{
+  const min = (name, n) => ok(D[name].length >= n, name + " ≥ " + n + " (" + D[name].length + ")");
+  min("KICKS", 100); min("HATS", 90); min("SNARES", 80); min("PERCS", 100); min("TOMS", 60);
+  min("GROOVES", 95); min("SWINGS", 60); min("SYNCS", 65); min("INTENSITIES", 75);
+  min("LEADS", 240); min("PERFS", 70); min("HARMONIES", 90); min("ARPS", 65);
+  min("CONTOURS", 55); min("RHYTHMS", 55); min("FEELINGS", 190); min("FLAVORS", 125);
+  min("DIRECTIONS", 115); min("BASS_VOICES", 200); min("BASS_MOVES", 85); min("BASS_RELS", 60);
+  min("MIX_DENSITY", 40); min("GHOST_NOTES", 40); min("SCALE_RUNS", 40); min("REVERB_TYPES", 50);
+  min("FILTER_TYPES", 45); min("CHORD_PROGS", 70); min("RHYTHM_PATTERNS", 80); min("SOUND_INTENSITIES", 25);
+  min("VOCAL_DIRECTIONS", 20); min("TECHNO_DRIVES", 45); min("TECHNO_ACIDS", 45);
+  min("ARRANGEMENTS", 12); min("SCALES", 27);
+  ok(D.MELODY_CONCEPT.story.length >= 55 && D.MELODY_CONCEPT.hook.length >= 38,
+    "melody concept stories+hooks expanded (" + D.MELODY_CONCEPT.story.length + "/" + D.MELODY_CONCEPT.hook.length + ")");
+  ok(D.LAYERS.length >= 45, "detail layers expanded (" + D.LAYERS.length + ")");
+  const sparkNames = Object.keys(D).filter(k => /^SPARK_/.test(k));
+  const sparkTotal = sparkNames.reduce((a, k) => a + (Array.isArray(D[k]) ? D[k].length : 0), 0);
+  ok(sparkNames.length >= 30, "≥30 spark pools present (" + sparkNames.length + ")");
+  ok(sparkTotal >= 1300, "spark pools carry ≥1300 entries (" + sparkTotal + ")");
+  // no duplicates in any rolled string pool
+  const dupPools = [];
+  for (const [name, pool] of Object.entries(D)) {
+    if (!Array.isArray(pool) || !pool.length || typeof pool[0] !== "string") continue;
+    if (name === "BANNED_MINIMAL" || name === "VOCAL_WORDS" || name === "NOTE_NAMES") continue;
+    const seen = new Set();
+    for (const x of pool) {
+      const k = String(x).toLowerCase();
+      if (seen.has(k)) { dupPools.push(name + " :: " + k); break; }
+      seen.add(k);
+    }
+  }
+  ok(dupPools.length === 0, "no duplicate entries in any string pool" + (dupPools.length ? " — " + dupPools.slice(0, 3).join(" | ") : ""));
+  // no self-censoring pool entries (mirrors legacy qa/pools.js)
+  const sDirty = E.defaultState(); sDirty.instrumental = false; // banned-word check only
+  const bad = [];
+  const chk = (lbl, arr) => arr.forEach(v => {
+    if (typeof v === "string" && v && E.isDirty(sDirty, v.toLowerCase())) bad.push(lbl + " :: " + v);
+  });
+  for (const name of ["FEELINGS", "FLAVORS", "DIRECTIONS", "LEADS", "PERFS", "HARMONIES", "ARPS", "CONTOURS", "RHYTHMS",
+    "BASS_VOICES", "BASS_MOVES", "BASS_RELS", "KICKS", "HATS", "SNARES", "PERCS", "TOMS", "GROOVES", "SWINGS", "SYNCS",
+    "INTENSITIES", "ARRANGEMENTS", "TECHNO_DRIVES", "TECHNO_ACIDS", "TECHNO_TEXTURES", "TECHNO_RAVES", "TECHNO_INDUSTRIALS"]) {
+    chk(name, D[name]);
+  }
+  chk("STYLES", D.STYLES.map(x => x.n));
+  chk("LAYERS", D.LAYERS.map(l => l.phrase));
+  ok(bad.length === 0, "no pool entry self-censors through the sanitizer" + (bad.length ? " — " + bad.slice(0, 3).join(" | ") : ""));
+  // ATOMS coverage: every atom rollable
+  const rollable = D.ATOMS.every(a => typeof E.ROLL_FN[a.key] === "function");
+  ok(rollable, "every ATOM key has a roll function (" + D.ATOMS.length + " atoms)");
+}
+
+/* ---------------- UI boot (jsdom, optional) ---------------- */
+section("UI boot (jsdom)");
+await (async () => {
+  let JSDOM;
+  try { ({ JSDOM } = await import("jsdom")); }
+  catch (e) {
+    console.log("  ~ jsdom not installed — skipping UI boot test (npm i to enable)");
+    return;
+  }
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const url = await import("node:url");
+  const root = path.dirname(path.dirname(url.fileURLToPath(import.meta.url)));
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const errors = [];
+  const dom = new JSDOM(html, {
+    url: "http://localhost/",
+    runScripts: "outside-only",
+    pretendToBeVisual: true
+  });
+  // jsdom can't execute <script type=module>; drive the app module directly
+  // against the jsdom window instead.
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.location = dom.window.location;
+  global.history = dom.window.history;
+  Object.defineProperty(global, "navigator", { value: dom.window.navigator, configurable: true });
+  dom.window.addEventListener("error", e => errors.push(e.message));
+  try {
+    const app = await import("../ui/app.js?" + Date.now());
+    ok(!!dom.window.__NF, "window.__NF test hook exists");
+    ok(errors.length === 0, "no window errors during boot");
+    const NF = dom.window.__NF;
+    const s = NF.get();
+    ok(!!s.primaryStyle, "first roll happened on boot (" + s.primaryStyle + ")");
+    ok(s.instrumental === true, "instrumental safety ON by default");
+    ok(dom.window.document.querySelectorAll("#cards .card").length >= 14, "cards rendered");
+    ok(dom.window.document.querySelectorAll("[data-roll]").length >= 90, "per-field roll buttons rendered");
+    ok(dom.window.document.querySelectorAll("[data-lock]").length >= 90, "per-field lock buttons rendered");
+    const sp = NF.buildStylePrompt();
+    ok(sp.length > 0 && sp.length <= 1000, "output prompt within cap (" + sp.length + ")");
+    // click ROLL EVERYTHING
+    dom.window.document.querySelector("#rollAllBtn").click();
+    ok(NF.buildStylePrompt().length <= 1000, "prompt still capped after UI roll");
+    // lock via UI
+    const lockBtn = dom.window.document.querySelector('[data-lock="kick"]');
+    const kickBefore = NF.get().kick;
+    lockBtn.click();
+    ok(NF.get().locks.kick === true, "lock button toggles state");
+    dom.window.document.querySelector("#rollAllBtn").click();
+    ok(NF.get().kick === kickBefore, "locked kick survives UI roll");
+    // hide a card via UI
+    dom.window.document.querySelector('[data-cardhide="bassCard"]').click();
+    ok(NF.get().hidden.bassCard === true, "hide button toggles card state");
+    ok(!/Bass:/.test(NF.buildStylePrompt()), "hidden card leaves the prompt");
+  } catch (e) {
+    failures++;
+    console.log("  ✗ FAIL: UI boot crashed — " + (e && e.stack || e));
+  } finally {
+    delete global.window; delete global.document; delete global.location;
+    delete global.history;
+    Object.defineProperty(global, "navigator", { value: undefined, configurable: true });
+  }
+})();
+
+console.log("\n===============================");
+console.log("PASS " + passes + "  FAIL " + failures);
+console.log("===============================");
+process.exit(failures ? 1 : 0);
