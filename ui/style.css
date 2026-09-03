@@ -17,6 +17,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
 button { font: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
 
 /* ---------- top bar ---------- */
 #topbar {
@@ -97,6 +98,7 @@ button { font: inherit; cursor: pointer; }
 #scoreChip { margin-left: auto; font-size: .8rem; color: var(--lime); }
 
 /* ---------- picker modal ---------- */
+.modal[hidden], #toast[hidden] { display: none !important; }
 .modal {
   position: fixed; inset: 0; z-index: 60; background: rgba(4,5,9,.8);
   display: flex; align-items: center; justify-content: center; padding: 24px;
