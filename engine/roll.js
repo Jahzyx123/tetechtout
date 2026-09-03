@@ -14,7 +14,7 @@
    Locks are always respected; genre-affecting scopes trigger the
    style-fit auto-curation exactly like the legacy engine did. */
 import { ROLL_FN, GROUPS } from "./state.js";
-import { newSeed, setSeed } from "./prng.js";
+import { newSeed, setSeed, random } from "./prng.js";
 import { scorePrompt } from "./prompt.js";
 import { styleFitCards, ELECTRONIC_LEAN_CARDS, FIT_GROUPS } from "./world.js";
 
@@ -45,28 +45,61 @@ function rollOnce(state, scope, keys) {
 export function roll(state, scope, opts = {}) {
   const mode = opts.mode || "random";
   const keys = resolveScope(scope);
-  if (mode === "max") return rollMax(state, scope, keys, opts.tries || 24);
+  if (mode === "max") return rollMax(state, scope, keys, opts);
   rollOnce(state, scope, keys);
   return { state, score: scorePrompt(state).total, improved: true, tries: 1 };
 }
 
-/* maximize-score-over-N-tries: hill-climb by full re-rolls of the scope,
-   keeping the single best-scoring candidate. */
-function rollMax(state, scope, keys, tries) {
+/* Keys MAX must never touch: the style identity you already chose.
+   Clicking MAX optimises the production around your genre, it does not
+   swap the genre out from under you. */
+const IDENTITY_KEYS = ["primary", "secondary", "genre"];
+
+/* maximize-score-over-N-tries.
+
+   Two behaviours the plain hill-climb didn't have:
+   1. Primary/secondary style are pinned for the duration (IDENTITY_KEYS).
+   2. Re-clicking MAX when you're already at the ceiling doesn't sit still:
+      candidates that TIE the current best are collected, and one that
+      differs from the current state is adopted. So every click gives you
+      another equally-max-scoring variation instead of a dead button. */
+function rollMax(state, scope, keys, opts) {
+  const tries = opts.tries || 24;
+  const keepStyle = opts.keepStyle !== false;
+  const rollable = keepStyle ? keys.filter(k => !IDENTITY_KEYS.includes(k)) : keys.slice();
   const startScore = scorePrompt(state).total;
+  const startSig = signature(state);
+
   let best = null, bestScore = startScore;
+  const ties = [];
   for (let i = 0; i < tries; i++) {
-    const cand = JSON.parse(JSON.stringify(state));
-    rollOnce(cand, scope, keys);
+    const cand = clone(state);
+    rollOnce(cand, keepStyle ? "sounds" : scope, rollable);
     const sc = scorePrompt(cand).total;
-    if (sc > bestScore) { best = cand; bestScore = sc; }
+    if (sc > bestScore) { best = cand; bestScore = sc; ties.length = 0; }
+    else if (sc === bestScore && signature(cand) !== startSig) ties.push(cand);
   }
-  if (best) {
-    // apply the winning candidate onto the live state object
-    for (const k of Object.keys(best)) state[k] = best[k];
-  }
+
+  let variation = false;
+  if (!best && ties.length) { best = ties[Math.floor(random() * ties.length)]; variation = true; }
+  if (best) for (const k of Object.keys(best)) state[k] = best[k];
   setSeed(state.seed);
-  return { state, score: bestScore, improved: !!best, tries };
+  return {
+    state, score: bestScore, tries, variation,
+    improved: bestScore > startScore,
+    changed: !!best
+  };
+}
+
+function clone(s) { return JSON.parse(JSON.stringify(s)); }
+/* cheap identity of a rolled set, used to detect "actually different" */
+function signature(s) {
+  let out = "";
+  for (const k of Object.keys(ROLL_FN)) {
+    const v = s[k];
+    out += typeof v === "string" || typeof v === "number" ? "|" + v : "";
+  }
+  return out + "|" + s.bpm + "|" + s.rootPc + "|" + s.scaleId;
 }
 
 /* ---------------------------- STYLE-FIT (no-techno auto-curation) ----------------------------

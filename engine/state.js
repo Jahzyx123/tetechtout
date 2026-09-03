@@ -24,6 +24,8 @@ import {
   ENERGY_CURVE_TYPES, BUILD_TYPES, DROP_TYPES, CHOP_TYPES,
   CONCEPT
 } from "../data/index.js";
+import { EXTRA_POOLS } from "../data/expansion.js";
+import * as DATA from "../data/index.js";
 import { newSeed, random, pick } from "./prng.js";
 import { scaleOf } from "./music.js";
 import {
@@ -64,6 +66,21 @@ export const POOL_OF = {
   fxType: FX_TYPES, transitionType: TRANSITION_TYPES, riserType: RISER_TYPES, impactType: IMPACT_TYPES,
   energyCurve: ENERGY_CURVE_TYPES, buildType: BUILD_TYPES, dropType: DROP_TYPES, chopType: CHOP_TYPES
 };
+
+/* ---------------------------- POOL EXPANSION ----------------------------
+   data/expansion.js adds thousands of generated-but-curated entries on top
+   of the verbatim legacy pools. Merging happens here (not in /data) so the
+   extracted modules stay byte-identical to the legacy source. */
+const POOL_NAME_OF = new Map();
+for (const n in DATA) { if (Array.isArray(DATA[n])) POOL_NAME_OF.set(DATA[n], n); }
+export const EXPANSION_STATS = { pools: 0, added: 0 };
+for (const k in POOL_OF) {
+  const extra = EXTRA_POOLS[POOL_NAME_OF.get(POOL_OF[k])];
+  if (extra && extra.length) {
+    POOL_OF[k] = POOL_OF[k].concat(extra);
+    EXPANSION_STATS.pools++; EXPANSION_STATS.added += extra.length;
+  }
+}
 
 export const ROLL_FN = {};
 for (const k in POOL_OF) { ROLL_FN[k] = (pool => s => { s[k] = pick(pool); })(POOL_OF[k]); }

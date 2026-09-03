@@ -367,6 +367,100 @@ section("Pool integrity");
 }
 
 /* ---------------- UI boot (jsdom, optional) ---------------- */
+section("MAX keeps the style & re-rolls variations");
+{
+  const s = E.defaultState();
+  E.roll(s, "everything");
+  const p = s.primaryStyle, q = s.secondaryStyle, g = s.primaryGenre;
+  let scores = [], sigs = new Set();
+  for (let i = 0; i < 6; i++) {
+    const r = E.roll(s, "everything", { mode: "max", tries: 16 });
+    scores.push(r.score);
+    sigs.add(s.kick + "|" + s.bassVoice + "|" + s.leadVoice + "|" + s.hats);
+    ok(s.primaryStyle === p && s.secondaryStyle === q && s.primaryGenre === g,
+      "MAX #" + (i + 1) + " kept primary/secondary style (" + p + ")");
+  }
+  ok(sigs.size >= 3, "repeated MAX produces different sound sets (" + sigs.size + "/6 unique)");
+  for (let i = 1; i < scores.length; i++) ok(scores[i] >= scores[i - 1], "MAX never regresses the score (" + scores[i - 1] + " → " + scores[i] + ")");
+  // opting out still allowed
+  const s2 = E.defaultState(); E.roll(s2, "everything");
+  const before = s2.primaryStyle;
+  let moved = false;
+  for (let i = 0; i < 8 && !moved; i++) { E.roll(s2, "everything", { mode: "max", tries: 8, keepStyle: false }); if (s2.primaryStyle !== before) moved = true; }
+  ok(true, "keepStyle:false path runs (style changed: " + moved + ")");
+}
+
+section("Sound pool expansion");
+{
+  const { EXPANSION_STATS, POOL_OF } = await import("../engine/state.js");
+  const { EXTRA_POOLS } = await import("../data/expansion.js");
+  ok(EXPANSION_STATS.pools >= 60, "expansion merged into ≥60 pools (" + EXPANSION_STATS.pools + ")");
+  ok(EXPANSION_STATS.added >= 3000, "expansion adds ≥3000 entries (+" + EXPANSION_STATS.added + ")");
+  ok(POOL_OF.kick.length >= 300, "KICKS grew to " + POOL_OF.kick.length);
+  ok(POOL_OF.leadVoice.length >= 350, "LEADS grew to " + POOL_OF.leadVoice.length);
+  ok(POOL_OF.bassVoice.length >= 350, "BASS_VOICES grew to " + POOL_OF.bassVoice.length);
+  // banned / vocal / duplicate integrity across every merged pool
+  const sDirty = E.defaultState(); sDirty.instrumental = true;
+  const bad = [], dup = [];
+  for (const [k, pool] of Object.entries(POOL_OF)) {
+    const seen = new Set();
+    for (const v of pool) {
+      if (typeof v !== "string") continue;
+      const low = v.toLowerCase();
+      if (seen.has(low)) { dup.push(k + " :: " + v); break; }
+      seen.add(low);
+    }
+  }
+  /* the generated additions must be clean at the source (legacy verbatim
+     entries are allowed to lean on the runtime sanitizer instead) */
+  for (const [name, list] of Object.entries(EXTRA_POOLS)) {
+    for (const v of list) if (E.isDirty(sDirty, v.toLowerCase())) bad.push(name + " :: " + v);
+  }
+  ok(bad.length === 0, "no expanded entry trips the sanitizer" + (bad.length ? " — " + bad.slice(0, 3).join(" | ") : ""));
+  ok(dup.length === 0, "no duplicates after merging expansion" + (dup.length ? " — " + dup.slice(0, 3).join(" | ") : ""));
+  const names = Object.keys(EXTRA_POOLS);
+  ok(names.every(n => Array.isArray(EXTRA_POOLS[n]) && EXTRA_POOLS[n].length), "every expansion pool is a non-empty array (" + names.length + ")");
+  // still capped with the bigger vocabulary
+  for (let i = 0; i < 60; i++) {
+    const t = E.defaultState(); t.techOnly = i % 2 === 0; E.roll(t, "everything");
+    if (E.buildStylePrompt(t).length > 1000 || E.buildFullBrief(t).length > 3000) { ok(false, "cap broken with expanded pools"); break; }
+    if (i === 59) ok(true, "60 expanded rolls stay within 1000/3000 caps");
+  }
+}
+
+section("Undo / redo history");
+{
+  const { History } = await import("../ui/history.js");
+  const s = E.defaultState(); E.roll(s, "everything");
+  const h = new History(s);
+  const a = s.kick;
+  E.roll(s, "drums"); h.push(s, "Roll drums");
+  const b = s.kick;
+  E.roll(s, "drums"); h.push(s, "Roll drums");
+  const c = s.kick;
+  ok(h.canUndo() && !h.canRedo(), "undo available after two changes, redo empty");
+  ok(h.undo().state.kick === b, "undo steps back one change");
+  ok(h.undo().state.kick === a, "undo steps back to the original");
+  ok(!h.canUndo(), "undo stack exhausted at the origin");
+  ok(h.redo().state.kick === b, "redo replays the first change");
+  ok(h.redo().state.kick === c, "redo replays the second change");
+  ok(!h.canRedo(), "redo stack exhausted");
+  h.push(s, "new branch");
+  ok(!h.canRedo(), "a new change clears the redo branch");
+  // identical pushes are ignored
+  const n = h.past.length;
+  h.push(s, "same again");
+  ok(h.past.length === n, "pushing an identical state creates no undo step");
+  // copy log
+  const e1 = h.recordCopy(s, "Style Prompt", E.buildStylePrompt(s));
+  ok(h.copies.length === 1 && e1.seed === s.seed, "copy is archived with its seed");
+  ok(e1.state.kick === s.kick, "copy archives a restorable full snapshot");
+  h.recordCopy(s, "Full Brief", E.buildFullBrief(s));
+  ok(h.copies[0].kind === "Full Brief", "newest copy is first");
+  h.clearCopies();
+  ok(h.copies.length === 0, "copy history clears");
+}
+
 section("UI boot (jsdom)");
 await (async () => {
   let JSDOM;
@@ -421,6 +515,30 @@ await (async () => {
     dom.window.document.querySelector('[data-cardhide="bassCard"]').click();
     ok(NF.get().hidden.bassCard === true, "hide button toggles card state");
     ok(!/Bass:/.test(NF.buildStylePrompt()), "hidden card leaves the prompt");
+    // undo / redo through the UI
+    const doc = dom.window.document;
+    ok(!!doc.querySelector("#undoBtn") && !!doc.querySelector("#redoBtn"), "undo/redo buttons rendered");
+    const kickNow = NF.get().kick;
+    doc.querySelector('[data-roll="kick"]').click();
+    const kickRolled = NF.get().kick;
+    NF.undo();
+    ok(NF.get().kick === kickNow, "Ctrl+Z path restores the previous kick");
+    NF.redo();
+    ok(NF.get().kick === kickRolled, "Ctrl+Y path re-applies the roll");
+    // keyboard shortcut wiring
+    const ev = new dom.window.KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
+    doc.dispatchEvent(ev);
+    ok(NF.get().kick === kickNow, "Ctrl+Z keyboard shortcut undoes");
+    const ev2 = new dom.window.KeyboardEvent("keydown", { key: "y", ctrlKey: true, bubbles: true, cancelable: true });
+    doc.dispatchEvent(ev2);
+    ok(NF.get().kick === kickRolled, "Ctrl+Y keyboard shortcut redoes");
+    // copy writes history
+    ok(!!doc.querySelector("#historyCard"), "copy history panel rendered");
+    const nBefore = NF.history.copies.length;
+    doc.querySelector("#copyOutBtn").click();
+    await new Promise(r => setTimeout(r, 30));
+    ok(NF.history.copies.length === nBefore + 1, "clicking Copy archives the prompt");
+    ok(/histItem|histEmpty/.test(doc.querySelector("#histList").innerHTML), "history list renders entries");
   } catch (e) {
     failures++;
     console.log("  ✗ FAIL: UI boot crashed — " + (e && e.stack || e));

@@ -121,3 +121,20 @@ button { font: inherit; cursor: pointer; }
   background: var(--panel2); color: var(--text); border: 1px solid var(--cyan);
   padding: 8px 18px; border-radius: 20px; font-size: .85rem; box-shadow: 0 4px 24px rgba(0,0,0,.5);
 }
+
+/* ---------- undo/redo + copy history ---------- */
+#undoSeg button { padding: 6px 10px; color: var(--text); }
+#undoSeg button:disabled { color: #3a3e58; cursor: default; }
+#undoSeg button:not(:disabled):hover { background: var(--panel2); color: var(--cyan); }
+#historyCard .head { display: flex; align-items: center; gap: 8px; }
+#historyCard .head h2 { flex: 1; margin: 0; font-size: .85rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--cyan); }
+#histList { max-height: 30vh; overflow: auto; }
+.histEmpty { padding: 12px; color: var(--dim); font-size: .8rem; }
+.histItem { padding: 8px 12px; border-bottom: 1px solid rgba(35,39,65,.7); cursor: pointer; }
+.histItem:last-child { border-bottom: 0; }
+.histItem:hover { background: var(--panel2); }
+.histTop { display: flex; gap: 8px; font-size: .8rem; }
+.histTop b { color: var(--lime); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.histTop span { color: var(--dim); white-space: nowrap; }
+.histPrev { font-size: .74rem; color: var(--text); opacity: .8; margin-top: 3px; overflow-wrap: anywhere; }
+.histMeta { font-size: .7rem; color: var(--dim); margin-top: 2px; }
