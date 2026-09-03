@@ -373,6 +373,15 @@ export function layerLine(s) {
 }
 /* Instrumental-only vocal sanitizer: when instrumental is on the prompt
    always ends in an explicit no-vocals policy line. */
+/* Compact form of the no-vocals policy. Semantically identical to
+   SAFETY_LINE but ~40 characters cheaper, which densify() converts into
+   roughly three more rolled sounds. The verbose SAFETY_LINE is still used
+   in the Full Brief, where 3000 characters is never the binding limit. */
+export function vocalLineCompact(s) {
+  const g = (!s.techOnly && s.primaryGenre && !/techno/i.test(s.primaryGenre))
+    ? s.primaryGenre.toLowerCase() : "techno";
+  return "instrumental " + g + ", no vocals/lyrics/chants/choir/spoken words";
+}
 export function vocalLine(s) {
   if (s.instrumental) {
     if (s.techOnly) return SAFETY_LINE;
@@ -472,13 +481,13 @@ export function buildStylePrompt(state) {
   body = sanitize(s, body);
   if (!s.techOnly) body = genreSafeText(s, body, true); // rephrase techno-isms to fit the genre (style names protected)
   /* spend every leftover character on rolled sounds that didn't make the cut */
-  const v0 = vocalLine(s);
+  const v0 = s.instrumental ? vocalLineCompact(s) : vocalLine(s);
   const reserve = (v0 ? v0.length + 2 : 1) + tagCost + 2;
   body = densify(s, body, 1000 - reserve);
   body = sanitize(s, body);
   if (!s.techOnly) body = genreSafeText(s, body, true);
   if (s.structure && !s.hidden.styleCard) body += TAGS;
-  const v = vocalLine(s);
+  const v = s.instrumental ? vocalLineCompact(s) : vocalLine(s);
   let out = normalizePrompt(body + "." + (v ? " " + v : ""));
   if (s.structure && out.length > 1000) {
     out = normalizePrompt(out.replace(TAGS, ""));

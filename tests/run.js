@@ -307,7 +307,7 @@ section("Instrumental safety & banned max-energy words");
     ok(!new RegExp("\\b" + w + "\\b", "i").test(noPolicy), "banned word never reaches output: " + w);
   }
   ok(!/vocal chop/i.test(sp), "vocal reference stripped in instrumental mode");
-  ok(/no vocals, no lyrics/.test(sp), "instrumental policy line appended");
+  ok(/no vocals[,/]\s*(no )?lyrics/.test(sp), "instrumental policy line appended (compact or verbose form)");
   const fb = E.buildFullBrief(s);
   ok(!/\bminimal\b|\bsparse\b/i.test(fb.replace(/VOCAL POLICY[\s\S]*/, "")), "brief clauses with banned words dropped");
   s.instrumental = false; s.vocalMode = false;
@@ -459,19 +459,22 @@ section("Style Prompt density (sound packing)");
   const avg = hits / n;
   ok(over === 0, "60 dense rolls never exceed 1000 chars (max " + worstLen + ")");
   ok(styleLost === 0, "the style name is never clamped away by packing");
-  ok(avg >= 23, "avg rolled sounds reaching the Style Prompt ≥23 (" + avg.toFixed(1) + " of " + KEYS.length + ")");
+  /* Floor is deliberately just under the measured mean (~25.5): sound
+     phrases vary in length, so the count fluctuates a couple either way. */
+  ok(avg >= 24, "avg rolled sounds reaching the Style Prompt ≥24 (" + avg.toFixed(1) + " of " + KEYS.length + ")");
   // scorePrompt's own density metric (drives MAX)
   const sD = E.defaultState(); E.roll(sD, "everything");
   const before = E.scorePrompt(sD).soundCount;
-  ok(before >= 22, "scorePrompt reports a sound count (" + before + ")");
+  ok(before >= 28, "scorePrompt reports a high sound count (" + before + ")");
   E.roll(sD, "everything", { mode: "max", tries: 24 });
-  ok(E.scorePrompt(sD).soundCount >= 22, "MAX keeps the prompt densely packed (" + E.scorePrompt(sD).soundCount + ")");
+  ok(E.scorePrompt(sD).soundCount >= 28, "MAX keeps the prompt densely packed (" + E.scorePrompt(sD).soundCount + ")");
   ok(waste <= 6, "prompts fill the box — ≤6/60 under 880 chars (" + waste + ")");
   // densify must never invent, duplicate, or emit banned/vocal text
   const s2 = E.defaultState(); E.roll(s2, "everything");
   const sp2 = E.buildStylePrompt(s2);
   ok(!/\b(minimal|sparse|restrained|weak|quiet|gentle)\b/i.test(sp2), "packed prompt stays banned-word free");
-  ok(!E.hasVocalRef(sp2.replace(/no vocals|no lyrics|no screaming|no chants|no choir|no spoken words/g, "")), "packed prompt stays instrumental-safe");
+  const noPolicy2 = sp2.replace(/instrumental [a-z-]+, no vocals.*$/i, "");
+  ok(!E.hasVocalRef(noPolicy2), "packed prompt stays instrumental-safe");
   const clauses = sp2.split(/\.\s+/).map(c => c.trim()).filter(Boolean);
   ok(clauses.every(c => !/,\s*$/.test(c)), "no clause ends on a dangling comma");
   ok(!/\b(\w+ \w+), \1\b/.test(sp2), "packing does not repeat a phrase inside a clause");
@@ -614,6 +617,24 @@ await (async () => {
     await new Promise(r => setTimeout(r, 30));
     ok(NF.history.copies.length === nBefore + 1, "clicking Copy archives the prompt");
     ok(/histItem|histEmpty/.test(doc.querySelector("#histList").innerHTML), "history list renders entries");
+    /* MAX through the real button: every click must reroll the sounds and
+       keep the style. This is the exact path the user clicks. */
+    const maxBtn = doc.querySelector("#maxBtn");
+    ok(!!maxBtn, "MAX button rendered");
+    const styleBefore = NF.get().primaryStyle + "|" + NF.get().secondaryStyle;
+    const sig = () => { const q = NF.get(); return [q.kick, q.hats, q.snare, q.bassVoice, q.leadVoice, q.reverbType].join("|"); };
+    let rerolled = 0, kept = 0;
+    for (let i = 0; i < 8; i++) {
+      const b = sig();
+      maxBtn.click();
+      if (sig() !== b) rerolled++;
+      if (NF.get().primaryStyle + "|" + NF.get().secondaryStyle === styleBefore) kept++;
+    }
+    ok(rerolled === 8, "every MAX button click rerolls the sounds (" + rerolled + "/8)");
+    ok(kept === 8, "every MAX button click keeps the style (" + kept + "/8)");
+    ok(NF.buildStylePrompt().length <= 1000, "prompt still capped after 8 MAX clicks");
+    ok(!!doc.querySelector("#densityChip"), "sound-density readout rendered");
+    ok(!!doc.querySelector("#buildChip"), "build id readout rendered");
   } catch (e) {
     failures++;
     console.log("  ✗ FAIL: UI boot crashed — " + (e && e.stack || e));

@@ -138,3 +138,5 @@ button { font: inherit; cursor: pointer; }
 .histTop span { color: var(--dim); white-space: nowrap; }
 .histPrev { font-size: .74rem; color: var(--text); opacity: .8; margin-top: 3px; overflow-wrap: anywhere; }
 .histMeta { font-size: .7rem; color: var(--dim); margin-top: 2px; }
+#buildChip { opacity: .6; font-size: .7rem; letter-spacing: .5px; }
+#densityChip b { color: var(--lime); }

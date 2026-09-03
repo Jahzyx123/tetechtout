@@ -14,6 +14,7 @@ import {
 } from "../engine/index.js";
 import { openPicker } from "./picker.js";
 import { History, bindUndoKeys } from "./history.js";
+import { BUILD } from "./version.js";
 
 /* ---------------------------- state ---------------------------- */
 export let state = loadInitialState();
@@ -111,6 +112,7 @@ function atomValue(a) {
 }
 
 /* ---------------------------- actions ---------------------------- */
+let maxClicks = 0;
 function doRoll(scope, mode) {
   const tries = +($("#triesSel") ? $("#triesSel").value : 24);
   const res = roll(state, scope, { mode: mode || "random", tries, keepStyle: true });
@@ -118,7 +120,7 @@ function doRoll(scope, mode) {
     toast(res.improved
       ? "⭐ Improved to " + res.score + " in " + res.tries + " tries — style kept"
       : res.variation
-        ? "⭐ Fresh set at the same top score (" + res.score + ") — style kept"
+        ? "⭐ Fresh set #" + (++maxClicks) + " at the same top score (" + res.score + ") — style kept"
         : "⭐ Kept the current set (" + res.score + ")");
   }
   commit((mode === "max" ? "MAX " : "Roll ") + scope);
@@ -168,6 +170,8 @@ function renderTopbar() {
       ${["light", "balanced", "strong", "dominant"].map(v => `<option ${state.melodicForce === v ? "selected" : ""}>${v}</option>`).join("")}
     </select></label>
     <span class="chip" id="seedChip" title="Click to copy share link">seed ${state.seed}</span>
+    <span class="readout" id="densityChip" title="How many rolled sounds reached the Style Prompt">sounds <b>${scorePrompt(state).soundCount}</b></span>
+    <span class="readout" id="buildChip" title="Build id — confirms which code your browser is running">build ${BUILD}</span>
   `;
   el.querySelector("#modeSeg").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
