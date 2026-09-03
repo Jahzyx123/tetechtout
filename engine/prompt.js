@@ -94,13 +94,13 @@ export function assemble(blocks, budget, sep) {
 
 /* every rolled sound atom that can be packed, best-first */
 export const PACK_ORDER = [
-  ["Emotion", ["feeling", "flavor", "direction"]],
+  ["Feel", ["feeling", "flavor", "direction"]],
   ["Drums", ["kick", "hats", "snare", "clapLayer", "perc", "toms", "rideType", "crashType", "percFill", "groove", "swing", "sync", "intensity", "ghostNotes", "humanizeType", "pocketType"]],
   ["Bass", ["bassVoice", "bassMovement", "bassRel"]],
   ["Lead", ["leadVoice", "leadPerf", "contour", "rhythm", "ornamentType", "vibratoType", "portamentoType", "scaleRun", "intervalLeap"]],
   ["Harmony", ["harmony", "chordColor", "arpeggio", "chordProg", "voicingType", "inversionType", "tensionType", "resolutionType"]],
-  ["Techno Lab", ["technoDrive", "technoAcid", "technoTexture", "technoRave", "technoIndustrial"]],
-  ["Sound Design", ["filterType", "filterCutoff", "filterResonance", "envelopeType", "lfoType", "distortionType", "saturationType", "reverbType", "reverbSize", "reverbDecay", "delayType", "delayTime", "delayFeedback", "sidechainType", "sidechainCurve", "stereoType", "fxChain", "soundIntensity"]],
+  ["Lab", ["technoDrive", "technoAcid", "technoTexture", "technoRave", "technoIndustrial"]],
+  ["Synth", ["filterType", "filterCutoff", "filterResonance", "envelopeType", "lfoType", "distortionType", "saturationType", "reverbType", "reverbSize", "reverbDecay", "delayType", "delayTime", "delayFeedback", "sidechainType", "sidechainCurve", "stereoType", "fxChain", "soundIntensity"]],
   ["Mix", ["mixDensity", "mixEnergy", "mixSpace", "mixGlue", "mixPunch", "eqType", "compressionType", "masterDrive", "masterLoudness", "masterColor", "masterChain"]],
   ["Space", ["stereoImage", "stereoWidth", "stereoEnhance", "spatialDepth", "spatialMovement", "modSource", "modDest", "modRate", "modDepth"]],
   ["Texture", ["textureLayer", "grainType", "shimmerType", "atmosphereType"]],
@@ -110,15 +110,16 @@ export const PACK_ORDER = [
 
 /* which card must be visible for a group to be packed */
 const PACK_CARD = {
-  "Emotion": "feelCard", "Drums": "drumsCard", "Bass": "bassCard", "Lead": "feelCard", "Harmony": "feelCard",
-  "Techno Lab": "technoLabCard", "Sound Design": "soundDesignCard", "Mix": "mixMasterCard",
+  "Feel": "feelCard", "Drums": "drumsCard", "Bass": "bassCard", "Lead": "feelCard", "Harmony": "feelCard",
+  "Lab": "technoLabCard", "Synth": "soundDesignCard", "Mix": "mixMasterCard",
   "Space": "spatialModCard", "Texture": "spatialModCard", "FX": "textureFxCard", "Arc": "textureFxCard"
 };
 
 export function densify(s, body, budget) {
   let out = body;
   const has = v => out.toLowerCase().includes(String(v).toLowerCase());
-  /* collect what's still missing, grouped */
+
+  /* collect everything still missing, grouped, shortest-first */
   const groups = [];
   for (const [label, keys] of PACK_ORDER) {
     const card = PACK_CARD[label];
@@ -128,42 +129,58 @@ export function densify(s, body, budget) {
       const v = s[k];
       if (!v || typeof v !== "string") continue;
       if (isDirty(s, v.toLowerCase())) continue;
-      if (has(v)) continue;
-      if (vals.includes(v)) continue;
+      if (has(v) || vals.includes(v)) continue;
       vals.push(v);
     }
     if (vals.length) {
-      /* shortest-first: fitting three short sounds beats one long one */
-      vals.sort((a, b) => a.length - b.length);
-      groups.push({ label, vals });
+      vals.sort((a, b) => a.length - b.length);   // three short sounds beat one long one
+      groups.push({ label, vals, open: false });
     }
   }
   if (!groups.length) return out;
 
-  /* round-robin across groups so no single section eats the whole budget */
+  const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const clauseRe = label => new RegExp("((?:^|\\. )" + esc(label) + ":[^.]*)", "i");
+  for (const g of groups) g.open = clauseRe(g.label).test(out);
+
+  /* append `v` to g's clause (cheap: ", v") or start the clause (costly:
+     ". Label: v"). Returns false if it wouldn't fit. */
+  function place(g, v) {
+    const cost = g.open ? 2 + v.length : 2 + g.label.length + 2 + v.length;
+    if (out.length + cost > budget) return false;
+    if (g.open) {
+      const re = clauseRe(g.label);
+      if (re.test(out)) out = out.replace(re, m => m + ", " + v);
+      else out += ", " + v;
+    } else {
+      out += ". " + g.label + ": " + v;
+      g.open = true;
+    }
+    return true;
+  }
+
+  /* Pass 1 — round-robin one item per section, so every part of the kit
+     gets represented before any single section goes deep. */
   let progress = true;
-  const open = {};                       // label -> true once its clause exists
   while (progress) {
     progress = false;
     for (const g of groups) {
       if (!g.vals.length) continue;
-      const v = g.vals[0];
-      const existing = new RegExp("(^|\\. )" + g.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":", "i").test(out) || open[g.label];
-      const add = existing ? ", " + v : ". " + g.label + ": " + v;
-      if (out.length + add.length > budget) { g.vals.shift(); continue; }  // too long — try the next, shorter one
-      if (existing) {
-        /* append to that section's clause, not to the very end */
-        const re = new RegExp("((?:^|\\. )" + g.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":[^.]*)", "i");
-        if (re.test(out)) out = out.replace(re, m => m + ", " + v);
-        else out += ". " + g.label + ": " + v;
-      } else {
-        out += ". " + g.label + ": " + v;
-        open[g.label] = true;
-      }
-      g.vals.shift();
-      progress = true;
+      if (place(g, g.vals[0])) { g.vals.shift(); progress = true; }
+      else break;                                  // nothing shorter will fit either
     }
   }
+
+  /* Pass 2 — spend the leftovers globally shortest-first, preferring
+     sections whose clause already exists (no label to pay for). This is
+     what turns the last ~80 characters into 2-4 extra sounds instead of
+     dead space. */
+  const rest = [];
+  for (const g of groups) for (const v of g.vals) rest.push({ g, v });
+  rest.sort((a, b) => (a.g.open ? a.v.length : a.v.length + a.g.label.length) -
+                      (b.g.open ? b.v.length : b.v.length + b.g.label.length));
+  for (const { g, v } of rest) { if (has(v)) continue; place(g, v); }
+
   return out;
 }
 
@@ -377,11 +394,20 @@ export function buildStylePrompt(state) {
   const flavor = (!s.techOnly && SLIM) ? (genreWorld(s.primaryGenre) === "organic" ? " — live acoustic instrumentation" : genreWorld(s.primaryGenre) === "hybrid" ? " — live and electronic hybrid instrumentation" : "") : "";
   const blocks = [{ t: SLIM ? (s.primaryStyle + (s.secondaryStyle ? ", " + s.secondaryStyle : "") + flavor) : styleLine(s), required: true, priority: 1 }];
   if (!s.hidden.feelCard) {
-    blocks.push({ t: SLIM ? "Emotion-led melody: " + s.feeling + ", " + s.flavor + "; " + s.direction : emotionLine(s), required: true, priority: 2 });
+    blocks.push({
+      t: SLIM ? "Emotion-led melody: " + s.feeling + ", " + s.flavor + "; " + s.direction : emotionLine(s),
+      /* dense form: same information, none of the connective prose — the
+         characters saved here become extra sounds in densify() */
+      compact: "Emotion: " + [s.feeling, s.flavor, s.direction].filter(Boolean).join(", "),
+      required: true, priority: 2
+    });
     const cml = counterMelodyLine(s);
     const fullMelody = melodyLine(s) + (cml ? ". " + cml : "");
     const compactMelody = melodyLine(s) + (cml && s.counterMelody && s.counterMelody.voice ? ". Counter-melody: " + s.counterMelody.voice : "");
-    blocks.push({ t: SLIM ? "Lead: " + s.leadVoice + "; " + s.contour + "; harmony: " + s.harmony : fullMelody, compact: compactMelody, required: true, priority: 3 });
+    const denseMelody = "Lead: " + [s.leadVoice, s.leadPerf, s.contour, s.rhythm].filter(Boolean).join(", ")
+      + ". Harmony: " + [s.harmony, s.chordColor, s.arpeggio].filter(Boolean).join(", ")
+      + (s.counterMelody && s.counterMelody.voice ? ". Counter: " + s.counterMelody.voice : "");
+    blocks.push({ t: SLIM ? "Lead: " + s.leadVoice + "; " + s.contour + "; harmony: " + s.harmony : fullMelody, compact: denseMelody, required: true, priority: 3 });
     const mcl = melodyConceptLine(s, false);
     if (mcl) blocks.push({ t: mcl, compact: melodyConceptLine(s, true), required: false, priority: 6.5 });
   }
@@ -389,7 +415,9 @@ export function buildStylePrompt(state) {
     const vcl = voiceConceptLine(s);
     const fullBass = bassLine(s) + (vcl ? ". " + vcl : "");
     const compactBass = bassLine(s) + (vcl && s.voiceConcept && s.voiceConcept.voice ? ". Second line: " + s.voiceConcept.voice : "");
-    blocks.push({ t: SLIM ? "Bass: " + s.bassVoice + "; " + s.bassMovement : fullBass, compact: compactBass, required: true, priority: 4 });
+    const denseBass = "Bass: " + [s.bassVoice, s.bassMovement, s.bassRel].filter(Boolean).join(", ")
+      + (s.voiceConcept && s.voiceConcept.voice ? ". Second line: " + s.voiceConcept.voice : "");
+    blocks.push({ t: SLIM ? "Bass: " + s.bassVoice + "; " + s.bassMovement : fullBass, compact: denseBass, required: true, priority: 4 });
   }
   if (!s.hidden.drumsCard) blocks.push({ t: SLIM ? "Drums: " + s.kick + "; " + s.groove : drumLine(s), compact: drumLine(s, true), required: true, priority: 5 });
   if (!s.hidden.technoLabCard) {
@@ -433,14 +461,14 @@ export function buildStylePrompt(state) {
      emotion, lead, bass and drum lines always survive intact. */
   const requiredLen = blocks.filter(b => b.required)
     .reduce((a, b) => a + ((b.compact || b.t || "").length + 2), 0);
-  const seedBudget = Math.min(hardBudget, Math.max(Math.round(hardBudget * 0.18), requiredLen));
+  const seedBudget = Math.min(hardBudget, Math.max(Math.round(hardBudget * 0.10), requiredLen));
   let body = assemble(blocks.slice(), seedBudget, ". ");
   body = sanitize(s, body);
   body = body.replace(/[.\s]+$/, "");
   if (!/Bass:/.test(body) && !s.hidden.bassCard) body += ". " + bassLine(s);
   if (!/Drums:/.test(body) && !s.hidden.drumsCard) body += ". " + drumLine(s, true);
-  if (s.counterMelody && s.counterMelody.voice && !/Counter-melody:/.test(body)) body += ". Counter-melody: " + s.counterMelody.voice;
-  if (s.voiceConcept && s.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + s.voiceConcept.voice;
+  if (s.counterMelody && s.counterMelody.voice && !/Counter(-melody)?:/.test(body)) body += ". Counter: " + s.counterMelody.voice;
+  if (s.voiceConcept && s.voiceConcept.voice && !/Second line:/.test(body)) body += ". 2nd: " + s.voiceConcept.voice;
   body = sanitize(s, body);
   if (!s.techOnly) body = genreSafeText(s, body, true); // rephrase techno-isms to fit the genre (style names protected)
   /* spend every leftover character on rolled sounds that didn't make the cut */
@@ -608,6 +636,22 @@ export function scorePrompt(state) {
     label: "Harmonic definition", score: keyScore,
     note: s.hidden.key ? "Key hidden — Suno will pick its own." : keyName(s) + " locked in."
   });
+  /* Sound density: how much of the 1000-character box is actually carrying
+     rolled sonic detail. This is what makes MAX hunt for prompts that pack
+     more sounds rather than just longer prose. */
+  let soundChars = 0, soundCount = 0;
+  for (const [, keys] of PACK_ORDER) {
+    for (const k of keys) {
+      const v = s[k];
+      if (v && typeof v === "string" && sp.includes(v)) { soundChars += v.length; soundCount++; }
+    }
+  }
+  const dScore = soundCount >= 30 ? 100 : soundCount >= 26 ? 92 : soundCount >= 22 ? 82 : soundCount >= 18 ? 68 : 45;
+  items.push({
+    label: "Sound density", score: dScore,
+    note: soundCount + " rolled sounds in the prompt (" + Math.round(soundChars / Math.max(len, 1) * 100) + "% of the box)"
+  });
+
   const total = Math.round(items.reduce((a, i) => a + i.score, 0) / items.length);
-  return { total, items };
+  return { total, items, soundCount, soundChars };
 }

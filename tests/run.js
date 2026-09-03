@@ -459,7 +459,13 @@ section("Style Prompt density (sound packing)");
   const avg = hits / n;
   ok(over === 0, "60 dense rolls never exceed 1000 chars (max " + worstLen + ")");
   ok(styleLost === 0, "the style name is never clamped away by packing");
-  ok(avg >= 22, "avg rolled sounds reaching the Style Prompt ≥22 (" + avg.toFixed(1) + " of " + KEYS.length + ")");
+  ok(avg >= 23, "avg rolled sounds reaching the Style Prompt ≥23 (" + avg.toFixed(1) + " of " + KEYS.length + ")");
+  // scorePrompt's own density metric (drives MAX)
+  const sD = E.defaultState(); E.roll(sD, "everything");
+  const before = E.scorePrompt(sD).soundCount;
+  ok(before >= 22, "scorePrompt reports a sound count (" + before + ")");
+  E.roll(sD, "everything", { mode: "max", tries: 24 });
+  ok(E.scorePrompt(sD).soundCount >= 22, "MAX keeps the prompt densely packed (" + E.scorePrompt(sD).soundCount + ")");
   ok(waste <= 6, "prompts fill the box — ≤6/60 under 880 chars (" + waste + ")");
   // densify must never invent, duplicate, or emit banned/vocal text
   const s2 = E.defaultState(); E.roll(s2, "everything");
