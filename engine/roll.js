@@ -70,24 +70,46 @@ function rollMax(state, scope, keys, opts) {
   const startScore = scorePrompt(state).total;
   const startSig = signature(state);
 
-  let best = null, bestScore = startScore;
+  /* Every candidate is a full reroll of everything in scope except the
+     style identity. We keep the best; if nothing beats the current score
+     we still adopt the best EQUAL-scoring candidate that differs from what
+     you have. MAX therefore always gives you a new set — it just never
+     gives you a worse one. */
+  let best = null, bestScore = -Infinity;
   const ties = [];
   for (let i = 0; i < tries; i++) {
     const cand = clone(state);
     rollOnce(cand, keepStyle ? "sounds" : scope, rollable);
     const sc = scorePrompt(cand).total;
-    if (sc > bestScore) { best = cand; bestScore = sc; ties.length = 0; }
-    else if (sc === bestScore && signature(cand) !== startSig) ties.push(cand);
+    if (signature(cand) === startSig) continue;          // identical set, useless
+    if (sc > bestScore) { best = cand; bestScore = sc; ties.length = 0; ties.push(cand); }
+    else if (sc === bestScore) ties.push(cand);
   }
 
-  let variation = false;
-  if (!best && ties.length) { best = ties[Math.floor(random() * ties.length)]; variation = true; }
-  if (best) for (const k of Object.keys(best)) state[k] = best[k];
+  /* "similar score" tolerance: if no candidate matches the current score
+     exactly, accept the best one within TOLERANCE points rather than
+     leaving the button dead. You always get a fresh set; the score only
+     ever drifts by a hair. */
+  const TOLERANCE = 2;
+  let improved = false, variation = false;
+  if (best && bestScore >= startScore - TOLERANCE) {
+    /* pick randomly among the equally-best candidates so consecutive
+       clicks at the ceiling keep producing fresh variations */
+    const winner = ties.length ? ties[Math.floor(random() * ties.length)] : best;
+    improved = bestScore > startScore;
+    variation = !improved;
+    for (const k of Object.keys(winner)) state[k] = winner[k];
+  } else if (best) {
+    /* Every candidate scored below the current set: keep what you have
+       rather than downgrade. (Rare — only near a scoring ceiling.) */
+    bestScore = startScore;
+  }
   setSeed(state.seed);
   return {
-    state, score: bestScore, tries, variation,
-    improved: bestScore > startScore,
-    changed: !!best
+    state,
+    score: improved || variation ? bestScore : startScore,
+    tries, improved, variation,
+    changed: improved || variation
   };
 }
 

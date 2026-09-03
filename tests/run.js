@@ -178,7 +178,7 @@ section("Unified roll(scope, mode) engine");
   E.roll(s, "drums");
   const start = E.scorePrompt(s).total;
   const res = E.roll(s, "everything", { mode: "max", tries: 12 });
-  ok(res.score >= start, "maximize mode never ends below the starting score (" + start + " → " + res.score + ")");
+  ok(res.score >= start - 2, "maximize mode stays within its tolerance band of the starting score (" + start + " → " + res.score + ")");
   const res2 = E.roll(s, "drums", { mode: "max", tries: 8 });
   ok(res2.score >= res.score - 2 && typeof res2.score === "number", "section-scoped maximize works (" + res2.score + ")");
   // fully locked: no crash, nothing changes
@@ -381,7 +381,11 @@ section("MAX keeps the style & re-rolls variations");
       "MAX #" + (i + 1) + " kept primary/secondary style (" + p + ")");
   }
   ok(sigs.size >= 3, "repeated MAX produces different sound sets (" + sigs.size + "/6 unique)");
-  for (let i = 1; i < scores.length; i++) ok(scores[i] >= scores[i - 1], "MAX never regresses the score (" + scores[i - 1] + " → " + scores[i] + ")");
+  /* MAX accepts a candidate within TOLERANCE (2) of the current score so
+     the button always yields a fresh set instead of going dead at a
+     plateau; it must never slide further than that. */
+  for (let i = 1; i < scores.length; i++) ok(scores[i] >= scores[i - 1] - 2, "MAX stays within the tolerance band (" + scores[i - 1] + " → " + scores[i] + ")");
+  ok(Math.max(...scores) >= scores[0], "MAX reaches at least its starting score");
   // opting out still allowed
   const s2 = E.defaultState(); E.roll(s2, "everything");
   const before = s2.primaryStyle;
@@ -426,6 +430,71 @@ section("Sound pool expansion");
     if (E.buildStylePrompt(t).length > 1000 || E.buildFullBrief(t).length > 3000) { ok(false, "cap broken with expanded pools"); break; }
     if (i === 59) ok(true, "60 expanded rolls stay within 1000/3000 caps");
   }
+}
+
+section("Style Prompt density (sound packing)");
+{
+  const KEYS = ["kick","hats","snare","perc","toms","groove","swing","sync","intensity",
+    "bassVoice","bassMovement","bassRel","leadVoice","leadPerf","contour","rhythm",
+    "harmony","chordColor","arpeggio","chordProg","filterType","envelopeType","lfoType",
+    "distortionType","reverbType","delayType","sidechainType","stereoType","fxChain",
+    "mixDensity","mixEnergy","mixSpace","mixGlue","mixPunch","masterDrive","masterLoudness",
+    "stereoImage","stereoWidth","spatialDepth","spatialMovement","modSource","textureLayer",
+    "grainType","shimmerType","atmosphereType","ghostNotes","humanizeType","pocketType",
+    "ornamentType","vibratoType","voicingType","tensionType","rideType","crashType",
+    "clapLayer","percFill","fxType","transitionType","riserType","impactType",
+    "energyCurve","buildType","dropType","chopType"];
+  let hits = 0, n = 0, over = 0, styleLost = 0, waste = 0, worstLen = 0;
+  for (let i = 0; i < 60; i++) {
+    const s = E.defaultState(); s.techOnly = i % 2 === 0;
+    E.roll(s, "everything");
+    const sp = E.buildStylePrompt(s);
+    if (sp.length > 1000) over++;
+    if (!sp.includes(s.primaryStyle)) styleLost++;
+    if (sp.length < 880) waste++;
+    worstLen = Math.max(worstLen, sp.length);
+    hits += KEYS.filter(k => s[k] && sp.includes(s[k])).length;
+    n++;
+  }
+  const avg = hits / n;
+  ok(over === 0, "60 dense rolls never exceed 1000 chars (max " + worstLen + ")");
+  ok(styleLost === 0, "the style name is never clamped away by packing");
+  ok(avg >= 22, "avg rolled sounds reaching the Style Prompt ≥22 (" + avg.toFixed(1) + " of " + KEYS.length + ")");
+  ok(waste <= 6, "prompts fill the box — ≤6/60 under 880 chars (" + waste + ")");
+  // densify must never invent, duplicate, or emit banned/vocal text
+  const s2 = E.defaultState(); E.roll(s2, "everything");
+  const sp2 = E.buildStylePrompt(s2);
+  ok(!/\b(minimal|sparse|restrained|weak|quiet|gentle)\b/i.test(sp2), "packed prompt stays banned-word free");
+  ok(!E.hasVocalRef(sp2.replace(/no vocals|no lyrics|no screaming|no chants|no choir|no spoken words/g, "")), "packed prompt stays instrumental-safe");
+  const clauses = sp2.split(/\.\s+/).map(c => c.trim()).filter(Boolean);
+  ok(clauses.every(c => !/,\s*$/.test(c)), "no clause ends on a dangling comma");
+  ok(!/\b(\w+ \w+), \1\b/.test(sp2), "packing does not repeat a phrase inside a clause");
+  // hidden sections are still respected by the packer
+  const s3 = E.defaultState(); E.roll(s3, "everything");
+  s3.hidden.mixMasterCard = true; s3.hidden.spatialModCard = true;
+  const sp3 = E.buildStylePrompt(s3);
+  ok(!sp3.includes(s3.mixDensity) && !sp3.includes(s3.stereoImage), "packer honours hidden cards");
+  // determinism survives packing
+  const a = E.decodeState(E.encodeState(s2));
+  ok(E.buildStylePrompt(a) === sp2, "packed prompt is deterministic across encode/decode");
+}
+
+section("MAX always produces a new set");
+{
+  const s = E.defaultState(); E.roll(s, "everything");
+  const style = s.primaryStyle, sec = s.secondaryStyle;
+  let changed = 0, regressed = 0, last = E.scorePrompt(s).total;
+  for (let i = 0; i < 12; i++) {
+    const before = [s.kick, s.hats, s.bassVoice, s.leadVoice, s.reverbType].join("|");
+    const r = E.roll(s, "everything", { mode: "max", tries: 20 });
+    const after = [s.kick, s.hats, s.bassVoice, s.leadVoice, s.reverbType].join("|");
+    if (before !== after) changed++;
+    if (r.score < last - 2) regressed++;   // TOLERANCE=2 in rollMax
+    last = r.score;
+  }
+  ok(changed >= 11, "12 MAX clicks each reroll the sounds (" + changed + "/12)");
+  ok(regressed === 0, "MAX never drops the score below the tolerance band");
+  ok(s.primaryStyle === style && s.secondaryStyle === sec, "12 MAX clicks all kept the style");
 }
 
 section("Undo / redo history");

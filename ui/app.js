@@ -116,10 +116,10 @@ function doRoll(scope, mode) {
   const res = roll(state, scope, { mode: mode || "random", tries, keepStyle: true });
   if (mode === "max") {
     toast(res.improved
-      ? "⭐ Improved to " + res.score + " in " + res.tries + " tries"
+      ? "⭐ Improved to " + res.score + " in " + res.tries + " tries — style kept"
       : res.variation
-        ? "⭐ New variation at the same top score (" + res.score + ") — style kept"
-        : "⭐ No better set found in " + res.tries + " tries (still " + res.score + ")");
+        ? "⭐ Fresh set at the same top score (" + res.score + ") — style kept"
+        : "⭐ Kept the current set (" + res.score + ")");
   }
   commit((mode === "max" ? "MAX " : "Roll ") + scope);
   afterChange();

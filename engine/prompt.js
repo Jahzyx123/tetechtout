@@ -79,6 +79,94 @@ export function assemble(blocks, budget, sep) {
   }
   return text;
 }
+
+/* ---------------------------- DENSE PACKING ----------------------------
+   assemble() guarantees we fit the budget, but it gets there by compacting
+   and dropping — which used to leave 100-300 characters of the Suno style
+   box unused while a dozen rolled sounds never made it into the prompt.
+
+   densify() runs afterwards and spends every remaining character: it walks
+   the rolled sound atoms that aren't in the text yet, in musical-importance
+   order, and appends each one to its section clause (or to a trailing
+   "Sound:" clause) as long as it still fits. Nothing is ever truncated
+   mid-phrase — a fragment either fits whole or is skipped and the next,
+   shorter one is tried. */
+
+/* every rolled sound atom that can be packed, best-first */
+export const PACK_ORDER = [
+  ["Emotion", ["feeling", "flavor", "direction"]],
+  ["Drums", ["kick", "hats", "snare", "clapLayer", "perc", "toms", "rideType", "crashType", "percFill", "groove", "swing", "sync", "intensity", "ghostNotes", "humanizeType", "pocketType"]],
+  ["Bass", ["bassVoice", "bassMovement", "bassRel"]],
+  ["Lead", ["leadVoice", "leadPerf", "contour", "rhythm", "ornamentType", "vibratoType", "portamentoType", "scaleRun", "intervalLeap"]],
+  ["Harmony", ["harmony", "chordColor", "arpeggio", "chordProg", "voicingType", "inversionType", "tensionType", "resolutionType"]],
+  ["Techno Lab", ["technoDrive", "technoAcid", "technoTexture", "technoRave", "technoIndustrial"]],
+  ["Sound Design", ["filterType", "filterCutoff", "filterResonance", "envelopeType", "lfoType", "distortionType", "saturationType", "reverbType", "reverbSize", "reverbDecay", "delayType", "delayTime", "delayFeedback", "sidechainType", "sidechainCurve", "stereoType", "fxChain", "soundIntensity"]],
+  ["Mix", ["mixDensity", "mixEnergy", "mixSpace", "mixGlue", "mixPunch", "eqType", "compressionType", "masterDrive", "masterLoudness", "masterColor", "masterChain"]],
+  ["Space", ["stereoImage", "stereoWidth", "stereoEnhance", "spatialDepth", "spatialMovement", "modSource", "modDest", "modRate", "modDepth"]],
+  ["Texture", ["textureLayer", "grainType", "shimmerType", "atmosphereType"]],
+  ["FX", ["fxType", "transitionType", "riserType", "impactType", "chopType"]],
+  ["Arc", ["energyCurve", "buildType", "dropType", "sectionDensity", "rhythmPattern"]]
+];
+
+/* which card must be visible for a group to be packed */
+const PACK_CARD = {
+  "Emotion": "feelCard", "Drums": "drumsCard", "Bass": "bassCard", "Lead": "feelCard", "Harmony": "feelCard",
+  "Techno Lab": "technoLabCard", "Sound Design": "soundDesignCard", "Mix": "mixMasterCard",
+  "Space": "spatialModCard", "Texture": "spatialModCard", "FX": "textureFxCard", "Arc": "textureFxCard"
+};
+
+export function densify(s, body, budget) {
+  let out = body;
+  const has = v => out.toLowerCase().includes(String(v).toLowerCase());
+  /* collect what's still missing, grouped */
+  const groups = [];
+  for (const [label, keys] of PACK_ORDER) {
+    const card = PACK_CARD[label];
+    if (card && s.hidden[card]) continue;
+    const vals = [];
+    for (const k of keys) {
+      const v = s[k];
+      if (!v || typeof v !== "string") continue;
+      if (isDirty(s, v.toLowerCase())) continue;
+      if (has(v)) continue;
+      if (vals.includes(v)) continue;
+      vals.push(v);
+    }
+    if (vals.length) {
+      /* shortest-first: fitting three short sounds beats one long one */
+      vals.sort((a, b) => a.length - b.length);
+      groups.push({ label, vals });
+    }
+  }
+  if (!groups.length) return out;
+
+  /* round-robin across groups so no single section eats the whole budget */
+  let progress = true;
+  const open = {};                       // label -> true once its clause exists
+  while (progress) {
+    progress = false;
+    for (const g of groups) {
+      if (!g.vals.length) continue;
+      const v = g.vals[0];
+      const existing = new RegExp("(^|\\. )" + g.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":", "i").test(out) || open[g.label];
+      const add = existing ? ", " + v : ". " + g.label + ": " + v;
+      if (out.length + add.length > budget) { g.vals.shift(); continue; }  // too long — try the next, shorter one
+      if (existing) {
+        /* append to that section's clause, not to the very end */
+        const re = new RegExp("((?:^|\\. )" + g.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":[^.]*)", "i");
+        if (re.test(out)) out = out.replace(re, m => m + ", " + v);
+        else out += ". " + g.label + ": " + v;
+      } else {
+        out += ". " + g.label + ": " + v;
+        open[g.label] = true;
+      }
+      g.vals.shift();
+      progress = true;
+    }
+  }
+  return out;
+}
+
 export function normalizePrompt(text) {
   let t = String(text || "");
   t = t.replace(/\s+/g, " ").trim();
@@ -336,7 +424,17 @@ export function buildStylePrompt(state) {
   const TAGS = structTags(s);
   const tagCost = s.structure ? TAGS.length + 1 : 0;
   const flavorCost = (!s.techOnly && (SLIM || true)) ? (genreWorld(s.primaryGenre) === "organic" ? " — live acoustic instrumentation".length : genreWorld(s.primaryGenre) === "hybrid" ? " — live and electronic hybrid instrumentation".length : 0) : 0;
-  let body = assemble(blocks.slice(), 1000 - (s.instrumental ? SAFETY_LINE.length + 2 : 20) - tagCost - flavorCost, ". ");
+  /* Budget note: we deliberately assemble against a REDUCED budget so the
+     block system produces its compact, high-density forms, then densify()
+     spends the reclaimed characters on rolled sounds that prose phrasing
+     would have left out entirely. Net effect: many more sounds per 1000. */
+  const hardBudget = 1000 - (s.instrumental ? SAFETY_LINE.length + 2 : 20) - tagCost - flavorCost;
+  /* Never clamp below the required blocks' own compact length — the style,
+     emotion, lead, bass and drum lines always survive intact. */
+  const requiredLen = blocks.filter(b => b.required)
+    .reduce((a, b) => a + ((b.compact || b.t || "").length + 2), 0);
+  const seedBudget = Math.min(hardBudget, Math.max(Math.round(hardBudget * 0.18), requiredLen));
+  let body = assemble(blocks.slice(), seedBudget, ". ");
   body = sanitize(s, body);
   body = body.replace(/[.\s]+$/, "");
   if (!/Bass:/.test(body) && !s.hidden.bassCard) body += ". " + bassLine(s);
@@ -345,6 +443,12 @@ export function buildStylePrompt(state) {
   if (s.voiceConcept && s.voiceConcept.voice && !/Second line:/.test(body)) body += ". Second line: " + s.voiceConcept.voice;
   body = sanitize(s, body);
   if (!s.techOnly) body = genreSafeText(s, body, true); // rephrase techno-isms to fit the genre (style names protected)
+  /* spend every leftover character on rolled sounds that didn't make the cut */
+  const v0 = vocalLine(s);
+  const reserve = (v0 ? v0.length + 2 : 1) + tagCost + 2;
+  body = densify(s, body, 1000 - reserve);
+  body = sanitize(s, body);
+  if (!s.techOnly) body = genreSafeText(s, body, true);
   if (s.structure && !s.hidden.styleCard) body += TAGS;
   const v = vocalLine(s);
   let out = normalizePrompt(body + "." + (v ? " " + v : ""));
