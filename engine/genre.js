@@ -7,9 +7,25 @@
    - tempoForGenre(): genre-aware BPM in no-techno mode, weighted BPM
      bands in techno-only mode.
    All functions that need app settings take the state object `s`. */
-import { STYLES, GENRES, TEMPO_RULES, WEIRD_MIX, SCALE_TIERS } from "../data/styles.js";
+import { STYLES as BASE_STYLES, GENRES as BASE_GENRES, TEMPO_RULES, WEIRD_MIX, SCALE_TIERS } from "../data/styles.js";
+import { EXTRA_STYLES, EXTRA_GENRES, EXTRA_SUBS } from "../data/styles-extra.js";
 import { ARRANGEMENTS } from "../data/concept.js";
 import { random, pick } from "./prng.js";
+
+/* ---------------------------- POOL EXPANSION ----------------------------
+   The verbatim STYLES / GENRES pools are never edited on disk; the
+   generated additions from data/styles-extra.js are concatenated here.
+   EXTRA_SUBS bolts new sub-styles onto genres that already exist, which
+   multiplies the combo space without inventing whole new genres. */
+export const STYLES = BASE_STYLES.concat(EXTRA_STYLES);
+export const GENRES = BASE_GENRES
+  .map(g => (EXTRA_SUBS[g.n] ? { ...g, subs: g.subs.concat(EXTRA_SUBS[g.n]) } : g))
+  .concat(EXTRA_GENRES);
+export const STYLE_STATS = {
+  styles: STYLES.length,
+  genres: GENRES.length,
+  combos: GENRES.reduce((a, g) => a + g.subs.length, 0)
+};
 
 export const STYLES_BY_CAT = { core: [], sub: [], rare: [] };
 STYLES.forEach(st => { (STYLES_BY_CAT[st.c] || STYLES_BY_CAT.sub).push(st.n); });

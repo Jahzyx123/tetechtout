@@ -25,6 +25,8 @@ import {
   CONCEPT
 } from "../data/index.js";
 import { EXTRA_POOLS } from "../data/expansion.js";
+import { ORGANIC_POOLS, HYBRID_POOLS } from "../data/acoustic.js";
+import { genreWorld } from "./world.js";
 import * as DATA from "../data/index.js";
 import { newSeed, random, pick } from "./prng.js";
 import { scaleOf } from "./music.js";
@@ -82,8 +84,30 @@ for (const k in POOL_OF) {
   }
 }
 
+/* ---------------------------- WORLD-AWARE POOLS ----------------------------
+   In no-techno mode the rolled genre decides which vocabulary a sound atom
+   draws from. Organic genres (jazz, folk, classical…) roll real rooms,
+   kits, horns and strings; hybrid genres (rock, shoegaze…) get a blend;
+   electronic genres and techno-only mode keep the original pools.
+
+   This replaces the old style-fit behaviour of HIDING the techno-flavoured
+   cards, which silently cost no-techno prompts ~6 sounds. Now the slots
+   stay filled — with words that fit the genre. */
+export function poolFor(s, key) {
+  const base = POOL_OF[key];
+  if (!s || s.techOnly || !s.styleFit) return base;
+  const world = genreWorld(s.primaryGenre);
+  if (world === "organic") return ORGANIC_POOLS[key] || base;
+  /* Hybrid prefers its own blended vocabulary, then falls back to the
+     organic one, and only then to the techno-flavoured original — without
+     that middle step, keys like sidechainType leak "909"/"sidechain" into
+     rock and shoegaze prompts. */
+  if (world === "hybrid") return HYBRID_POOLS[key] || ORGANIC_POOLS[key] || base;
+  return base;
+}
+
 export const ROLL_FN = {};
-for (const k in POOL_OF) { ROLL_FN[k] = (pool => s => { s[k] = pick(pool); })(POOL_OF[k]); }
+for (const k in POOL_OF) { ROLL_FN[k] = (key => s => { s[key] = pick(poolFor(s, key)); })(k); }
 ROLL_FN.primary = s => { s.primaryStyle = pickStyle(s); s.primaryGenre = s.techOnly ? "Techno" : genreOfStyle(s.primaryStyle); };
 ROLL_FN.secondary = s => { s.secondaryStyle = pickSecondary(s, s.primaryStyle); s.secondaryGenre = s.techOnly ? "Techno" : genreOfStyle(s.secondaryStyle); };
 ROLL_FN.genre = s => {
@@ -98,15 +122,17 @@ ROLL_FN.genre = s => {
 };
 ROLL_FN.bpm = s => { s.bpm = rollBpmValue(); };
 ROLL_FN.key = s => { s.rootPc = Math.floor(random() * 12); s.scaleId = pickScaleId(s); s.chordColor = scaleOf(s).n; };
-ROLL_FN.feeling = s => { s.feeling = pick(FEELINGS); s.flavor = pick(FLAVORS); };
+ROLL_FN.feeling = s => { s.feeling = pick(poolFor(s, "feeling")); s.flavor = pick(poolFor(s, "flavor")); };
 ROLL_FN.chordColor = s => { s.scaleId = pickScaleId(s); s.chordColor = scaleOf(s).n; };
 ROLL_FN.rootPc = s => { s.rootPc = Math.floor(random() * 12); };
 ROLL_FN.scaleId = s => { s.scaleId = pickScaleId(s); s.chordColor = scaleOf(s).n; };
 ROLL_FN.concept = s => { for (const k in s.concept) s.concept[k] = pick(CONCEPT[k]); };
 ROLL_FN.melodyConcept = s => { if (!s.melodyConcept) s.melodyConcept = {}; for (const k in MELODY_CONCEPT) s.melodyConcept[k] = pick(MELODY_CONCEPT[k]); };
-ROLL_FN["counter-melody"] = s => { s.counterMelody = { voice: pick(LEADS), direction: pick(DIRECTIONS), perf: pick(PERFS), contour: pick(CONTOURS), rhythm: pick(RHYTHMS) }; };
+/* composite atoms route through poolFor too, or they leak techno words
+   (e.g. a "supersaw stack" counter-melody) into acoustic prompts */
+ROLL_FN["counter-melody"] = s => { s.counterMelody = { voice: pick(poolFor(s, "leadVoice")), direction: pick(poolFor(s, "direction")), perf: pick(poolFor(s, "leadPerf")), contour: pick(poolFor(s, "contour")), rhythm: pick(poolFor(s, "rhythm")) }; };
 ROLL_FN["counter-relation"] = s => { s.counterMelodyRelation = pick(["supports", "follows", "counters"]); };
-ROLL_FN["voice-concept"] = s => { s.voiceConcept = { voice: pick(BASS_VOICES), movement: pick(BASS_MOVES) }; };
+ROLL_FN["voice-concept"] = s => { s.voiceConcept = { voice: pick(poolFor(s, "bassVoice")), movement: pick(poolFor(s, "bassMovement")) }; };
 ROLL_FN["voice-relation"] = s => { s.voiceRelation = pick(["supports", "follows", "counters"]); };
 ROLL_FN.arrangement = s => { s.arrangement = pickArrangementFor(s); };
 export const CONCEPT_KEYS = ["world", "location", "visual", "narrative", "sensation", "event", "conflict", "crowd", "title", "transform"];

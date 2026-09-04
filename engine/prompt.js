@@ -99,8 +99,8 @@ export const PACK_ORDER = [
   ["Bass", ["bassVoice", "bassMovement", "bassRel"]],
   ["Lead", ["leadVoice", "leadPerf", "contour", "rhythm", "ornamentType", "vibratoType", "portamentoType", "scaleRun", "intervalLeap"]],
   ["Harmony", ["harmony", "chordColor", "arpeggio", "chordProg", "voicingType", "inversionType", "tensionType", "resolutionType"]],
-  ["Lab", ["technoDrive", "technoAcid", "technoTexture", "technoRave", "technoIndustrial"]],
-  ["Synth", ["filterType", "filterCutoff", "filterResonance", "envelopeType", "lfoType", "distortionType", "saturationType", "reverbType", "reverbSize", "reverbDecay", "delayType", "delayTime", "delayFeedback", "sidechainType", "sidechainCurve", "stereoType", "fxChain", "soundIntensity"]],
+  ["Ensemble", ["technoDrive", "technoAcid", "technoTexture", "technoRave", "technoIndustrial"]],
+  ["Tone", ["filterType", "filterCutoff", "filterResonance", "envelopeType", "lfoType", "distortionType", "saturationType", "reverbType", "reverbSize", "reverbDecay", "delayType", "delayTime", "delayFeedback", "sidechainType", "sidechainCurve", "stereoType", "fxChain", "soundIntensity"]],
   ["Mix", ["mixDensity", "mixEnergy", "mixSpace", "mixGlue", "mixPunch", "eqType", "compressionType", "masterDrive", "masterLoudness", "masterColor", "masterChain"]],
   ["Space", ["stereoImage", "stereoWidth", "stereoEnhance", "spatialDepth", "spatialMovement", "modSource", "modDest", "modRate", "modDepth"]],
   ["Texture", ["textureLayer", "grainType", "shimmerType", "atmosphereType"]],
@@ -111,12 +111,17 @@ export const PACK_ORDER = [
 /* which card must be visible for a group to be packed */
 const PACK_CARD = {
   "Feel": "feelCard", "Drums": "drumsCard", "Bass": "bassCard", "Lead": "feelCard", "Harmony": "feelCard",
-  "Lab": "technoLabCard", "Synth": "soundDesignCard", "Mix": "mixMasterCard",
+  "Ensemble": "technoLabCard", "Tone": "soundDesignCard", "Mix": "mixMasterCard",
   "Space": "spatialModCard", "Texture": "spatialModCard", "FX": "textureFxCard", "Arc": "textureFxCard"
 };
 
 export function densify(s, body, budget) {
   let out = body;
+  /* In no-techno mode the body has already been genre-rewritten, so a raw
+     pool value ("synth-driven hook") won't match its rewritten form
+     ("driven hook") and would be packed in twice. Compare — and insert —
+     the rewritten text. */
+  const fit = v => (!s.techOnly ? genreSafeText(s, String(v), true) : String(v));
   const has = v => out.toLowerCase().includes(String(v).toLowerCase());
 
   /* collect everything still missing, grouped, shortest-first */
@@ -129,8 +134,9 @@ export function densify(s, body, budget) {
       const v = s[k];
       if (!v || typeof v !== "string") continue;
       if (isDirty(s, v.toLowerCase())) continue;
-      if (has(v) || vals.includes(v)) continue;
-      vals.push(v);
+      const w = fit(v);
+      if (!w || has(w) || vals.includes(w)) continue;
+      vals.push(w);
     }
     if (vals.length) {
       vals.sort((a, b) => a.length - b.length);   // three short sounds beat one long one
@@ -140,7 +146,9 @@ export function densify(s, body, budget) {
   if (!groups.length) return out;
 
   const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const clauseRe = label => new RegExp("((?:^|\\. )" + esc(label) + ":[^.]*)", "i");
+  /* [^.] would stop at the decimal in "2.5s decay" and splice text into
+     the middle of a value; only treat ". " (period + space) as a break. */
+  const clauseRe = label => new RegExp("((?:^|\\. )" + esc(label) + ":(?:[^.]|\\.(?! ))*)", "i");
   for (const g of groups) g.open = clauseRe(g.label).test(out);
 
   /* append `v` to g's clause (cheap: ", v") or start the clause (costly:
@@ -184,8 +192,15 @@ export function densify(s, body, budget) {
   return out;
 }
 
+/* A clause whose values were all stripped by the sanitizer leaves a bare
+   label ("Emotion: Lead: ..."). Drop those empty labels. */
+function dropEmptyLabels(text) {
+  return String(text || "")
+    .replace(/(^|\. )([A-Z][A-Za-z&\/\- ]{1,14}):\s*(?=[A-Z][A-Za-z&\/\- ]{1,14}:)/g, "$1")
+    .replace(/(^|\. )([A-Z][A-Za-z&\/\- ]{1,14}):\s*(?=\.|$)/g, "$1");
+}
 export function normalizePrompt(text) {
-  let t = String(text || "");
+  let t = dropEmptyLabels(String(text || ""));
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/(\.|,)\s*(?=\.|,)/g, ".").replace(/\.{2,}/g, ".");
   t = t.replace(/,\s*,/g, ",");
@@ -251,8 +266,10 @@ export function technoLabLine(s, compact) {
   if (s.technoRave) parts.push(s.technoRave);
   if (s.technoIndustrial) parts.push(s.technoIndustrial);
   if (!parts.length) return "";
-  if (compact) return "Techno Lab: " + parts.slice(0, 2).join(", ");
-  return "Techno Lab: " + parts.join(", ") + (s.acidAmt ? ", acid " + s.acidAmt + "%" : "") + (s.driveAmt ? ", drive " + s.driveAmt + "%" : "");
+  /* the label follows the genre world: "Techno Lab" only in techno mode */
+  const lab = s.techOnly ? "Techno Lab" : "Ensemble";
+  if (compact) return lab + ": " + parts.slice(0, 2).join(", ");
+  return lab + ": " + parts.join(", ") + (s.acidAmt ? ", acid " + s.acidAmt + "%" : "") + (s.driveAmt ? ", drive " + s.driveAmt + "%" : "");
 }
 export function counterMelodyLine(s) {
   const cm = s.counterMelody; if (!cm || !cm.voice) return "";
@@ -473,6 +490,15 @@ export function buildStylePrompt(state) {
   const seedBudget = Math.min(hardBudget, Math.max(Math.round(hardBudget * 0.10), requiredLen));
   let body = assemble(blocks.slice(), seedBudget, ". ");
   body = sanitize(s, body);
+  /* The style line is the one block Suno cannot do without. sanitize() and
+     assemble()'s last-resort clamp can both strip it (long generated style
+     names made this reachable), so restore it at the front if it is gone. */
+  const styleHead = blocks[0] && (blocks[0].t || blocks[0].compact);
+  const styleShown = () => body.includes(s.primaryStyle) ||
+    (!s.techOnly && body.includes(genreSafeText(s, s.primaryStyle, true)));
+  if (styleHead && s.primaryStyle && !styleShown()) {
+    body = body ? styleHead + ". " + body : styleHead;
+  }
   body = body.replace(/[.\s]+$/, "");
   if (!/Bass:/.test(body) && !s.hidden.bassCard) body += ". " + bassLine(s);
   if (!/Drums:/.test(body) && !s.hidden.drumsCard) body += ". " + drumLine(s, true);

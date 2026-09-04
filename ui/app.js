@@ -10,7 +10,7 @@ import { LAYERS } from "../data/safety.js";
 import {
   defaultState, roll, buildStylePrompt, buildFullBrief, scorePrompt,
   encodeState, decodeState, setSeed, weirdMix,
-  SOUND_CARDS, unhideAllSoundCards, autoFitSounds
+  SOUND_CARDS, unhideAllSoundCards, autoFitSounds, STYLE_STATS
 } from "../engine/index.js";
 import { openPicker } from "./picker.js";
 import { History, bindUndoKeys } from "./history.js";
@@ -142,8 +142,8 @@ function renderTopbar() {
   el.innerHTML = `
     <span class="logo">NEON FORGE</span>
     <span class="seg" id="modeSeg">
-      <button data-mode="techno" class="${state.techOnly ? "on" : ""}">TECHNO-ONLY</button>
-      <button data-mode="all" class="${!state.techOnly ? "on" : ""}">NO-TECHNO</button>
+      <button data-mode="techno" class="${state.techOnly ? "on" : ""}" title="${STYLE_STATS.styles} techno styles">TECHNO-ONLY</button>
+      <button data-mode="all" class="${!state.techOnly ? "on" : ""}" title="${STYLE_STATS.genres} genres · ${STYLE_STATS.combos} sub-style combos">NO-TECHNO</button>
     </span>
     <button class="btn primary" id="rollAllBtn" title="Roll every unlocked field (R)">🎲 ROLL EVERYTHING</button>
     <button class="btn" id="maxBtn" title="Reroll production N times keeping your primary/secondary style; re-click for another top-score variation">⭐ MAX</button>
@@ -171,6 +171,7 @@ function renderTopbar() {
     </select></label>
     <span class="chip" id="seedChip" title="Click to copy share link">seed ${state.seed}</span>
     <span class="readout" id="densityChip" title="How many rolled sounds reached the Style Prompt">sounds <b>${scorePrompt(state).soundCount}</b></span>
+    <span class="readout" id="poolChip" title="Style pool in play">${state.techOnly ? STYLE_STATS.styles + " styles" : STYLE_STATS.combos + " combos"}</span>
     <span class="readout" id="buildChip" title="Build id — confirms which code your browser is running">build ${BUILD}</span>
   `;
   el.querySelector("#modeSeg").addEventListener("click", e => {

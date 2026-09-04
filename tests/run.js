@@ -72,7 +72,8 @@ section("Prompt budgets (no-techno, style-fit on)");
 section("Techno-only isolation");
 {
   const s = freshTechno();
-  const technoNames = new Set(D.STYLES.map(x => x.n));
+  /* the engine pool = verbatim STYLES + generated EXTRA_STYLES */
+  const technoNames = new Set(E.STYLES.map(x => x.n));
   let allFromPool = true, bpmOk = true, distinct = true;
   for (let i = 0; i < 40; i++) {
     E.roll(s, "genre");
@@ -80,7 +81,8 @@ section("Techno-only isolation");
     if (s.bpm < 125 || s.bpm > 170) bpmOk = false;
     if (s.primaryStyle === s.secondaryStyle) distinct = false;
   }
-  ok(D.STYLES.length >= 838, "techno pool has ≥838 styles (" + D.STYLES.length + ")");
+  ok(D.STYLES.length >= 838, "verbatim techno pool intact at ≥838 styles (" + D.STYLES.length + ")");
+  ok(E.STYLES.length >= 1400, "expanded techno pool has ≥1400 styles (" + E.STYLES.length + ")");
   ok(allFromPool, "techno-only rolls come exclusively from the techno pool");
   ok(bpmOk, "techno tempo stays in the weighted 128–156 band (last " + s.bpm + ")");
   ok(distinct, "primary and secondary style never coincide");
@@ -202,17 +204,20 @@ section("Style-fit (no-techno auto-curation)");
   s.primaryGenre = "Jazz"; s.primaryStyle = "Bebop Jazz"; s.secondaryStyle = "";
   s.hidden = E.defaultHidden(); s.lastFitGenre = "";
   E.autoFitSounds(s, { reRoll: false });
-  ["technoLabCard", "textureFxCard", "soundDesignCard", "mixMasterCard", "spatialModCard", "rhythmLabCard"].forEach(c =>
-    ok(s.hidden[c] === true, "organic genre hides " + c));
-  ["feelCard", "bassCard", "drumsCard", "harmonyLabCard", "grooveMelodicCard"].forEach(c =>
-    ok(s.hidden[c] === false, "organic genre keeps " + c + " visible"));
+  /* New behaviour: instead of hiding the techno-flavoured cards (which
+     silently cost no-techno prompts ~6 sounds), they stay visible and roll
+     organic vocabularies from data/acoustic.js. Only Techno Lab, which no
+     rewording can rescue, is still hidden for organic genres. */
+  ok(s.hidden.technoLabCard === true, "organic genre hides technoLabCard");
+  ["textureFxCard", "soundDesignCard", "mixMasterCard", "spatialModCard", "rhythmLabCard",
+    "feelCard", "bassCard", "drumsCard", "harmonyLabCard", "grooveMelodicCard"].forEach(c =>
+      ok(s.hidden[c] === false, "organic genre keeps " + c + " visible (swapped, not hidden)"));
   s.primaryGenre = "House"; s.primaryStyle = "Deep House";
   E.autoFitSounds(s, { reRoll: false });
   ok(E.SOUND_CARDS.every(c => !s.hidden[c]), "electronic genre restores every sound card");
   s.primaryGenre = "Rock"; s.primaryStyle = "Indie Rock";
   E.autoFitSounds(s, { reRoll: false });
-  ok(s.hidden.technoLabCard === true && s.hidden.textureFxCard === true, "hybrid genre hides techno lab + texture fx");
-  ok(s.hidden.soundDesignCard === false && s.hidden.mixMasterCard === false, "hybrid genre keeps sound design + mix");
+  ok(E.SOUND_CARDS.every(c => !s.hidden[c]), "hybrid genre keeps every sound card visible");
   // locked field survives the style-fit re-tune
   s.primaryGenre = "Classical"; s.primaryStyle = "Romantic Classical";
   s.kick = "__SENTINEL__"; s.locks.kick = true; s.lastFitGenre = "";
@@ -477,6 +482,7 @@ section("Style Prompt density (sound packing)");
   ok(!E.hasVocalRef(noPolicy2), "packed prompt stays instrumental-safe");
   const clauses = sp2.split(/\.\s+/).map(c => c.trim()).filter(Boolean);
   ok(clauses.every(c => !/,\s*$/.test(c)), "no clause ends on a dangling comma");
+  ok(!/[A-Z][A-Za-z\/ ]{1,14}:\s*[A-Z][A-Za-z\/ ]{1,14}:/.test(sp2), "no empty section label left behind by the sanitizer");
   ok(!/\b(\w+ \w+), \1\b/.test(sp2), "packing does not repeat a phrase inside a clause");
   // hidden sections are still respected by the packer
   const s3 = E.defaultState(); E.roll(s3, "everything");
@@ -486,6 +492,128 @@ section("Style Prompt density (sound packing)");
   // determinism survives packing
   const a = E.decodeState(E.encodeState(s2));
   ok(E.buildStylePrompt(a) === sp2, "packed prompt is deterministic across encode/decode");
+}
+
+section("Style pool expansion");
+{
+  const { EXTRA_STYLES, EXTRA_GENRES, EXTRA_SUBS } = await import("../data/styles-extra.js");
+  ok(E.STYLES.length >= 1400, "techno styles expanded to ≥1400 (" + E.STYLES.length + " from " + D.STYLES.length + ")");
+  ok(E.GENRES.length >= 275, "genres expanded to ≥275 (" + E.GENRES.length + " from " + D.GENRES.length + ")");
+  ok(E.STYLE_STATS.combos >= 4000, "genre x sub-style combos ≥4000 (" + E.STYLE_STATS.combos + ")");
+
+  // the verbatim pools must be untouched
+  ok(D.STYLES.length === 839 && D.GENRES.length === 253, "verbatim STYLES/GENRES unmodified");
+
+  // tiers preserved so the weirdness slider still works
+  ["core", "sub", "rare"].forEach(t =>
+    ok(EXTRA_STYLES.some(x => x.c === t), "expansion contributes " + t + "-tier styles"));
+  ok(EXTRA_STYLES.every(x => x.n && (x.c === "core" || x.c === "sub" || x.c === "rare")), "every extra style is well-formed and tiered");
+
+  // no duplicates against the verbatim pool or itself
+  const seen = new Set(D.STYLES.map(x => x.n.toLowerCase()));
+  const dups = EXTRA_STYLES.filter(x => { const k = x.n.toLowerCase(); if (seen.has(k)) return true; seen.add(k); return false; });
+  ok(dups.length === 0, "no duplicate style names" + (dups.length ? " — " + dups.slice(0, 3).map(d => d.n).join(" | ") : ""));
+
+  // a banned word in a style name would make sanitize() delete the style line
+  const banned = [];
+  for (const x of EXTRA_STYLES) if (/\b(minimal|sparse|restrained|weak|quiet|gentle)\b/i.test(x.n)) banned.push(x.n);
+  for (const g of EXTRA_GENRES) {
+    if (/\b(minimal|sparse|restrained|weak|quiet|gentle)\b/i.test(g.n)) banned.push(g.n);
+    for (const sub of g.subs) if (/\b(minimal|sparse|restrained|weak|quiet|gentle)\b/i.test(sub)) banned.push(sub);
+  }
+  for (const list of Object.values(EXTRA_SUBS)) for (const sub of list) if (/\b(minimal|sparse|restrained|weak|quiet|gentle)\b/i.test(sub)) banned.push(sub);
+  ok(banned.length === 0, "no generated style name carries a banned word" + (banned.length ? " — " + banned.slice(0, 3).join(" | ") : ""));
+
+  // the style name always survives into the prompt, both modes
+  let lost = 0;
+  for (let i = 0; i < 200; i++) {
+    const s = E.defaultState(); s.techOnly = i % 2 === 0;
+    E.roll(s, "everything");
+    const sp = E.buildStylePrompt(s);
+    const alt = s.techOnly ? s.primaryStyle : E.genreSafeText(s, s.primaryStyle, true);
+    if (!sp.includes(s.primaryStyle) && !sp.includes(alt)) lost++;
+  }
+  ok(lost === 0, "style name survives into every prompt across 200 rolls (" + lost + " lost)");
+
+  // techno-only never reaches into the genre pool, even expanded
+  const names = new Set(E.STYLES.map(x => x.n));
+  const st = E.defaultState(); st.techOnly = true;
+  let leaked = 0;
+  for (let i = 0; i < 60; i++) { E.roll(st, "genre"); if (!names.has(st.primaryStyle)) leaked++; }
+  ok(leaked === 0, "expanded techno pool stays isolated from genre combos");
+}
+
+section("No-techno sound worlds (acoustic swap)");
+{
+  const { ORGANIC_POOLS, HYBRID_POOLS } = await import("../data/acoustic.js");
+  const { poolFor } = await import("../engine/state.js");
+  const oKeys = Object.keys(ORGANIC_POOLS), hKeys = Object.keys(HYBRID_POOLS);
+  const oTot = oKeys.reduce((a, k) => a + ORGANIC_POOLS[k].length, 0);
+  const hTot = hKeys.reduce((a, k) => a + HYBRID_POOLS[k].length, 0);
+  ok(oKeys.length >= 80, "organic vocabularies cover ≥80 atom keys (" + oKeys.length + ")");
+  ok(oTot >= 1500, "organic pools carry ≥1500 entries (" + oTot + ")");
+  ok(hTot >= 300, "hybrid pools carry ≥300 entries (" + hTot + ")");
+
+  // integrity: clean, deduped, no leftover electronic jargon in organic
+  const sDirty = E.defaultState();
+  const bad = [], dup = [], jargon = [];
+  for (const [name, pools] of [["organic", ORGANIC_POOLS], ["hybrid", HYBRID_POOLS]]) {
+    for (const [k, list] of Object.entries(pools)) {
+      const seen = new Set();
+      for (const v of list) {
+        const low = v.toLowerCase();
+        if (E.isDirty(sDirty, low)) bad.push(name + "." + k + " :: " + v);
+        if (seen.has(low)) dup.push(name + "." + k + " :: " + v);
+        seen.add(low);
+        if (name === "organic" && /\b(909|808|303|acid|rave|sidechain|warehouse|supersaw|bitcrush)\b/i.test(v)) jargon.push(k + " :: " + v);
+      }
+    }
+  }
+  ok(bad.length === 0, "no acoustic entry trips the sanitizer" + (bad.length ? " — " + bad.slice(0, 2).join(" | ") : ""));
+  ok(dup.length === 0, "no duplicates inside the acoustic pools" + (dup.length ? " — " + dup.slice(0, 2).join(" | ") : ""));
+  ok(jargon.length === 0, "organic pools carry no electronic jargon" + (jargon.length ? " — " + jargon.slice(0, 2).join(" | ") : ""));
+
+  // poolFor routes by genre world
+  const so = E.defaultState(); so.techOnly = false; so.styleFit = true; so.primaryGenre = "Jazz";
+  ok(poolFor(so, "kick") === ORGANIC_POOLS.kick, "organic genre routes to the organic pool");
+  const sh = E.defaultState(); sh.techOnly = false; sh.styleFit = true; sh.primaryGenre = "Rock";
+  ok(poolFor(sh, "kick") === HYBRID_POOLS.kick, "hybrid genre routes to the hybrid pool");
+  const se = E.defaultState(); se.techOnly = false; se.styleFit = true; se.primaryGenre = "House";
+  ok(poolFor(se, "kick") !== ORGANIC_POOLS.kick, "electronic genre keeps the original pool");
+  const st = E.defaultState(); st.techOnly = true;
+  ok(poolFor(st, "kick") !== ORGANIC_POOLS.kick, "techno-only is untouched by the swap");
+  const sf = E.defaultState(); sf.techOnly = false; sf.styleFit = false; sf.primaryGenre = "Jazz";
+  ok(poolFor(sf, "kick") !== ORGANIC_POOLS.kick, "style-fit OFF disables the swap");
+
+  // organic rolls really produce acoustic prompts, densely, within cap
+  let organicSeen = 0, dense = 0, over = 0, jargonPrompts = 0, totalSounds = 0;
+  for (let i = 0; i < 60; i++) {
+    const s = E.defaultState(); s.techOnly = false;
+    E.roll(s, "everything");
+    if (E.genreWorld(s.primaryGenre) !== "organic") continue;
+    organicSeen++;
+    const sp = E.buildStylePrompt(s);
+    const n = E.scorePrompt(s).soundCount;
+    totalSounds += n;
+    if (sp.length > 1000) over++;
+    if (n >= 24) dense++;
+    if (/\b(909|808|303|sidechain|supersaw)\b/i.test(sp.replace(new RegExp(s.primaryStyle, "g"), ""))) jargonPrompts++;
+  }
+  ok(organicSeen > 0, "organic genres do get rolled (" + organicSeen + " of 60)");
+  ok(over === 0, "organic prompts never exceed 1000 chars");
+  ok(jargonPrompts === 0, "organic prompts carry no drum-machine jargon");
+  ok(dense >= organicSeen - 2, "organic prompts are densely packed (" + dense + "/" + organicSeen + " ≥24 sounds)");
+  ok(totalSounds / organicSeen >= 26, "organic prompts average ≥26 sounds (" + (totalSounds / organicSeen).toFixed(1) + ")");
+
+  // no-techno should now be within a couple of sounds of techno-only
+  const avg = mode => {
+    let t = 0;
+    for (let i = 0; i < 30; i++) { const s = E.defaultState(); s.techOnly = mode; E.roll(s, "everything"); t += E.scorePrompt(s).soundCount; }
+    return t / 30;
+  };
+  const aT = avg(true), aN = avg(false);
+  ok(aN >= 30, "no-techno prompts average ≥30 sounds (" + aN.toFixed(1) + ")");
+  ok(aT - aN <= 4, "no-techno is within 4 sounds of techno-only (" + aT.toFixed(1) + " vs " + aN.toFixed(1) + ")");
 }
 
 section("MAX always produces a new set");

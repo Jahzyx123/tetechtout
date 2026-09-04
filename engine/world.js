@@ -37,12 +37,21 @@ export function genreWorld(genre) {
   return "hybrid";
 }
 
+/* Cards to hide for the rolled genre world.
+
+   Previously organic genres hid six cards and hybrid genres hid two,
+   which meant those sounds never reached the prompt at all — no-techno
+   prompts carried ~6 fewer sounds than techno-only ones.
+
+   Now that engine/state.js swaps in organic/hybrid vocabularies for those
+   same atom keys (data/acoustic.js), every card stays VISIBLE and simply
+   rolls genre-appropriate words. The Lab card stays visible too — its five
+   slots become ensemble stabs, room colour and hand percussion — except
+   for organic genres, where the acoustic set already covers that ground
+   and the extra slots crowd out better sounds. */
 export function styleFitCards(s) {
   if (s.techOnly) return [];
-  const world = genreWorld(s.primaryGenre);
-  if (world === "electronic") return [];
-  if (world === "organic") return ELECTRONIC_LEAN_CARDS.slice();
-  return HYBRID_HIDE.slice();
+  return genreWorld(s.primaryGenre) === "organic" ? ["technoLabCard"] : [];
 }
 
 /* ---------------------------- GENRE-SAFE PHRASES (no-techno) ----------------------------
