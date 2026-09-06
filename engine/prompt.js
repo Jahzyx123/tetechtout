@@ -683,16 +683,66 @@ export function fmtTime(sec) { const m = Math.floor(sec / 60), x = Math.round(se
 /* ---------------------------- PROMPT SCORE ----------------------------
    Same scoring as the legacy engine — used by the maximize mode of the
    unified roll engine. */
+/* Words that carry no sonic information -- used for the variety metric. */
+const STOP_WORDS = new Set(["with","and","the","that","then","into","over","under","from","this","a","an","of","in","on","at","to","for","bpm","no","vocals","instrumental"]);
+
 export function scorePrompt(state) {
   const s = state;
   const sp = buildStylePrompt(s);
   const items = [];
   const len = sp.length;
-  let lenScore = len < 250 ? 40 : len < 400 ? 70 : len <= 900 ? 100 : len <= 1000 ? 82 : 50;
+
+  /* Length: the box is 1000 chars and unused space is wasted signal, so a
+     full prompt is the goal. The old curve peaked at <=900 and gave every
+     dense prompt 82 -- it penalised exactly what the packer is built to do. */
+  const lenScore = len > 1000 ? 40 : len >= 940 ? 100 : len >= 860 ? 92
+    : len >= 700 ? 80 : len >= 450 ? 64 : len >= 250 ? 48 : 30;
   items.push({
     label: "Prompt length", score: lenScore,
-    note: len < 400 ? "Short — add detail layers or unhide a section." : len > 900 ? "Near the ceiling; trim if Suno truncates." : "In the sweet spot."
+    note: len > 1000 ? "Over the 1000-char cap." : len >= 940 ? "Filling the box — maximum signal."
+      : len >= 700 ? "Room left; unhide a section to use it." : "Short — a lot of the box is unused."
   });
+
+  /* Sound density measured against what is actually achievable, not a flat
+     table that saturates at 30. */
+  let soundChars = 0, soundCount = 0;
+  for (const [, keys] of PACK_ORDER) {
+    for (const k of keys) {
+      const v = s[k];
+      if (!v || typeof v !== "string") continue;
+      const forms = [v, tightenPhrase(v), stripLive(v)];
+      if (!s.techOnly) forms.push(tightenPhrase(genreSafeText(s, v, true)));
+      const hit = forms.find(f => f && sp.includes(f));
+      if (hit) { soundChars += hit.length; soundCount++; }
+    }
+  }
+  const dScore = Math.max(20, Math.min(100, Math.round((soundCount / 42) * 100)));
+  items.push({
+    label: "Sound density", score: dScore,
+    note: soundCount + " rolled sounds packed (" + Math.round(soundChars / Math.max(len, 1) * 100) + "% of the box)"
+  });
+
+  /* Vocabulary variety: repeated descriptors waste characters and read as
+     padding to the model. Scores the share of unique content words. */
+  const words = (sp.toLowerCase().match(/[a-z][a-z-]{2,}/g) || []).filter(w => !STOP_WORDS.has(w));
+  const uniq = new Set(words).size;
+  const ratio = words.length ? uniq / words.length : 1;
+  const vScore = Math.max(20, Math.min(100, Math.round((ratio - 0.6) / 0.35 * 100)));
+  items.push({
+    label: "Vocabulary variety", score: vScore,
+    note: (words.length - uniq) + " repeated words of " + words.length + " (" + Math.round(ratio * 100) + "% unique)"
+  });
+
+  /* Section coverage across every labelled block the packer can emit. */
+  const LABELS = ["Emotion:", "Lead:", "Harmony:", "Bass:", "Drums:", "Tone:", "Mix:", "Space:", "Texture:", "FX:", "Arc:"];
+  const present = LABELS.filter(l => sp.includes(l)).length;
+  const cScore = Math.round(present / LABELS.length * 100);
+  items.push({
+    label: "Section coverage", score: cScore,
+    note: present + " of " + LABELS.length + " sections present" +
+      (present < LABELS.length ? " — unhide cards to add more." : " — full spread.")
+  });
+
   const melo = /Lead:|Melody-driven|Melody-dominant/.test(sp);
   const force = s.melodicForce || "balanced";
   const meloScore = !melo ? 0 : force === "light" ? 72 : force === "balanced" ? 92 : 100;
@@ -700,49 +750,25 @@ export function scorePrompt(state) {
     label: "Melodic clarity", score: meloScore,
     note: !melo ? "Melody missing — unhide Feeling & Melody." : force === "light" ? "Light force; raise it for a stronger hook." : "Melody is clearly led."
   });
-  const hasLead = /Lead:|Melody-driven|Melody-dominant/.test(sp);
-  const parts = ["Bass:", "Drums:", "Harmony:", "Emotion-led melody:"].filter(k => sp.includes(k)).length + (hasLead ? 1 : 0);
-  items.push({
-    label: "Instrumentation coverage", score: Math.round(parts / 5 * 100),
-    note: parts === 5 ? "Every layer specified." : (5 - parts) + " section(s) missing from the prompt."
-  });
+
   const styleWords = styleLine(s).split(/,|with|fused/).length;
   const focusScore = styleWords <= 3 ? 100 : styleWords <= 4 ? 85 : 65;
   items.push({
     label: "Style focus", score: focusScore,
     note: focusScore === 100 ? "Tight, unambiguous genre signal." : "Consider fusing or clearing the secondary style."
   });
+
   const energyWords = (sp.match(/\b(maximum|relentless|explosive|brutal|massive|huge|ferocious|unstoppable|driving|crushing|slamming|overdrive|peak|euphoric|thunderous)\b/gi) || []).length;
   const eScore = energyWords >= 6 ? 100 : energyWords >= 4 ? 88 : energyWords >= 2 ? 70 : 45;
   items.push({
     label: "Energy density", score: eScore,
     note: energyWords >= 4 ? energyWords + " high-energy cues." : "Roll drums/intensity for more punch."
   });
+
   const keyScore = s.hidden.key ? 55 : 100;
   items.push({
     label: "Harmonic definition", score: keyScore,
     note: s.hidden.key ? "Key hidden — Suno will pick its own." : keyName(s) + " locked in."
-  });
-  /* Sound density: how much of the 1000-character box is actually carrying
-     rolled sonic detail. This is what makes MAX hunt for prompts that pack
-     more sounds rather than just longer prose. */
-  let soundChars = 0, soundCount = 0;
-  for (const [, keys] of PACK_ORDER) {
-    for (const k of keys) {
-      const v = s[k];
-      if (!v || typeof v !== "string") continue;
-      /* compare against the same transforms the builder applies, or
-         genre-rewritten / tightened values would not be counted */
-      const forms = [v, tightenPhrase(v)];
-      if (!s.techOnly) forms.push(tightenPhrase(genreSafeText(s, v, true)));
-      const hit = forms.find(f => f && sp.includes(f));
-      if (hit) { soundChars += hit.length; soundCount++; }
-    }
-  }
-  const dScore = soundCount >= 30 ? 100 : soundCount >= 26 ? 92 : soundCount >= 22 ? 82 : soundCount >= 18 ? 68 : 45;
-  items.push({
-    label: "Sound density", score: dScore,
-    note: soundCount + " rolled sounds in the prompt (" + Math.round(soundChars / Math.max(len, 1) * 100) + "% of the box)"
   });
 
   const total = Math.round(items.reduce((a, i) => a + i.score, 0) / items.length);

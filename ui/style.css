@@ -140,3 +140,32 @@ button { font: inherit; cursor: pointer; }
 .histMeta { font-size: .7rem; color: var(--dim); margin-top: 2px; }
 #buildChip { opacity: .6; font-size: .7rem; letter-spacing: .5px; }
 #densityChip b { color: var(--lime); }
+
+/* ---------------- library + A/B compare ---------------- */
+#libSearch{width:100%;box-sizing:border-box;margin:8px 0;padding:7px 10px;border-radius:8px;
+  border:1px solid var(--line,#2a2f45);background:#0e1120;color:inherit;font:inherit}
+#libList{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto}
+.libRow{display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;
+  background:#11142a;border:1px solid #232848}
+.libRow:hover{border-color:#3a4270}
+.libRow .star{background:none;border:0;cursor:pointer;font-size:16px;color:#5a6080;padding:0 2px}
+.libRow .star.on{color:#ffcc44}
+.libMain{flex:1;min-width:0;cursor:pointer}
+.libName{font-weight:600;font-size:13px}
+.libMeta{font-size:11px;opacity:.6;margin:2px 0}
+.libPrev{font-size:11px;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.libBtns{display:flex;gap:4px;flex-shrink:0}
+.empty{opacity:.5;font-size:12px;padding:10px 2px}
+
+.cmpSlots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.cmpSlot{padding:10px;border-radius:8px;background:#11142a;border:1px solid #232848}
+.cmpSlot.win{border-color:#3ad07a;box-shadow:0 0 0 1px #3ad07a33}
+.cmpSlot b{font-size:11px;letter-spacing:.08em;opacity:.7}
+.cmpScore{font-size:26px;font-weight:700;line-height:1.1}
+.cmpMeta{font-size:11px;opacity:.6}
+.cmpPrev{font-size:11px;opacity:.45;margin:6px 0}
+.cmpTable{width:100%;border-collapse:collapse;font-size:12px}
+.cmpTable th{text-align:left;opacity:.55;font-weight:500;padding:4px 6px;border-bottom:1px solid #232848}
+.cmpTable td{padding:4px 6px;border-bottom:1px solid #1a1e35}
+.cmpTable td.up{color:#3ad07a}.cmpTable td.down{color:#ff6b6b}
+.cmpTable tr.w-a td:nth-child(2),.cmpTable tr.w-b td:nth-child(3){font-weight:700}

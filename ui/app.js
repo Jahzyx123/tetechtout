@@ -14,6 +14,8 @@ import {
 } from "../engine/index.js";
 import { openPicker } from "./picker.js";
 import { History, bindUndoKeys } from "./history.js";
+import { Library, defaultName } from "./library.js";
+import { Compare } from "./compare.js";
 import { BUILD } from "./version.js";
 
 /* ---------------------------- state ---------------------------- */
@@ -22,6 +24,9 @@ setSeed(state.seed);
 
 /* undo/redo + copy log (Ctrl+Z / Ctrl+Y, and every Copy is archived) */
 export const history = new History(state);
+export const library = new Library();
+export const compare = new Compare();
+let libQuery = "", libStarred = false, showLibrary = false, showCompare = false;
 function commit(label) { history.push(state, label); }
 function applySnapshot(snap) {
   for (const k of Object.keys(state)) delete state[k];
@@ -121,7 +126,7 @@ function doRoll(scope, mode) {
       ? "⭐ Improved to " + res.score + " in " + res.tries + " tries — style kept"
       : res.variation
         ? "⭐ Fresh set #" + (++maxClicks) + " at the same top score (" + res.score + ") — style kept"
-        : "⭐ Kept the current set (" + res.score + ")");
+        : "⭐ Peak reached (" + res.score + ") — " + res.tries + " tries found nothing better. Reroll or tweak a field to escape it.");
   }
   commit((mode === "max" ? "MAX " : "Roll ") + scope);
   afterChange();
@@ -158,6 +163,8 @@ function renderTopbar() {
       <button data-mode="techno" class="${state.techOnly ? "on" : ""}" title="${STYLE_STATS.styles} techno styles">TECHNO-ONLY</button>
       <button data-mode="all" class="${!state.techOnly ? "on" : ""}" title="${STYLE_STATS.genres} genres · ${STYLE_STATS.combos} sub-style combos">NO-TECHNO</button>
     </span>
+    <button class="btn" id="libBtn" title="Saved prompt library (L)">📚 LIBRARY</button>
+    <button class="btn" id="cmpBtn" title="A/B compare two candidates (C)">⚖ COMPARE</button>
     <button class="btn" id="noTechnoBtn" title="Switch to No-Techno and roll a fresh genre + sub-style combo (${STYLE_STATS.combos} combos, zero techno)">🚫 NO-TECHNO COMBO</button>
     <button class="btn primary" id="rollAllBtn" title="Roll every unlocked field (R)">🎲 ROLL EVERYTHING</button>
     <button class="btn" id="maxBtn" title="Reroll production N times keeping your primary/secondary style; re-click for another top-score variation">⭐ MAX</button>
@@ -192,6 +199,8 @@ function renderTopbar() {
     const b = e.target.closest("button"); if (!b) return;
     setMode(b.dataset.mode === "techno");
   });
+  el.querySelector("#libBtn").addEventListener("click", () => { showLibrary = !showLibrary; renderOutput(); });
+  el.querySelector("#cmpBtn").addEventListener("click", () => { showCompare = !showCompare; renderOutput(); });
   el.querySelector("#noTechnoBtn").addEventListener("click", rollNoTechnoCombo);
   el.querySelector("#undoBtn").addEventListener("click", doUndo);
   el.querySelector("#redoBtn").addEventListener("click", doRedo);
@@ -274,10 +283,16 @@ function renderOutput() {
       <div id="outmeta">
         <button class="btn small" id="copyOutBtn">📋 Copy</button>
         <button class="btn small" id="shareBtn">🔗 Share link</button>
+        <button class="btn small" id="saveLibBtn" title="Save this prompt to your library (S)">⭐ Save</button>
+        <button class="btn small" id="dlBtn" title="Download as a .txt file">⬇ Download</button>
+        <button class="btn small" id="toABtn" title="Send current prompt to compare slot A">A</button>
+        <button class="btn small" id="toBBtn" title="Send current prompt to compare slot B">B</button>
         <span id="charCount" class="${text.length > cap ? "warn" : ""}">${text.length} / ${cap}</span>
         <span id="scoreChip" title="${score.items.map(i => i.label + " " + i.score).join(" · ")}">score ${score.total}</span>
       </div>
     </div>
+    ${showLibrary ? libraryHtml() : ""}
+    ${showCompare ? compareHtml() : ""}
     <div class="card" id="historyCard">
       <div class="head">
         <h2>Copy history</h2>
@@ -293,8 +308,201 @@ function renderOutput() {
   host.querySelector("#copyOutBtn").addEventListener("click", () => copyText(text, currentTab === "style" ? "Style Prompt" : "Full Brief"));
   host.querySelector("#shareBtn").addEventListener("click", () =>
     copyText(location.origin + location.pathname + "?s=" + encodeState(state), "Share link"));
+  host.querySelector("#saveLibBtn").addEventListener("click", saveToLibrary);
+  host.querySelector("#dlBtn").addEventListener("click", () => downloadText(text));
+  host.querySelector("#toABtn").addEventListener("click", () => sendToCompare("a"));
+  host.querySelector("#toBBtn").addEventListener("click", () => sendToCompare("b"));
+  if (showLibrary) wireLibrary(host);
+  if (showCompare) wireCompare(host);
   host.querySelector("#clearHistBtn").addEventListener("click", () => { history.clearCopies(); renderHistory(); toast("History cleared"); });
   renderHistory();
+}
+
+/* ------------------------ library + compare ------------------------ */
+function saveToLibrary() {
+  const name = prompt("Name this prompt:", defaultName(state));
+  if (name === null) return;                       /* cancelled */
+  const entry = library.add({
+    name, state,
+    prompt: buildStylePrompt(state),
+    score: scorePrompt(state).total
+  });
+  if (!entry) return toast("Could not save — browser storage is full");
+  showLibrary = true;
+  renderOutput();
+  toast("Saved “" + entry.name + "”");
+}
+
+function downloadText(text) {
+  const stamp = (state.primaryStyle || "neon-forge").replace(/[^\w-]+/g, "-").toLowerCase();
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = stamp + "-" + (currentTab === "style" ? "style-prompt" : "full-brief") + ".txt";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast("Downloaded");
+}
+
+function sendToCompare(slot) {
+  compare.setSlot(slot, state, buildStylePrompt(state), scorePrompt(state));
+  showCompare = true;
+  renderOutput();
+  toast("Sent to slot " + slot.toUpperCase());
+}
+
+function libraryHtml() {
+  const rows = library.list({ query: libQuery, starredOnly: libStarred });
+  const total = library.entries.length;
+  return `
+    <div class="card" id="libraryCard">
+      <div class="head">
+        <h2>Library</h2>
+        <span class="readout">${rows.length} of ${total}</span>
+        <button class="btn small ${libStarred ? "on" : ""}" id="libStarFilter" title="Show starred only">★</button>
+        <button class="btn small" id="libExport" title="Export the whole library as JSON">⬇ Export</button>
+        <button class="btn small" id="libImport" title="Merge a library JSON file into yours">⬆ Import</button>
+        <input type="file" id="libFile" accept="application/json,.json" hidden>
+      </div>
+      <input type="text" id="libSearch" placeholder="Search saved prompts…" value="${escapeHtml(libQuery)}">
+      <div id="libList">
+        ${rows.length ? rows.map(e => `
+          <div class="libRow" data-id="${e.id}">
+            <button class="star ${e.starred ? "on" : ""}" data-act="star" title="Star">${e.starred ? "★" : "☆"}</button>
+            <div class="libMain" data-act="load" title="Load this prompt">
+              <div class="libName">${escapeHtml(e.name)}</div>
+              <div class="libMeta">score ${e.score} · ${escapeHtml(e.style || "—")}${e.bpm ? " · " + e.bpm + " BPM" : ""} · ${new Date(e.at).toLocaleDateString()}</div>
+              <div class="libPrev">${escapeHtml(e.preview)}…</div>
+            </div>
+            <div class="libBtns">
+              <button class="btn small" data-act="rename" title="Rename">✎</button>
+              <button class="btn small" data-act="tob" title="Compare against current (slot B)">⚖</button>
+              <button class="btn small" data-act="del" title="Delete">✕</button>
+            </div>
+          </div>`).join("")
+        : `<div class="empty">Nothing saved yet — hit ⭐ Save on a prompt you like.</div>`}
+      </div>
+    </div>`;
+}
+
+function wireLibrary(host) {
+  const search = host.querySelector("#libSearch");
+  search.addEventListener("input", e => {
+    libQuery = e.target.value;
+    const list = host.querySelector("#libList");
+    const open = document.activeElement === search;
+    renderOutput();
+    if (open) { const el = $("#libSearch"); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    void list;
+  });
+  host.querySelector("#libStarFilter").addEventListener("click", () => { libStarred = !libStarred; renderOutput(); });
+  host.querySelector("#libExport").addEventListener("click", () => {
+    const blob = new Blob([library.exportJSON()], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "neon-forge-library.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast("Exported " + library.entries.length + " prompts");
+  });
+  host.querySelector("#libImport").addEventListener("click", () => host.querySelector("#libFile").click());
+  host.querySelector("#libFile").addEventListener("change", e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      const res = library.importJSON(String(fr.result));
+      renderOutput();
+      toast(res.ok ? "Imported " + res.added + " prompts" : "Import failed — " + res.error);
+    };
+    fr.readAsText(file);
+  });
+  host.querySelector("#libList").addEventListener("click", e => {
+    const btn = e.target.closest("[data-act]");
+    const row = e.target.closest(".libRow");
+    if (!btn || !row) return;
+    const id = row.dataset.id, entry = library.get(id);
+    if (!entry) return;
+    const act = btn.dataset.act;
+    if (act === "star") { library.toggleStar(id); renderOutput(); }
+    else if (act === "del") {
+      if (confirm("Delete “" + entry.name + "”?")) { library.remove(id); renderOutput(); toast("Deleted"); }
+    } else if (act === "rename") {
+      const n = prompt("Rename:", entry.name);
+      if (n !== null) { library.rename(id, n); renderOutput(); }
+    } else if (act === "tob") {
+      compare.setSlot("a", state, buildStylePrompt(state), scorePrompt(state));
+      const saved = JSON.parse(JSON.stringify(entry.state));
+      compare.setSlot("b", saved, previewOf(saved), scoreOf(saved));
+      showCompare = true; renderOutput(); toast("Comparing against “" + entry.name + "”");
+    } else if (act === "load") {
+      applySnapshot(JSON.parse(JSON.stringify(entry.state)));
+      commit("Load “" + entry.name + "”");
+      toast("Loaded “" + entry.name + "”");
+    }
+  });
+}
+
+/* Score/render an arbitrary state without disturbing the live one. */
+function scoreOf(snap) { return scorePrompt(snap); }
+function previewOf(snap) { return buildStylePrompt(snap); }
+
+function compareHtml() {
+  const sum = compare.summary();
+  const slot = (k, snap) => {
+    if (!snap) return `<div class="cmpSlot empty"><b>${k.toUpperCase()}</b><div class="empty">Empty — press ${k.toUpperCase()} in the output bar.</div></div>`;
+    const win = sum && sum.winner === k;
+    return `<div class="cmpSlot ${win ? "win" : ""}">
+      <b>${k.toUpperCase()}${win ? " · winner" : ""}</b>
+      <div class="cmpScore">${snap.score.total}</div>
+      <div class="cmpMeta">${escapeHtml(snap.state.primaryStyle || "—")} · ${snap.prompt.length} chars</div>
+      <div class="cmpPrev">${escapeHtml(snap.prompt.slice(0, 180))}…</div>
+      <button class="btn small" data-keep="${k}">Keep ${k.toUpperCase()}</button>
+    </div>`;
+  };
+  const rows = compare.rows();
+  return `
+    <div class="card" id="compareCard">
+      <div class="head">
+        <h2>A / B compare</h2>
+        ${sum ? `<span class="readout">${sum.winner === "tie" ? "Dead heat" : sum.winner.toUpperCase() + " wins by " + Math.abs(sum.delta)}</span>` : ""}
+        <button class="btn small" id="cmpRollB" title="Roll a fresh challenger into slot B">🎲 Challenger → B</button>
+        <button class="btn small" id="cmpMaxB" title="MAX the current prompt into slot B">⭐ MAX → B</button>
+        <button class="btn small" id="cmpClear">Clear</button>
+      </div>
+      <div class="cmpSlots">${slot("a", compare.a)}${slot("b", compare.b)}</div>
+      ${rows.length ? `<table class="cmpTable">
+        <tr><th>Criterion</th><th>A</th><th>B</th><th>Δ</th></tr>
+        ${rows.map(r => `<tr class="${r.winner === "tie" ? "" : "w-" + r.winner}">
+          <td>${escapeHtml(r.label)}</td><td>${r.a}</td><td>${r.b}</td>
+          <td class="${r.delta > 0 ? "up" : r.delta < 0 ? "down" : ""}">${r.delta > 0 ? "+" : ""}${r.delta}</td></tr>`).join("")}
+      </table>` : `<div class="empty">Fill both slots to see a per-criterion breakdown.</div>`}
+    </div>`;
+}
+
+function wireCompare(host) {
+  host.querySelector("#cmpClear").addEventListener("click", () => { compare.clear(); renderOutput(); });
+  host.querySelector("#cmpRollB").addEventListener("click", () => {
+    if (!compare.a) compare.setSlot("a", state, buildStylePrompt(state), scorePrompt(state));
+    const cand = JSON.parse(JSON.stringify(state));
+    roll(cand, "everything");
+    compare.setSlot("b", cand, previewOf(cand), scoreOf(cand));
+    renderOutput(); toast("Challenger rolled into B");
+  });
+  host.querySelector("#cmpMaxB").addEventListener("click", () => {
+    if (!compare.a) compare.setSlot("a", state, buildStylePrompt(state), scorePrompt(state));
+    const cand = JSON.parse(JSON.stringify(state));
+    roll(cand, "everything", { mode: "max", tries: +($("#triesSel") || {}).value || 24 });
+    compare.setSlot("b", cand, previewOf(cand), scoreOf(cand));
+    renderOutput(); toast("MAX candidate in B");
+  });
+  host.querySelectorAll("[data-keep]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.keep, snap = k === "a" ? compare.a : compare.b;
+    if (!snap) return;
+    applySnapshot(JSON.parse(JSON.stringify(snap.state)));
+    commit("Keep " + k.toUpperCase());
+    toast("Kept " + k.toUpperCase());
+  }));
 }
 
 /* Every Copy click is archived with its full state — click an entry to
@@ -346,7 +554,16 @@ function initEvents() {
   document.addEventListener("keydown", e => {
     const tgt = e.target;
     if (tgt && tgt.matches && tgt.matches("input,textarea,select")) return;
-    if (e.key === "r" || e.key === "R") { doRoll("everything"); }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = (e.key || "").toLowerCase();
+    if (k === "r") doRoll("everything");
+    else if (k === "m") doRoll("everything", "max");
+    else if (k === "l") { showLibrary = !showLibrary; renderOutput(); }
+    else if (k === "c") { showCompare = !showCompare; renderOutput(); }
+    else if (k === "s") { e.preventDefault(); saveToLibrary(); }
+    else if (k === "1") { currentTab = "style"; renderOutput(); }
+    else if (k === "2") { currentTab = "brief"; renderOutput(); }
+    else if (k === "?") toast("R roll · M max · L library · C compare · S save · 1/2 tabs");
   });
 }
 

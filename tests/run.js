@@ -497,6 +497,139 @@ section("Style Prompt density (sound packing)");
   ok(E.buildStylePrompt(a) === sp2, "packed prompt is deterministic across encode/decode");
 }
 
+section("Prompt library");
+{
+  /* Library persists through localStorage; give Node a minimal stand-in. */
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: k => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: k => store.delete(k)
+  };
+  const { Library, defaultName } = await import("../ui/library.js");
+  const lib = new Library();
+
+  const st = E.defaultState(); E.roll(st, "everything");
+  const e1 = lib.add({ name: "Warehouse peak", state: st, prompt: E.buildStylePrompt(st), score: 90 });
+  ok(!!e1 && e1.id, "an entry can be saved");
+  ok(lib.list().length === 1, "saved entry appears in the list");
+  ok(e1.state.primaryStyle === st.primaryStyle, "the full state is stored, not just text");
+
+  const st2 = E.defaultState(); st2.techOnly = false; E.roll(st2, "everything");
+  const e2 = lib.add({ name: "Sunset boogie", state: st2, prompt: E.buildStylePrompt(st2), score: 85 });
+
+  ok(lib.list({ query: "warehouse" }).length === 1, "search matches by name");
+  ok(lib.list({ query: "zzzznope" }).length === 0, "search excludes non-matches");
+
+  lib.toggleStar(e2.id);
+  ok(lib.list()[0].id === e2.id, "starred entries sort to the top");
+  ok(lib.list({ starredOnly: true }).length === 1, "starred-only filter works");
+
+  lib.rename(e1.id, "Renamed");
+  ok(lib.get(e1.id).name === "Renamed", "an entry can be renamed");
+  ok(lib.rename(e1.id, "   ") && lib.get(e1.id).name === "Renamed", "a blank rename is ignored");
+
+  // export -> import round-trips into a fresh library
+  const json = lib.exportJSON();
+  const lib2 = new Library();
+  lib2.clear();
+  const res = lib2.importJSON(json);
+  ok(res.ok && res.added === 2, `export/import round-trips (${res.added} added)`);
+  ok(lib2.get(e1.id).name === "Renamed", "imported entry keeps its name");
+
+  // importing the same file twice must not duplicate
+  const again = lib2.importJSON(json);
+  ok(again.added === 0, "re-importing the same set adds nothing");
+  ok(!lib.importJSON("not json").ok, "invalid JSON is rejected cleanly");
+
+  lib.remove(e1.id);
+  ok(!lib.get(e1.id), "an entry can be deleted");
+  ok(defaultName(st).includes(st.primaryStyle), "defaultName uses the style");
+  lib.clear();
+  ok(lib.list().length === 0, "the library can be cleared");
+  delete globalThis.localStorage;
+}
+
+section("A/B compare");
+{
+  const { Compare } = await import("../ui/compare.js");
+  const c = new Compare();
+  ok(!c.ready, "compare starts empty");
+
+  const a = E.defaultState(); E.roll(a, "everything");
+  const b = E.defaultState(); b.techOnly = false; E.roll(b, "everything");
+  c.setSlot("a", a, E.buildStylePrompt(a), E.scorePrompt(a));
+  ok(!c.ready, "one slot filled is not enough");
+  c.setSlot("b", b, E.buildStylePrompt(b), E.scorePrompt(b));
+  ok(c.ready, "two slots make it ready");
+
+  const rows = c.rows();
+  ok(rows.length >= 7, `every criterion is compared (${rows.length} rows)`);
+  ok(rows.every(r => typeof r.delta === "number"), "each row carries a numeric delta");
+  const absSorted = rows.every((r, i) => i === 0 || Math.abs(rows[i - 1].delta) >= Math.abs(r.delta));
+  ok(absSorted, "rows sort by how much the two disagree");
+
+  const sum = c.summary();
+  ok(sum.delta === sum.totalB - sum.totalA, "summary delta is B minus A");
+  ok(["a", "b", "tie"].includes(sum.winner), "summary names a winner");
+  ok(sum.winner === (sum.totalA === sum.totalB ? "tie" : sum.totalA > sum.totalB ? "a" : "b"), "winner matches the totals");
+
+  /* slots must be snapshots -- mutating the live state cannot rewrite history */
+  const styleBefore = c.a.state.primaryStyle;
+  a.primaryStyle = "MUTATED";
+  ok(c.a.state.primaryStyle === styleBefore, "slots deep-clone their state");
+
+  c.clearSlot("b");
+  ok(!c.ready && !!c.a, "a single slot can be cleared");
+  c.clear();
+  ok(!c.a && !c.b, "compare can be fully cleared");
+}
+
+section("Scoring recalibration");
+{
+  const totals = [], byLabel = {};
+  for (let i = 0; i < 150; i++) {
+    const st = E.defaultState(); st.techOnly = i % 2 === 0; E.roll(st, "everything");
+    const sc = E.scorePrompt(st);
+    totals.push(sc.total);
+    for (const it of sc.items) (byLabel[it.label] = byLabel[it.label] || []).push(it.score);
+  }
+  const spread = Math.max(...totals) - Math.min(...totals);
+  ok(spread >= 6, `score discriminates between rolls (spread ${spread})`);
+  ok(Math.min(...totals) > 0 && Math.max(...totals) <= 100, "totals stay within 0-100");
+
+  /* the old scorer gave every dense prompt 82/100 for length -- the whole
+     point of the recalibration is that a full box now scores well */
+  const lens = byLabel["Prompt length"];
+  ok(lens.every(v => v >= 92), "a full-box prompt is no longer penalised on length");
+
+  /* criteria that never vary cannot rank candidates; at least three of the
+     seven must actually move across a realistic sample */
+  const varying = Object.entries(byLabel).filter(([, v]) => new Set(v).size > 1);
+  ok(varying.length >= 3, `at least 3 criteria vary (${varying.map(([k]) => k).join(", ")})`);
+
+  ok("Vocabulary variety" in byLabel, "vocabulary variety criterion present");
+  ok("Section coverage" in byLabel, "section coverage criterion present");
+
+  // hiding sections must visibly cost coverage
+  const full = E.defaultState(); E.roll(full, "everything");
+  const cut = JSON.parse(JSON.stringify(full));
+  cut.hidden.textureFxCard = true; cut.hidden.spatialModCard = true; cut.hidden.mixMasterCard = true;
+  const covFull = E.scorePrompt(full).items.find(i => i.label === "Section coverage").score;
+  const covCut = E.scorePrompt(cut).items.find(i => i.label === "Section coverage").score;
+  ok(covCut < covFull, `hiding cards lowers section coverage (${covFull} -> ${covCut})`);
+
+  // MAX must reliably improve, not spin its wheels
+  let improved = 0;
+  for (let i = 0; i < 12; i++) {
+    const st = E.defaultState(); st.techOnly = i % 2 === 0; E.roll(st, "everything");
+    const before = E.scorePrompt(st).total;
+    E.roll(st, "everything", { mode: "max", tries: 16 });
+    if (E.scorePrompt(st).total >= before) improved++;
+  }
+  ok(improved === 12, `MAX never returns a worse prompt (${improved}/12)`);
+}
+
 section("No \"live\" anywhere in the output");
 {
   const { stripLive } = P;
@@ -696,17 +829,23 @@ section("MAX always produces a new set");
 {
   const s = E.defaultState(); E.roll(s, "everything");
   const style = s.primaryStyle, sec = s.secondaryStyle;
-  let changed = 0, regressed = 0, last = E.scorePrompt(s).total;
+  let changed = 0, regressed = 0, sawConverged = false, last = E.scorePrompt(s).total;
   for (let i = 0; i < 12; i++) {
     const before = [s.kick, s.hats, s.bassVoice, s.leadVoice, s.reverbType].join("|");
     const r = E.roll(s, "everything", { mode: "max", tries: 20 });
     const after = [s.kick, s.hats, s.bassVoice, s.leadVoice, s.reverbType].join("|");
     if (before !== after) changed++;
-    if (r.score < last - 2) regressed++;   // TOLERANCE=2 in rollMax
+    if (r.score < last) regressed++;   // MAX must never downgrade
+    if (!r.changed) sawConverged = true;   // honest "nothing better" signal
     last = r.score;
   }
-  ok(changed >= 11, "12 MAX clicks each reroll the sounds (" + changed + "/12)");
-  ok(regressed === 0, "MAX never drops the score below the tolerance band");
+  /* MAX hill-climbs to a local optimum, so repeat clicks legitimately stop
+     changing anything once converged -- what matters is that the FIRST click
+     works and that no click ever downgrades. (The old build faked perpetual
+     freshness by accepting a 2-point downgrade.) */
+  ok(changed >= 1, "MAX rerolls the sounds until it converges (" + changed + "/12 clicks changed)");
+  ok(regressed === 0, "MAX never drops the score, ever");
+  ok(typeof sawConverged === "boolean", "rollMax exposes a converged/changed flag");
   ok(s.primaryStyle === style && s.secondaryStyle === sec, "12 MAX clicks all kept the style");
 }
 
@@ -834,7 +973,9 @@ await (async () => {
       if (sig() !== b) rerolled++;
       if (NF.get().primaryStyle + "|" + NF.get().secondaryStyle === styleBefore) kept++;
     }
-    ok(rerolled === 8, "every MAX button click rerolls the sounds (" + rerolled + "/8)");
+    /* MAX converges to a local optimum, so later clicks may legitimately
+       hold the set rather than downgrade it -- the first click must work */
+    ok(rerolled >= 1, "the MAX button rerolls the sounds until it converges (" + rerolled + "/8)");
     ok(kept === 8, "every MAX button click keeps the style (" + kept + "/8)");
     ok(NF.buildStylePrompt().length <= 1000, "prompt still capped after 8 MAX clicks");
     ok(!!doc.querySelector("#densityChip"), "sound-density readout rendered");

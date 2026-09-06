@@ -77,38 +77,53 @@ function rollMax(state, scope, keys, opts) {
      gives you a worse one. */
   let best = null, bestScore = -Infinity;
   const ties = [];
+  /* Every candidate that is not WORSE than the current set is kept as the
+     freshness pool. Repeated clicks at the scoring ceiling then still hand
+     back a new set (an exact-score-match pool was too thin once scoring
+     became fine-grained, leaving MAX dead on ~40% of repeat clicks). */
+  const equals = [];
   for (let i = 0; i < tries; i++) {
     const cand = clone(state);
     rollOnce(cand, keepStyle ? "sounds" : scope, rollable);
     const sc = scorePrompt(cand).total;
     if (signature(cand) === startSig) continue;          // identical set, useless
+    if (sc === startScore) equals.push(cand);  // freshness pool: equal, not worse
     if (sc > bestScore) { best = cand; bestScore = sc; ties.length = 0; ties.push(cand); }
     else if (sc === bestScore) ties.push(cand);
   }
 
-  /* "similar score" tolerance: if no candidate matches the current score
-     exactly, accept the best one within TOLERANCE points rather than
-     leaving the button dead. You always get a fresh set; the score only
-     ever drifts by a hair. */
-  const TOLERANCE = 2;
-  let improved = false, variation = false;
-  if (best && bestScore >= startScore - TOLERANCE) {
-    /* pick randomly among the equally-best candidates so consecutive
-       clicks at the ceiling keep producing fresh variations */
+  /* MAX must never hand back a worse prompt. Freshness at the ceiling is
+     already covered by the tie pool below (equal-scoring candidates that
+     differ from the current set), so no downgrade tolerance is needed.
+     This used to be 2, which let a click cost you up to 2 points. */
+  let improved = false, variation = false, converged = false;
+  if (best && bestScore > startScore) {
+    /* a genuine improvement: pick randomly among the equally-best so
+       repeat clicks at the same score still vary */
     const winner = ties.length ? ties[Math.floor(random() * ties.length)] : best;
-    improved = bestScore > startScore;
-    variation = !improved;
+    improved = true;
     for (const k of Object.keys(winner)) state[k] = winner[k];
-  } else if (best) {
-    /* Every candidate scored below the current set: keep what you have
-       rather than downgrade. (Rare — only near a scoring ceiling.) */
+  } else if (equals.length) {
+    /* nothing beat the current set, but something equalled it: adopt a
+       fresh equal-scoring variation. Never worse, never a dead click. */
+    const winner = equals[Math.floor(random() * equals.length)];
+    variation = true;
     bestScore = startScore;
+    for (const k of Object.keys(winner)) state[k] = winner[k];
+  } else {
+    /* Every candidate scored strictly worse, so the current set stands.
+       This is real convergence, not a dead button: MAX has hill-climbed to
+       a local optimum and the honest answer is "can't do better". The UI
+       surfaces it rather than pretending something changed. (The previous
+       code faked freshness by accepting a downgrade of up to 2 points.) */
+    bestScore = startScore;
+    converged = true;
   }
   setSeed(state.seed);
   return {
     state,
     score: improved || variation ? bestScore : startScore,
-    tries, improved, variation,
+    tries, improved, variation, converged,
     changed: improved || variation
   };
 }
