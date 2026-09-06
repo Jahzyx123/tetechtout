@@ -115,13 +115,45 @@ const PACK_CARD = {
   "Space": "spatialModCard", "Texture": "spatialModCard", "FX": "textureFxCard", "Arc": "textureFxCard"
 };
 
+/* Legacy pools contain degenerate phrases where an expansion suffix was
+   appended to a word that already ended the phrase — "driving drive",
+   "master drive drive", "filter drive pressure". They read badly AND they
+   waste characters that could carry another sound, so collapse them at
+   pack time. The pools on disk stay verbatim. */
+const FILLER = "force|drive|pressure";
+export function tightenPhrase(v) {
+  let t = String(v || "");
+  t = t.replace(new RegExp("\\b(" + FILLER + ")(\\s+(?:" + FILLER + "))+\\b", "gi"), "$1");
+  t = t.replace(/\b(\w+)ing\s+\1\b/gi, "$1ing");
+  t = t.replace(new RegExp("\\b(\\w+)\\s+\\1\\b", "gi"), "$1");
+  return t.replace(/\s+/g, " ").trim();
+}
+
+/* Inside a labelled clause the label already says what the sound is, so
+   the noun repeated in every value is pure overhead: "Bass: searing FM
+   bass, rolling octave bass line" -> "Bass: searing FM, rolling octave
+   line". Only applied to values being packed under a matching label, and
+   never when it would leave nothing behind. */
+const LABEL_NOUN = {
+  Bass: /\s+bass\b/i,
+  Lead: /\s+lead\b/i,
+  Drums: /\s+(?:drum|drums)\b/i,
+  Harmony: /\s+(?:harmony|chords)\b/i
+};
+export function dropLabelNoun(label, v) {
+  const re = LABEL_NOUN[label];
+  if (!re) return v;
+  const out = String(v).replace(re, "").replace(/\s+/g, " ").trim();
+  return out.length >= 3 ? out : v;
+}
+
 export function densify(s, body, budget) {
   let out = body;
   /* In no-techno mode the body has already been genre-rewritten, so a raw
      pool value ("synth-driven hook") won't match its rewritten form
      ("driven hook") and would be packed in twice. Compare — and insert —
      the rewritten text. */
-  const fit = v => (!s.techOnly ? genreSafeText(s, String(v), true) : String(v));
+  const fit = v => tightenPhrase(!s.techOnly ? genreSafeText(s, String(v), true) : String(v));
   const has = v => out.toLowerCase().includes(String(v).toLowerCase());
 
   /* collect everything still missing, grouped, shortest-first */
@@ -153,7 +185,8 @@ export function densify(s, body, budget) {
 
   /* append `v` to g's clause (cheap: ", v") or start the clause (costly:
      ". Label: v"). Returns false if it wouldn't fit. */
-  function place(g, v) {
+  function place(g, vRaw) {
+    const v = g.open ? dropLabelNoun(g.label, vRaw) : vRaw;
     const cost = g.open ? 2 + v.length : 2 + g.label.length + 2 + v.length;
     if (out.length + cost > budget) return false;
     if (g.open) {
@@ -201,6 +234,7 @@ function dropEmptyLabels(text) {
 }
 export function normalizePrompt(text) {
   let t = dropEmptyLabels(String(text || ""));
+  t = tightenPhrase(t);
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/(\.|,)\s*(?=\.|,)/g, ".").replace(/\.{2,}/g, ".");
   t = t.replace(/,\s*,/g, ",");
@@ -678,7 +712,13 @@ export function scorePrompt(state) {
   for (const [, keys] of PACK_ORDER) {
     for (const k of keys) {
       const v = s[k];
-      if (v && typeof v === "string" && sp.includes(v)) { soundChars += v.length; soundCount++; }
+      if (!v || typeof v !== "string") continue;
+      /* compare against the same transforms the builder applies, or
+         genre-rewritten / tightened values would not be counted */
+      const forms = [v, tightenPhrase(v)];
+      if (!s.techOnly) forms.push(tightenPhrase(genreSafeText(s, v, true)));
+      const hit = forms.find(f => f && sp.includes(f));
+      if (hit) { soundChars += hit.length; soundCount++; }
     }
   }
   const dScore = soundCount >= 30 ? 100 : soundCount >= 26 ? 92 : soundCount >= 22 ? 82 : soundCount >= 18 ? 68 : 45;

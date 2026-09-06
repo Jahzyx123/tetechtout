@@ -5,8 +5,8 @@
 
    EXTRA_STYLES: 659 techno styles (Techno-Only mode).
    EXTRA_GENRES: 28 new genres / 279 sub-styles (No-Techno mode).
-   EXTRA_SUBS:   1515 extra sub-styles on 253 existing genres.
-   Net new genre x sub-style combos: 1794. */
+   EXTRA_SUBS:   1514 extra sub-styles on 253 existing genres.
+   Net new genre x sub-style combos: 1793. */
 export const EXTRA_STYLES = [
   {"n":"Classic Terrace Techno","c":"core"},
   {"n":"Late-Night Techno","c":"core"},
@@ -1371,7 +1371,6 @@ export const EXTRA_SUBS = {
     "Sunrise Groove",
     "Festival Groove"],
   "Neon":["Wide-Screen Neon",
-    "Neon Neon",
     "Fever-Dream Neon",
     "Live-Room Neon",
     "Midnight Neon",

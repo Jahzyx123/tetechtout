@@ -147,6 +147,10 @@ for (const g of GENRES) {
   for (const q of picks) {
     const t = (q + " " + g.n).replace(/\s+/g, " ").trim();
     if (!ok(t) || have.has(t.toLowerCase())) continue;
+    /* the combo is rendered "<sub> <genre>", so a sub sharing a word with
+       its genre yields "Percussive Carnatic Carnatic Fusion" */
+    const gw = new Set(g.n.toLowerCase().split(/\s+/));
+    if (q.toLowerCase().split(/\s+/).some(w => gw.has(w))) continue;
     have.add(t.toLowerCase());
     list.push(t);
   }

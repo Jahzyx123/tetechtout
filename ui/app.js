@@ -134,6 +134,19 @@ function setMode(techOnly) {
   doRoll("genre");
 }
 
+/* One-click "give me a combo with no techno in it": force No-Techno mode
+   and roll a fresh genre + sub-style combo, whatever mode we were in. The
+   combo pool is already techno-free, so switching modes is the whole job. */
+function rollNoTechnoCombo() {
+  const wasTechno = state.techOnly;
+  state.techOnly = false;
+  if (wasTechno) { state.primaryStyle = ""; state.secondaryStyle = ""; }
+  for (const k of ["primaryStyle", "secondaryStyle", "primaryGenre", "secondaryGenre"]) {
+    if (state.locks) state.locks[k] = false;
+  }
+  doRoll("genre");
+}
+
 /* ---------------------------- top bar ---------------------------- */
 function renderTopbar() {
   const el = $("#topbar");
@@ -145,6 +158,7 @@ function renderTopbar() {
       <button data-mode="techno" class="${state.techOnly ? "on" : ""}" title="${STYLE_STATS.styles} techno styles">TECHNO-ONLY</button>
       <button data-mode="all" class="${!state.techOnly ? "on" : ""}" title="${STYLE_STATS.genres} genres · ${STYLE_STATS.combos} sub-style combos">NO-TECHNO</button>
     </span>
+    <button class="btn" id="noTechnoBtn" title="Switch to No-Techno and roll a fresh genre + sub-style combo (${STYLE_STATS.combos} combos, zero techno)">🚫 NO-TECHNO COMBO</button>
     <button class="btn primary" id="rollAllBtn" title="Roll every unlocked field (R)">🎲 ROLL EVERYTHING</button>
     <button class="btn" id="maxBtn" title="Reroll production N times keeping your primary/secondary style; re-click for another top-score variation">⭐ MAX</button>
     <span class="seg" id="undoSeg">
@@ -178,6 +192,7 @@ function renderTopbar() {
     const b = e.target.closest("button"); if (!b) return;
     setMode(b.dataset.mode === "techno");
   });
+  el.querySelector("#noTechnoBtn").addEventListener("click", rollNoTechnoCombo);
   el.querySelector("#undoBtn").addEventListener("click", doUndo);
   el.querySelector("#redoBtn").addEventListener("click", doRedo);
   el.querySelector("#rollAllBtn").addEventListener("click", () => doRoll("everything"));

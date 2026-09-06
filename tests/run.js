@@ -18,6 +18,7 @@
    ===================================================================== */
 import * as E from "../engine/index.js";
 import * as D from "../data/index.js";
+import * as P from "../engine/prompt.js";
 
 let passes = 0, failures = 0;
 function ok(cond, msg) {
@@ -455,7 +456,9 @@ section("Style Prompt density (sound packing)");
     E.roll(s, "everything");
     const sp = E.buildStylePrompt(s);
     if (sp.length > 1000) over++;
-    if (!sp.includes(s.primaryStyle)) styleLost++;
+    /* the builder tightens doubled words out of names, so compare
+       against the same transform rather than the raw pool string */
+    if (!sp.includes(s.primaryStyle) && !sp.includes(P.tightenPhrase(s.primaryStyle))) styleLost++;
     if (sp.length < 880) waste++;
     worstLen = Math.max(worstLen, sp.length);
     hits += KEYS.filter(k => s[k] && sp.includes(s[k])).length;
@@ -492,6 +495,48 @@ section("Style Prompt density (sound packing)");
   // determinism survives packing
   const a = E.decodeState(E.encodeState(s2));
   ok(E.buildStylePrompt(a) === sp2, "packed prompt is deterministic across encode/decode");
+}
+
+section("Phrase tightening and label-noun trimming");
+{
+  const { tightenPhrase, dropLabelNoun } = P;
+  for (const [input, want] of [
+    ["master drive drive", "master drive"],
+    ["filter drive pressure", "filter drive"],
+    ["rolled clipping drive drive", "rolled clipping drive"]
+  ]) ok(tightenPhrase(input) === want,
+       `tightenPhrase collapses "${input}" -> "${want}" (got "${tightenPhrase(input)}")`);
+
+  for (const keep of ["punishing distorted kick", "half-time pressure", "four-on-the-floor drive"])
+    ok(tightenPhrase(keep) === keep, `tightenPhrase leaves meaningful phrase "${keep}" alone`);
+
+  ok(dropLabelNoun("Bass", "searing FM bass") === "searing FM", "dropLabelNoun trims the redundant label noun");
+  ok(dropLabelNoun("Bass", "bass") === "bass", "dropLabelNoun never empties a value");
+  ok(dropLabelNoun("Space", "wide bass room") === "wide bass room", "dropLabelNoun only acts on matching labels");
+
+  let degenerate = 0;
+  for (let i = 0; i < 120; i++) {
+    const st = E.defaultState(); st.techOnly = i % 2 === 0; E.roll(st, "everything");
+    if (/\b(\w{3,})\s+\1\b/i.test(E.buildStylePrompt(st))) degenerate++;
+  }
+  ok(degenerate === 0, `no doubled-word phrase in any generated prompt (${degenerate} found)`);
+}
+
+section("No-techno combo selection");
+{
+  const combos = E.allCombos();
+  ok(combos.length >= 4000, `combo pool is large (${combos.length})`);
+  /* "techno" proper only -- rave/gabber are verbatim hardcore genres from
+     the original pools and are legitimately part of the no-techno world */
+  const techish = combos.filter(c => /\btechno\b|hardgroove|schranz/i.test(c));
+  ok(techish.length === 0, `no combo mentions techno (${techish.slice(0, 3).join(", ")})`);
+
+  let bad = 0;
+  for (let i = 0; i < 80; i++) {
+    const st = E.defaultState(); st.techOnly = false; E.roll(st, "everything");
+    if (/\btechno\b|hardgroove|schranz/i.test(st.primaryStyle + " " + st.secondaryStyle)) bad++;
+  }
+  ok(bad === 0, `no-techno rolls never produce a techno style (${bad})`);
 }
 
 section("Style pool expansion");
@@ -531,7 +576,9 @@ section("Style pool expansion");
     E.roll(s, "everything");
     const sp = E.buildStylePrompt(s);
     const alt = s.techOnly ? s.primaryStyle : E.genreSafeText(s, s.primaryStyle, true);
-    if (!sp.includes(s.primaryStyle) && !sp.includes(alt)) lost++;
+    /* the builder tightens doubled words out of names -- accept that form too */
+    const forms = [s.primaryStyle, alt, P.tightenPhrase(s.primaryStyle), P.tightenPhrase(alt)];
+    if (!forms.some(f => f && sp.includes(f))) lost++;
   }
   ok(lost === 0, "style name survives into every prompt across 200 rolls (" + lost + " lost)");
 
