@@ -179,7 +179,7 @@ function renderTopbar() {
       <span class="readout"><b>${state.weirdness}</b> · core ${pct(m.core)}% / sub ${pct(m.sub)}% / rare ${pct(m.rare)}%</span></label>
     <span class="chip ${state.instrumental ? "on" : ""}" id="instToggle" title="Keep every vocal reference out of the output">Instrumental</span>
     <span class="chip ${state.equalChance ? "on" : ""}" id="eqToggle" title="Every style equally likely (ignores weirdness tiers)">Equal chance</span>
-    <span class="chip ${state.noHandPerc ? "on" : ""}" id="handPercToggle" title="Remove tribal / hand-percussion, woodblocks, claps, shakers and stomps from every roll">No hand-perc</span>
+    <span class="chip ${state.noHandPerc ? "on" : ""}" id="handPercToggle" title="Remove tribal &amp; hand percussion, woodblocks, claps, shakers, stomps, jungle/breakbeat drums and trash-can / scrap-metal percussion from every roll">No hand-perc</span>
     <span class="chip ${state.styleFit ? "on" : ""}" id="fitToggle" title="Auto-hide electronic-only cards for organic genres">Style-fit</span>
     <span class="chip ${state.structure ? "on" : ""}" id="structToggle" title="Append [Intro][Build][Drop]… tags">Structure</span>
     <label class="inline">Influence <select id="influenceSel">

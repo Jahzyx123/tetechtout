@@ -97,7 +97,10 @@ for (const k in POOL_OF) {
 /* ------------------------- no-hand-percussion ------------------------- */
 /* Suno hears "tribal", hand percussion, woodblocks and claps as a whole
    acoustic-percussion idiom, so the toggle removes that vocabulary as a
-   family rather than one word at a time.
+   family rather than one word at a time. The same switch also covers two
+   neighbouring idioms that read the same way in a prompt: chopped
+   breakbeat/jungle drums, and trash-can / found-object / scrap-metal
+   industrial percussion.
 
    Word-boundary anchored on purpose. "block density" (an intensity term),
    "snappy"/"snap attack" (transients), "Heartbeat of the Block" and
@@ -105,8 +108,16 @@ for (const k in POOL_OF) {
    percussion senses are matched. */
 export const HAND_PERC_RE = /\b(?:tribal|ethnic|conga|congas|bongo|bongos|djembe|djembes|tabla|tablas|shaker|shakers|tambourine|cowbell|clave|claves|maraca|maracas|guiro|cabasa|castanet|castanets|udu|cajon|cajón|taiko|timbale|timbales|agogo|bodhran|darbuka|doumbek|dholak|talking drum|frame drum|hand drum|hand-drum|hand percussion|shekere|kalimba|marimba|xylophone|vibraphone|woodblock|woodblocks|wood block|wooden block|wood-block|rimshot|rim shot|rim knock|rim click|clap|claps|clapping|handclap|handclaps|hand clap|hand-clap|finger snap|finger snaps|stomp|stomps|polyrhythm|polyrhythmic|caxixi rattles|caxixi|pandeiro|rainstick|washboard|jawbone|spoons|bones|bone clicks|sleigh bell|sleigh bells|wind chime|wind chimes|finger cymbal|finger cymbals|triangle|handpan|hang drum|steel pan|steelpan|steel drum|thumb piano|gourd|shekere|berimbau|cuica|repinique|surdo|tamborim|bodhrán|riq|daf|zarb|clacking|clacks|cross-stick|crossstick|rim-stick)\b|\bwood(?:en|y)?\b/i;
 
+/* Breakbeat/jungle drums and junk-metal percussion. Kept as its own
+   pattern so the two families stay legible, but driven by the same toggle.
+
+   Word-boundary anchored for the same reason as above: "ornament" contains
+   "amen", "expanse"/"expansion" contain "scrap"-like fragments, and
+   "hammered"/"master pipeline"/"barrelhouse" must all survive. */
+export const JUNK_PERC_RE = /\b(?:jungle|junglist|amen break|amen breaks|breakbeat|breakbeats|break-beat|chopped break|chopped breaks|ragga|trash|trash-can|trashcan|garbage|junk|junkyard|scrapyard|scrap metal|dustbin|bin lid|oil drum|oil-drum|anvil|anvils|hubcap|hubcaps|debris|found-object|found object|found sound|foley|pots and pans|kitchen sink|tin can|tin cans|clang|clangs|clanging|clank|clanks|clanking|clatter|clattering|metal sheet|sheet metal|pipe hit|pipe hits|blacksmith|scrap)\b|\b(?:industrial|machine|factory|scrap|junk)[ -]percussion\b/i;
+
 export function hasHandPerc(v) {
-  return typeof v === "string" && HAND_PERC_RE.test(v);
+  return typeof v === "string" && (HAND_PERC_RE.test(v) || JUNK_PERC_RE.test(v));
 }
 
 /* genre.js needs this predicate but cannot import it (state.js already
