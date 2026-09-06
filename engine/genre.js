@@ -43,38 +43,64 @@ export function weirdCategory(s) {
   if (r < m.core + m.sub) return "sub";
   return "rare";
 }
+/* The no-hand-percussion toggle also has to keep percussion-defined styles
+   out of the roll -- "Taiko Ensemble" or "Tribal House" would otherwise
+   reintroduce the whole idiom through the style line. Kept as a lazy import
+   because state.js imports from this module. */
+let _hp = null;
+function handPerc(v) {
+  if (!_hp) return false;
+  return _hp(v);
+}
+export function _setHandPercPredicate(fn) { _hp = fn; }
+
+/* retry-pick: draw from `arr` until the value passes, bounded so a heavily
+   filtered pool can never spin forever */
+function pickClean(s, arr, get) {
+  const v = pick(arr);
+  if (!s || !s.noHandPerc) return v;
+  if (!handPerc(get ? get(v) : v)) return v;
+  for (let i = 0; i < 24; i++) {
+    const c = pick(arr);
+    if (!handPerc(get ? get(c) : c)) return c;
+  }
+  return v;
+}
+
 export function pickStyle(s) {
   if (s.techOnly) {
-    if (s.equalChance) return pick(STYLES.map(x => x.n));
+    if (s.equalChance) return pickClean(s, STYLES.map(x => x.n));
     const cat = weirdCategory(s);
     const pool = STYLES_BY_CAT[cat];
-    if (!pool || !pool.length) return pick(STYLES.map(x => x.n));
-    return pick(pool);
+    if (!pool || !pool.length) return pickClean(s, STYLES.map(x => x.n));
+    return pickClean(s, pool);
   }
-  return pickGenreCombo();
+  return pickGenreCombo(s);
 }
 export function genreComboName(g, sub) {
   const st = sub.trim(), gn = g.n.trim();
   if (st.toLowerCase() === gn.toLowerCase() || st.toLowerCase().endsWith(gn.toLowerCase())) return st;
   return st + " " + gn;
 }
-export function pickGenreCombo() { const g = pick(GENRES); return genreComboName(g, pick(g.subs)); }
-export function pickGenreComboOther(avoid) { let c = pickGenreCombo(), g = 0; while (c === avoid && g++ < 8) { c = pickGenreCombo(); } return c; }
+export function pickGenreCombo(s) { const g = pickClean(s, GENRES, x => x.n); return genreComboName(g, pickClean(s, g.subs)); }
+export function pickGenreComboOther(avoid, s) { let c = pickGenreCombo(s), g = 0; while (c === avoid && g++ < 8) { c = pickGenreCombo(s); } return c; }
 export function allCombos() { const out = []; for (const g of GENRES) for (const sub of g.subs) out.push(genreComboName(g, sub)); return out; }
 export function pickGenreObj(s) {
-  if (s.equalChance) { const c = pick(allCombos()); return { genre: genreOfStyle(c) || "", combo: c }; }
-  const g = pick(GENRES);
-  return { genre: g.n, combo: genreComboName(g, pick(g.subs)) };
+  if (s.equalChance) { const c = pickClean(s, allCombos()); return { genre: genreOfStyle(c) || "", combo: c }; }
+  const g = pickClean(s, GENRES, x => x.n);
+  return { genre: g.n, combo: genreComboName(g, pickClean(s, g.subs)) };
 }
 export function pickGenreObjOther(s, avoidGenre) {
   if (s.equalChance) {
-    let c = pick(allCombos()), g = 0;
-    while ((genreOfStyle(c) === avoidGenre) && g++ < 8) c = pick(allCombos());
+    let c = pickClean(s, allCombos()), g = 0;
+    while ((genreOfStyle(c) === avoidGenre) && g++ < 8) c = pickClean(s, allCombos());
     return { genre: genreOfStyle(c) || "", combo: c };
   }
-  let g = pick(GENRES), guard = 0;
-  while (g.n === avoidGenre && guard++ < 8) g = pick(GENRES);
-  return { genre: g.n, combo: genreComboName(g, pick(g.subs)) };
+  let g = pickClean(s, GENRES, x => x.n), guard = 0;
+  while (g.n === avoidGenre && guard++ < 8) g = pickClean(s, GENRES, x => x.n);
+  /* the SUB needs filtering too: genre "House" is clean but its sub
+     "Tribal House" is not */
+  return { genre: g.n, combo: genreComboName(g, pickClean(s, g.subs)) };
 }
 export function genreOfStyle(name) {
   const low = (name || "").toLowerCase(); if (!low) return "";

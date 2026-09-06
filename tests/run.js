@@ -497,6 +497,67 @@ section("Style Prompt density (sound packing)");
   ok(E.buildStylePrompt(a) === sp2, "packed prompt is deterministic across encode/decode");
 }
 
+section("No hand-percussion toggle");
+{
+  const S = await import("../engine/state.js");
+  const RE = /\b(tribal|conga|congas|bongo|bongos|djembe|tabla|shaker|shakers|tambourine|cowbell|clave|claves|maraca|guiro|cabasa|castanet|udu|cajon|taiko|timbale|agogo|marimba|xylophone|vibraphone|woodblock|wooden|woody|wood|clap|claps|handclap|stomp|stomps|polyrhythm|rimshot|kalimba|caxixi|pandeiro|rainstick|washboard|jawbone|sleigh bell|wind chime|finger cymbal|cross-stick|handpan|berimbau)\b/i;
+
+  // the predicate must be precise in both directions
+  for (const kill of ["tribal bongo percussion", "wooden block hats", "maximum clap layer",
+                      "tribal djembe slap", "woodblock ticks", "jawbone rattles", "caxixi rattles",
+                      "pandeiro slaps", "washboard scrapes", "cross-stick tap", "hollow wooden bass"])
+    ok(S.hasHandPerc(kill), `flags "${kill}"`);
+
+  /* these merely LOOK like matches -- "block density" is an intensity term,
+     "snap" is a transient, "chain rattles" is industrial, "tar-thick" is bass */
+  for (const keep of ["ferocious block density", "Heartbeat of the Block", "crisp snap attack",
+                      "snappy transient", "a groove with a rim on the four", "chain rattles",
+                      "ratcheting industrial clicks", "tar-thick sub bass", "guitar strum"])
+    ok(!S.hasHandPerc(keep), `does NOT flag "${keep}"`);
+
+  ok(S.withoutHandPerc(["tribal stomp", "acid line"]).length === 1, "withoutHandPerc filters an array");
+  ok(S.withoutHandPerc(D.CLAP_LAYERS).length === 0, "CLAP_LAYERS is 100% hand-percussion");
+
+  // end-to-end: nothing reaches either output, in either mode
+  let leaks = 0, over = 0, blankClap = 0, sounds = 0;
+  const N = 120;
+  for (let i = 0; i < N; i++) {
+    const st = E.defaultState(); st.techOnly = i % 2 === 0; st.noHandPerc = true;
+    E.roll(st, "everything");
+    const sp = E.buildStylePrompt(st), fb = E.buildFullBrief(st);
+    if (RE.test(sp) || RE.test(fb)) leaks++;
+    if (sp.length > 1000 || fb.length > 3000) over++;
+    if (st.clapLayer === "") blankClap++;
+    sounds += E.scorePrompt(st).soundCount;
+  }
+  ok(leaks === 0, `no hand-percussion in any output across ${N} rolls (${leaks})`);
+  ok(over === 0, "length caps still respected with the filter on");
+  ok(blankClap === N, "the emptied clap-layer atom blanks instead of picking");
+  ok(sounds / N >= 30, `density holds with the filter on (${(sounds / N).toFixed(1)} sounds)`);
+
+  // percussion-defined styles must not be selected either
+  let taiko = 0;
+  for (let i = 0; i < 200; i++) {
+    const st = E.defaultState(); st.techOnly = false; st.noHandPerc = true;
+    E.roll(st, "everything");
+    if (RE.test(st.primaryStyle + " " + st.secondaryStyle + " " + st.primaryGenre)) taiko++;
+  }
+  ok(taiko === 0, `percussion-named genres/styles are excluded too (${taiko})`);
+
+  // OFF by default, and off means unchanged
+  ok(E.defaultState().noHandPerc === false, "the toggle is off by default");
+  let present = 0;
+  for (let i = 0; i < 60; i++) {
+    const st = E.defaultState(); E.roll(st, "everything");
+    if (RE.test(E.buildStylePrompt(st))) present++;
+  }
+  ok(present > 0, `with the toggle off these sounds still appear (${present}/60)`);
+
+  // survives a share link
+  const st = E.defaultState(); st.noHandPerc = true; E.roll(st, "everything");
+  ok(E.decodeState(E.encodeState(st)).noHandPerc === true, "the toggle round-trips through a share link");
+}
+
 section("Prompt library");
 {
   /* Library persists through localStorage; give Node a minimal stand-in. */

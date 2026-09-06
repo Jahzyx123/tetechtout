@@ -32,7 +32,8 @@ import { newSeed, random, pick } from "./prng.js";
 import { scaleOf } from "./music.js";
 import {
   pickStyle, pickSecondary, pickGenreObj, pickGenreObjOther, genreOfStyle,
-  tempoForGenre, pickScaleId, rollBpmValue, pickArrangementFor
+  tempoForGenre, pickScaleId, rollBpmValue, pickArrangementFor,
+  _setHandPercPredicate
 } from "./genre.js";
 
 /* ---------------------------- ROLL FUNCTIONS ----------------------------
@@ -93,21 +94,63 @@ for (const k in POOL_OF) {
    This replaces the old style-fit behaviour of HIDING the techno-flavoured
    cards, which silently cost no-techno prompts ~6 sounds. Now the slots
    stay filled — with words that fit the genre. */
+/* ------------------------- no-hand-percussion ------------------------- */
+/* Suno hears "tribal", hand percussion, woodblocks and claps as a whole
+   acoustic-percussion idiom, so the toggle removes that vocabulary as a
+   family rather than one word at a time.
+
+   Word-boundary anchored on purpose. "block density" (an intensity term),
+   "snappy"/"snap attack" (transients), "Heartbeat of the Block" and
+   "a groove with a rim on the four" must all survive -- only the
+   percussion senses are matched. */
+export const HAND_PERC_RE = /\b(?:tribal|ethnic|conga|congas|bongo|bongos|djembe|djembes|tabla|tablas|shaker|shakers|tambourine|cowbell|clave|claves|maraca|maracas|guiro|cabasa|castanet|castanets|udu|cajon|cajón|taiko|timbale|timbales|agogo|bodhran|darbuka|doumbek|dholak|talking drum|frame drum|hand drum|hand-drum|hand percussion|shekere|kalimba|marimba|xylophone|vibraphone|woodblock|woodblocks|wood block|wooden block|wood-block|rimshot|rim shot|rim knock|rim click|clap|claps|clapping|handclap|handclaps|hand clap|hand-clap|finger snap|finger snaps|stomp|stomps|polyrhythm|polyrhythmic|caxixi rattles|caxixi|pandeiro|rainstick|washboard|jawbone|spoons|bones|bone clicks|sleigh bell|sleigh bells|wind chime|wind chimes|finger cymbal|finger cymbals|triangle|handpan|hang drum|steel pan|steelpan|steel drum|thumb piano|gourd|shekere|berimbau|cuica|repinique|surdo|tamborim|bodhrán|riq|daf|zarb|clacking|clacks|cross-stick|crossstick|rim-stick)\b|\bwood(?:en|y)?\b/i;
+
+export function hasHandPerc(v) {
+  return typeof v === "string" && HAND_PERC_RE.test(v);
+}
+
+/* genre.js needs this predicate but cannot import it (state.js already
+   imports genre.js), so it is injected here. */
+_setHandPercPredicate(hasHandPerc);
+
+/* Filtered pools are memoised: the filter runs on every roll of every
+   atom, and re-scanning ~10k strings each time is wasteful. */
+const _cleanCache = new Map();
+export function withoutHandPerc(arr) {
+  if (!Array.isArray(arr)) return arr;
+  let out = _cleanCache.get(arr);
+  if (!out) {
+    out = arr.filter(x => !hasHandPerc(x));
+    _cleanCache.set(arr, out);
+  }
+  return out;
+}
+
 export function poolFor(s, key) {
-  const base = POOL_OF[key];
+  const raw = POOL_OF[key];
+  /* the filter wraps whichever world-specific pool ends up selected */
+  const clean = p => (s && s.noHandPerc ? withoutHandPerc(p) : p);
+  const base = clean(raw);
   if (!s || s.techOnly || !s.styleFit) return base;
   const world = genreWorld(s.primaryGenre);
-  if (world === "organic") return ORGANIC_POOLS[key] || base;
+  if (world === "organic") return clean(ORGANIC_POOLS[key]) || base;
   /* Hybrid prefers its own blended vocabulary, then falls back to the
      organic one, and only then to the techno-flavoured original — without
      that middle step, keys like sidechainType leak "909"/"sidechain" into
      rock and shoegaze prompts. */
-  if (world === "hybrid") return HYBRID_POOLS[key] || ORGANIC_POOLS[key] || base;
+  if (world === "hybrid") return clean(HYBRID_POOLS[key]) || clean(ORGANIC_POOLS[key]) || base;
   return base;
 }
 
 export const ROLL_FN = {};
-for (const k in POOL_OF) { ROLL_FN[k] = (key => s => { s[key] = pick(poolFor(s, key)); })(k); }
+for (const k in POOL_OF) {
+  ROLL_FN[k] = (key => s => {
+    const pool = poolFor(s, key);
+    /* CLAP_LAYERS is 100% hand-percussion, so with the toggle on the pool
+       is empty: blank the field instead of picking from nothing. */
+    s[key] = (pool && pool.length) ? pick(pool) : "";
+  })(k);
+}
 ROLL_FN.primary = s => { s.primaryStyle = pickStyle(s); s.primaryGenre = s.techOnly ? "Techno" : genreOfStyle(s.primaryStyle); };
 ROLL_FN.secondary = s => { s.secondaryStyle = pickSecondary(s, s.primaryStyle); s.secondaryGenre = s.techOnly ? "Techno" : genreOfStyle(s.secondaryStyle); };
 ROLL_FN.genre = s => {
@@ -224,7 +267,7 @@ export function defaultState() {
     layers: {}, locks: defaultLocks(), hidden: defaultHidden(),
     weirdness: 50, influence: "balanced", duration: "standard", melodicForce: "balanced", slim: false, structure: false,
     acidAmt: 60, driveAmt: 75,
-    styleFit: true, lastFitGenre: ""
+    styleFit: true, lastFitGenre: "", noHandPerc: false
   };
 }
 

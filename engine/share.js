@@ -21,7 +21,7 @@ const MAP = {
   sn: "snare", pc: "perc", tm: "toms", gr: "groove", sw: "swing", sy: "sync", it: "intensity",
   arng: "arrangement", td: "technoDrive", ta: "technoAcid", tt: "technoTexture", tr: "technoRave", ti: "technoIndustrial",
   aa: "acidAmt", da: "driveAmt", mm: "microMelody", mb: "microBass", im: "instrumental", vm: "vocalMode",
-  w: "weirdness", inf: "influence", dur: "duration", mf: "melodicForce", to: "techOnly", eq: "equalChance",
+  w: "weirdness", inf: "influence", dur: "duration", mf: "melodicForce", to: "techOnly", eq: "equalChance", nhp: "noHandPerc",
   ft: "filterType", et: "envelopeType", lt: "lfoType", dt: "distortionType", rt: "reverbType", dlt: "delayType",
   sct: "sidechainType", stt: "stereoType", fx: "fxChain", cprog: "chordProg", rpat: "rhythmPattern", sint: "soundIntensity",
   mixDensity: "mixDensity", mixEnergy: "mixEnergy", mixSpace: "mixSpace", mixGlue: "mixGlue", mixPunch: "mixPunch",

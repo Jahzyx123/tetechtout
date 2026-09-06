@@ -10,6 +10,7 @@
    - buildFullBrief(): hard cap 3000 chars.
    All builders take the state object explicitly. */
 import { SAFETY_LINE, BANNED_MINIMAL, VOCAL_WORDS, LAYERS, VOCAL_DIRECTIONS } from "../data/safety.js";
+import { hasHandPerc } from "./state.js";
 import { ARC_TEMPLATES } from "../data/concept.js";
 import { MELODY_FORCE } from "../data/scales.js";
 import { COUNTER_ROLE, VOICE_ROLE } from "../data/atoms.js";
@@ -24,6 +25,10 @@ export function hasVocalRef(text) { return VOCAL_RE.test(text); }
 const CLAUSE_LABEL_RE = /^([A-Z][A-Za-z&\- ]{1,28}:)\s*/;
 export function isDirty(s, low) {
   if (s.instrumental && hasVocalRef(low)) return true;
+  /* Safety net for the no-hand-percussion toggle. Filtering poolFor() covers
+     rolled atoms, but fixed prose, arrangement templates and spark lines
+     reach the prompt without passing through a pool. */
+  if (s.noHandPerc && hasHandPerc(low)) return true;
   for (const b of BANNED_MINIMAL) { if (low.includes(b)) return true; }
   return false;
 }

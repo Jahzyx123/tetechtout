@@ -179,6 +179,7 @@ function renderTopbar() {
       <span class="readout"><b>${state.weirdness}</b> · core ${pct(m.core)}% / sub ${pct(m.sub)}% / rare ${pct(m.rare)}%</span></label>
     <span class="chip ${state.instrumental ? "on" : ""}" id="instToggle" title="Keep every vocal reference out of the output">Instrumental</span>
     <span class="chip ${state.equalChance ? "on" : ""}" id="eqToggle" title="Every style equally likely (ignores weirdness tiers)">Equal chance</span>
+    <span class="chip ${state.noHandPerc ? "on" : ""}" id="handPercToggle" title="Remove tribal / hand-percussion, woodblocks, claps, shakers and stomps from every roll">No hand-perc</span>
     <span class="chip ${state.styleFit ? "on" : ""}" id="fitToggle" title="Auto-hide electronic-only cards for organic genres">Style-fit</span>
     <span class="chip ${state.structure ? "on" : ""}" id="structToggle" title="Append [Intro][Build][Drop]… tags">Structure</span>
     <label class="inline">Influence <select id="influenceSel">
@@ -209,6 +210,15 @@ function renderTopbar() {
   el.querySelector("#weirdRange").addEventListener("change", e => { state.weirdness = +e.target.value; commit("Weirdness " + state.weirdness); afterChange(); });
   el.querySelector("#instToggle").addEventListener("click", () => { state.instrumental = !state.instrumental; commit("Instrumental " + (state.instrumental ? "on" : "off")); afterChange(); });
   el.querySelector("#eqToggle").addEventListener("click", () => { state.equalChance = !state.equalChance; commit("Equal chance " + (state.equalChance ? "on" : "off")); afterChange(); });
+  el.querySelector("#handPercToggle").addEventListener("click", () => {
+    state.noHandPerc = !state.noHandPerc;
+    /* reroll so the change is visible immediately rather than only on the
+       next roll -- and so any offending values already in state are replaced */
+    if (state.noHandPerc) roll(state, "everything");
+    commit("No hand-perc " + (state.noHandPerc ? "on" : "off"));
+    afterChange();
+    toast(state.noHandPerc ? "Hand percussion removed" : "Hand percussion allowed");
+  });
   el.querySelector("#fitToggle").addEventListener("click", () => {
     state.styleFit = !state.styleFit;
     if (state.styleFit) { state.lastFitGenre = ""; autoFitSounds(state, { reRoll: false }); }
