@@ -121,6 +121,22 @@ const PACK_CARD = {
    waste characters that could carry another sound, so collapse them at
    pack time. The pools on disk stay verbatim. */
 const FILLER = "force|drive|pressure";
+/* The word "live" must never reach the output: Suno reads it as a concert
+   recording. Pool values and a few verbatim style names carry it, so it is
+   rewritten at output rather than by editing the verbatim pools. Compound
+   forms get a sensible replacement instead of being cut to a fragment
+   ("Live-Room Jazz" -> "Room-Recorded Jazz", not "Room Jazz"). */
+export function stripLive(v) {
+  let t = String(v || "");
+  t = t.replace(/\blive-room\b/gi, m => m[0] === "L" ? "Room-Recorded" : "room-recorded");
+  t = t.replace(/\blive-jam\b/gi, m => m[0] === "L" ? "Jam" : "jam");
+  t = t.replace(/\blive-band\b/gi, m => m[0] === "L" ? "Band" : "band");
+  t = t.replace(/\blive-drummer\b/gi, m => m[0] === "L" ? "Drummer" : "drummer");
+  t = t.replace(/\bsampled-and-live\b/gi, m => m[0] === "S" ? "Sampled" : "sampled");
+  t = t.replace(/\blive\b[ -]?/gi, "");
+  return t.replace(/\s+/g, " ").replace(/\s+([,.;:])/g, "$1").trim();
+}
+
 export function tightenPhrase(v) {
   let t = String(v || "");
   t = t.replace(new RegExp("\\b(" + FILLER + ")(\\s+(?:" + FILLER + "))+\\b", "gi"), "$1");
@@ -234,6 +250,7 @@ function dropEmptyLabels(text) {
 }
 export function normalizePrompt(text) {
   let t = dropEmptyLabels(String(text || ""));
+  t = stripLive(t);
   t = tightenPhrase(t);
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/(\.|,)\s*(?=\.|,)/g, ".").replace(/\.{2,}/g, ".");
@@ -255,8 +272,8 @@ export function styleLine(s) {
   }
   if (!s.techOnly) {
     const world = genreWorld(s.primaryGenre);
-    if (world === "organic") out += " — live acoustic instrumentation";
-    else if (world === "hybrid") out += " — live and electronic hybrid instrumentation";
+    if (world === "organic") out += " — acoustic instrumentation";
+    else if (world === "hybrid") out += " — acoustic and electronic hybrid instrumentation";
   }
   if (!s.hidden.bpm) out += ", " + s.bpm + " BPM";
   if (!s.hidden.key) out += ", " + keyName(s);
@@ -451,7 +468,7 @@ export function structTags(s) {
 export function buildStylePrompt(state) {
   const s = state;
   const SLIM = !!s.slim;
-  const flavor = (!s.techOnly && SLIM) ? (genreWorld(s.primaryGenre) === "organic" ? " — live acoustic instrumentation" : genreWorld(s.primaryGenre) === "hybrid" ? " — live and electronic hybrid instrumentation" : "") : "";
+  const flavor = (!s.techOnly && SLIM) ? (genreWorld(s.primaryGenre) === "organic" ? " — acoustic instrumentation" : genreWorld(s.primaryGenre) === "hybrid" ? " — acoustic and electronic hybrid instrumentation" : "") : "";
   const blocks = [{ t: SLIM ? (s.primaryStyle + (s.secondaryStyle ? ", " + s.secondaryStyle : "") + flavor) : styleLine(s), required: true, priority: 1 }];
   if (!s.hidden.feelCard) {
     blocks.push({
@@ -511,7 +528,7 @@ export function buildStylePrompt(state) {
   blocks.push({ t: layerLine(s), required: false, priority: 6 });
   const TAGS = structTags(s);
   const tagCost = s.structure ? TAGS.length + 1 : 0;
-  const flavorCost = (!s.techOnly && (SLIM || true)) ? (genreWorld(s.primaryGenre) === "organic" ? " — live acoustic instrumentation".length : genreWorld(s.primaryGenre) === "hybrid" ? " — live and electronic hybrid instrumentation".length : 0) : 0;
+  const flavorCost = (!s.techOnly && (SLIM || true)) ? (genreWorld(s.primaryGenre) === "organic" ? " — acoustic instrumentation".length : genreWorld(s.primaryGenre) === "hybrid" ? " — acoustic and electronic hybrid instrumentation".length : 0) : 0;
   /* Budget note: we deliberately assemble against a REDUCED budget so the
      block system produces its compact, high-density forms, then densify()
      spends the reclaimed characters on rolled sounds that prose phrasing
@@ -627,7 +644,8 @@ export function buildFullBrief(state) {
   sec.push("ENERGY ARC: " + arcLine(s) + ".");
   if (layers.length) sec.push("MIX & DETAIL: " + layers.map(l => l.phrase).join(", ") + ".");
   sec.push("VOCAL POLICY: " + vocalLine(s) + ".");
-  let text = sec.map(x => sanitize(s, x)).filter(Boolean).join("\n\n");
+  /* strip "live" before the 3000-char cap so length accounting stays right */
+  let text = sec.map(x => stripLive(sanitize(s, x))).filter(Boolean).join("\n\n");
   if (text.length > 3000) {
     const parts = text.split("\n\n");
     while (parts.length > 1 && parts.join("\n\n").length > 3000) parts.pop();

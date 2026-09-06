@@ -259,7 +259,7 @@ section("Genre-safe phrasing");
   s.concept = { world: "", location: "", visual: "", narrative: "", sensation: "", event: "", conflict: "", crowd: "", title: "", transform: "" };
   const sp = E.buildStylePrompt(s);
   ok(/Acid Jazz/.test(sp), "real genre name 'Acid Jazz' protected from cleaning");
-  ok(/live acoustic instrumentation/.test(sp), "organic flavor line added");
+  ok(/— acoustic instrumentation/.test(sp), "organic flavor line added");
   ok(!/\b(909|rave|sidechain|synth|warehouse|euphoric|overdriven|distorted|hardgroove|2\.0|reese)\b/i.test(sp.replace(/Acid Jazz/g, "")), "organic prompt has no techno-isms");
   ok(/steady pulse/.test(sp), "four-on-the-floor rephrased to steady pulse");
   ok(/joyous/.test(sp), "euphoric rephrased to joyous");
@@ -278,7 +278,7 @@ section("Genre-safe phrasing");
   ok(/four-on-the-floor/.test(spH), "hybrid prompt keeps four-on-the-floor");
   ok(/synth lead/.test(spH), "hybrid prompt keeps synth");
   ok(/euphoric/.test(spH), "hybrid prompt keeps euphoric");
-  ok(/live and electronic hybrid instrumentation/.test(spH), "hybrid flavor line added");
+  ok(/acoustic and electronic hybrid instrumentation/.test(spH), "hybrid flavor line added");
   // electronic: untouched
   s.primaryGenre = "House"; s.primaryStyle = "Acid House";
   const spE = E.buildStylePrompt(s);
@@ -458,7 +458,7 @@ section("Style Prompt density (sound packing)");
     if (sp.length > 1000) over++;
     /* the builder tightens doubled words out of names, so compare
        against the same transform rather than the raw pool string */
-    if (!sp.includes(s.primaryStyle) && !sp.includes(P.tightenPhrase(s.primaryStyle))) styleLost++;
+    if (![s.primaryStyle, P.tightenPhrase(s.primaryStyle), P.stripLive(s.primaryStyle), P.tightenPhrase(P.stripLive(s.primaryStyle))].some(f => f && sp.includes(f))) styleLost++;
     if (sp.length < 880) waste++;
     worstLen = Math.max(worstLen, sp.length);
     hits += KEYS.filter(k => s[k] && sp.includes(s[k])).length;
@@ -495,6 +495,35 @@ section("Style Prompt density (sound packing)");
   // determinism survives packing
   const a = E.decodeState(E.encodeState(s2));
   ok(E.buildStylePrompt(a) === sp2, "packed prompt is deterministic across encode/decode");
+}
+
+section("No \"live\" anywhere in the output");
+{
+  const { stripLive } = P;
+  for (const [input, want] of [
+    ["Live-Room Jazz", "Room-Recorded Jazz"],
+    ["Live-Jam Techno", "Jam Techno"],
+    ["live-room air", "room-recorded air"],
+    ["gated live snare", "gated snare"],
+    ["sampled-and-live kick", "sampled kick"],
+    ["Live Room", "Room"]
+  ]) ok(stripLive(input) === want,
+       `stripLive "${input}" -> "${want}" (got "${stripLive(input)}")`);
+
+  for (const keep of ["olive grove drive", "delivered lively", "sliver of noise"])
+    ok(stripLive(keep) === keep, `stripLive leaves "${keep}" alone (no substring damage)`);
+
+  let sp = 0, fb = 0;
+  for (let i = 0; i < 150; i++) {
+    const st = E.defaultState(); st.techOnly = i % 2 === 0; E.roll(st, "everything");
+    if (/\blive\b/i.test(E.buildStylePrompt(st))) sp++;
+    if (/\blive\b/i.test(E.buildFullBrief(st))) fb++;
+  }
+  ok(sp === 0, `no "live" in any style prompt across 150 rolls (${sp})`);
+  ok(fb === 0, `no "live" in any full brief across 150 rolls (${fb})`);
+
+  const gen = [...D.STYLES.map(x => x.n), ...D.GENRES.flatMap(g => g.subs)];
+  ok(gen.length > 0, "verbatim pools still load (untouched by the live scrub)");
 }
 
 section("Phrase tightening and label-noun trimming");
@@ -577,7 +606,7 @@ section("Style pool expansion");
     const sp = E.buildStylePrompt(s);
     const alt = s.techOnly ? s.primaryStyle : E.genreSafeText(s, s.primaryStyle, true);
     /* the builder tightens doubled words out of names -- accept that form too */
-    const forms = [s.primaryStyle, alt, P.tightenPhrase(s.primaryStyle), P.tightenPhrase(alt)];
+    const forms = [s.primaryStyle, alt].flatMap(x => x ? [x, P.tightenPhrase(x), P.stripLive(x), P.tightenPhrase(P.stripLive(x))] : []);
     if (!forms.some(f => f && sp.includes(f))) lost++;
   }
   ok(lost === 0, "style name survives into every prompt across 200 rolls (" + lost + " lost)");

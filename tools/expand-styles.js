@@ -67,7 +67,7 @@ const TPRE = {
 /* ---------------- new non-techno genres ---------------- */
 const NEW_GENRES = [
   ["Post-Rock", ["Cinematic Post-Rock", "Math Post-Rock", "Ambient Post-Rock", "Heavy Post-Rock", "Instrumental Crescendo", "Sludge Post-Rock", "Drone Post-Rock", "Chamber Post-Rock", "Nordic Post-Rock", "Desert Post-Rock"]],
-  ["Afrobeat", ["Classic Afrobeat", "Afro-Funk", "Afro-Jazz Groove", "Highlife Fusion", "Ethio-Groove", "Afro-House Live", "Lagos Shuffle", "Broken Afrobeat", "Afro-Latin Groove", "Desert Afrobeat"]],
+  ["Afrobeat", ["Classic Afrobeat", "Afro-Funk", "Afro-Jazz Groove", "Highlife Fusion", "Ethio-Groove", "Afro-House Groove", "Lagos Shuffle", "Broken Afrobeat", "Afro-Latin Groove", "Desert Afrobeat"]],
   ["Balkan Brass", ["Wedding Brass", "Gypsy Brass", "Turbo Brass", "Fanfare Romanesc", "Serbian Kolo", "Macedonian 7/8", "Brass Punk", "Balkan Swing", "Roma Fanfare", "Danube Brass"]],
   ["Nu Disco", ["French Touch", "Italo Revival", "Cosmic Disco", "Space Disco", "Boogie Funk", "Disco House", "Slow Motion Disco", "Balearic Disco", "Sunset Boogie", "Roller Disco"]],
   ["Neo-Soul", ["Jazzy Neo-Soul", "Future Soul", "Broken Soul", "Gospel Neo-Soul", "Rhodes Soul", "Alt-Soul", "Soul Groove", "Velvet Soul", "Late-Night Soul", "Psychedelic Soul"]],
@@ -109,7 +109,9 @@ const NEW_GENRES = [
 ];
 
 /* extra sub-styles for genres that already exist in the verbatim pool */
-const EXTRA_SUB_QUAL = ["Late-Night", "Sunrise", "Midnight", "Golden-Hour", "Rain-Soaked", "Sunlit", "Winter", "Summer", "Neon", "Velvet", "Smoke-Filled", "Wide-Screen", "Slow-Burn", "Fever-Dream", "Hand-Played", "Live-Room", "Festival", "Basement", "Rooftop", "Riverside"];
+/* Never use "live" in a generated name: Suno reads it as a concert
+   recording, and engine/prompt.js strips the word at output anyway. */
+const EXTRA_SUB_QUAL = ["Late-Night", "Sunrise", "Midnight", "Golden-Hour", "Rain-Soaked", "Sunlit", "Winter", "Summer", "Neon", "Velvet", "Smoke-Filled", "Wide-Screen", "Slow-Burn", "Fever-Dream", "Hand-Played", "Room-Recorded", "Festival", "Basement", "Rooftop", "Riverside"];
 
 /* ---------------- build ---------------- */
 const styleSeen = new Set(STYLES.map(s => s.n.toLowerCase()));
