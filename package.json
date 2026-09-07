@@ -1,0 +1,16 @@
+{
+  "name": "neon-forge",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NEON FORGE — modular Suno prompt lab for techno (and everything else). ES modules, no bundler.",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "extract": "node tools/extract-data.js",
+    "build": "node tools/build.js",
+    "test": "node tests/run.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
